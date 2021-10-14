@@ -109,8 +109,7 @@ describe("Mint", function () {
     const testMint = await testMintFactory.deploy(factory.address);
     await testMint.deployed();
     getPoolAddr = await testMint.pool(txAddr, tyAddr, 3000);
-    console.log("poolAddr: " + poolAddr);
-    console.log("getPoolAddr: " + getPoolAddr);
+
     expect(getPoolAddr).to.equal(poolAddr);
 
     
@@ -123,14 +122,8 @@ describe("Mint", function () {
 
     [currPt, currX, currY, liquidity, allX, locked] = await printState(poolAddr);
 
-    console.log("currPt: " + currPt);
-    console.log("currX: " + currX.toFixed(0));
-    console.log("currY: " + currY.toFixed(0));
-    console.log("liquidity: " + liquidity.toFixed(0));
-
     await tokenY.transfer(trader.address, 10000000000);
     x_5001 = l2x(BigNumber(30000), 5001, rate, false);
-    console.log(x_5001.toFixed(0));
 
     amountY_5001 = BigNumber(12000);
     amountY_5001_WithFee = ceil(BigNumber(12000).times(1003).div(1000));

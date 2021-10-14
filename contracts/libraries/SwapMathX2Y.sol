@@ -136,10 +136,6 @@ library SwapMathX2Y {
                     retState.finalAllX = true;
                 } else {
                     amountX -= retState.costX;
-                    console.log("++++++++++++++++++++++++");
-                    console.log("== costX: %s", retState.costX);
-                    console.log("== acquireY: %s", retState.acquireY);
-                    console.log("== currPt: %s", uint256(int256(st.currPt)));
                 }
             }
         } else if (!st.allX) { // all y
@@ -172,16 +168,7 @@ library SwapMathX2Y {
                 retState.finalPt = leftPt;
                 retState.sqrtFinalPrice_96 = sqrtPriceL_96;
                 retState.finalAllX = true;
-                console.log("++++++++++++++++++++++++");
-                console.log("== costX: %s", ret.costX);
-                console.log("== acquireY: %s", ret.acquireY);
-                console.log("== [%s, %s)", uint256(int256(leftPt)), uint256(int256(st.currPt)));
-                console.log("== complete liquid at: %s", uint256(int256(leftPt)));
             } else {
-                console.log("++++++++++++++++++++++++");
-                console.log("== costX: %s", ret.costX);
-                console.log("== acquireY: %s", ret.acquireY);
-                console.log("== [%s, %s)", uint256(int256(ret.locPt)), uint256(int256(st.currPt)));
                 ret.locPt = ret.locPt - 1;
                 ret.sqrtLoc_96 = uint160(FullMath.mulDiv(ret.sqrtLoc_96, FixedPoint96.Q96, sqrtRate_96));
                 // trade at locPt
@@ -191,11 +178,6 @@ library SwapMathX2Y {
                 retState.acquireY += locAcquireY;
                 retState.finished = true;
                 retState.sqrtFinalPrice_96 = ret.sqrtLoc_96;
-
-                console.log("++++++++++++++++++++++++");
-                console.log("== costX: %s", locCostX);
-                console.log("== acquireY: %s", locAcquireY);
-                console.log("== currPt: %s", uint256(int256(ret.locPt)));
 
                 if (locAcquireY >= locCurrY) {
                     retState.finalPt = ret.locPt; // locPt - 1 is also ok, but need to compute finalCurrY

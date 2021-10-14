@@ -922,7 +922,6 @@ contract IzumiswapPool is IIzumiswapPool {
             }
             // in [st.currPt, nextPt)
             if (st.liquidity == 0) {
-
                 // no liquidity in the range [st.currPoint, nextPt)
                 st.currPt = nextPt;
                 st.sqrtPrice_96 = TickMath.getSqrtRatioAtTick(st.currPt);
@@ -944,9 +943,6 @@ contract IzumiswapPool is IIzumiswapPool {
                     );
                     cache.finished = retState.finished;
                     uint256 feeAmount = FullMath.mulDivRoundingUp(retState.costY, fee, 1e6);
-                    console.log("actual costY without fee: %s", retState.costY);
-                    console.log("actual acquireX : %s", retState.acquireX);
-
 
                     amountX += retState.acquireX;
                     amountY += (retState.costY + feeAmount);

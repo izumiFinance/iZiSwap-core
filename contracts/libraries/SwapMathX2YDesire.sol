@@ -92,7 +92,7 @@ library SwapMathX2YDesire {
         int24 leftPt,
         uint160 sqrtRate_96,
         uint128 desireY
-    ) internal pure returns (
+    ) internal view returns (
         RangeRetState memory retState
     ) {
         retState.costX = 0;
@@ -137,6 +137,7 @@ library SwapMathX2YDesire {
                 }), 
                 desireY
             );
+            
             retState.costX += ret.costX;
             desireY = (desireY <= ret.acquireY) ? 0 : desireY - uint128(ret.acquireY);
             retState.acquireY += ret.acquireY;

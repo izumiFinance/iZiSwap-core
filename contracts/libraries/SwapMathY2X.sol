@@ -44,11 +44,8 @@ library SwapMathY2X {
         uint160 sqrtPrice_96,
         uint256 currX
     ) internal view returns (uint128 costY, uint256 acquireX) {
-        console.log("aamountY: %s", amountY);
         uint256 l = FullMath.mulDiv(amountY, FixedPoint96.Q96, sqrtPrice_96);
-        console.log("liquidity: %s", l);
         acquireX = FullMath.mulDiv(l, FixedPoint96.Q96, sqrtPrice_96);
-        console.log("acquire x: %s", acquireX);
         if (acquireX > currX) {
             acquireX = currX;
         }
@@ -211,10 +208,6 @@ library SwapMathY2X {
                         retState.sqrtFinalPrice_96 = TickMath.getSqrtRatioAtTick(retState.finalPt);
                         retState.finalAllX = true;
                     } else {
-                        console.log("---------------------");
-                        console.log("costY at 5001: %s", retState.costY);
-                        console.log("acquireX at 5001: %s", retState.acquireX);
-                        console.log("point: %s", uint256(int256(st.currPt)));
                         // y not run out
                         // not finsihed
                         st.currPt += 1;
@@ -244,12 +237,6 @@ library SwapMathY2X {
                 }),
                 amountY
             );
-            console.log("----------------------------");
-            console.log("left: %s", uint256(int256(st.currPt)));
-            console.log("right: %s", uint256(int256(rightPt)));
-            console.log("costY: %s", ret.costY);
-            console.log("acquireX: %s", ret.acquireX);
-            console.log("loc: %s", uint256(int256(ret.locPt)));
 
             retState.costY += ret.costY;
             amountY -= ret.costY;
@@ -262,13 +249,9 @@ library SwapMathY2X {
             } else {
                 // trade at locPt
                 uint256 locCurrX = FullMath.mulDiv(st.liquidity, FixedPoint96.Q96, ret.sqrtLoc_96);
-                console.log("curr liquidity: %s", st.liquidity);
-                console.log("curr loc x: %s", locCurrX);
-                console.log("curr pt: %s", uint256(int256(st.currPt)));
-                console.log("amountamountY: %s", amountY);
+                
                 (uint128 locCostY, uint256 locAcquireX) = y2XAtPriceLiquidity(amountY, ret.sqrtLoc_96, locCurrX);
-                console.log("curr cost y: %s", locCostY);
-                console.log("curr cost x: %s", locAcquireX);
+                
                 retState.costY += locCostY;
                 retState.acquireX += locAcquireX;
                 retState.finished = true;

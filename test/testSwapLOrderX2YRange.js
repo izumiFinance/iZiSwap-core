@@ -148,8 +148,22 @@ async function checkStatusVal(eVal, poolAddr, pt) {
     val = await getStatusVal(poolAddr, pt);
     expect(eVal).to.equal(val);
 }
+async function addLimOrderWithY(tokenX, tokenY, seller, testAddLimOrder, amountY, point) {
+    await tokenY.transfer(seller.address, amountY);
+    await tokenY.connect(seller).approve(testAddLimOrder.address, amountY);
+    await testAddLimOrder.connect(seller).addLimOrderWithY(
+        tokenX.address, tokenY.address, 3000, point, amountY
+    );
+}
+async function addLimOrderWithX(tokenX, tokenY, seller, testAddLimOrder, amountX, point) {
+    await tokenX.transfer(seller.address, amountX);
+    await tokenX.connect(seller).approve(testAddLimOrder.address, amountX);
+    await testAddLimOrder.connect(seller).addLimOrderWithX(
+        tokenX.address, tokenY.address, 3000, point, amountX
+    );
+}
 describe("swap", function () {
-  it("swap with no limorder x2y range complex", async function () {
+  it("swap with limorder x2y range complex", async function () {
     const [signer, miner1, miner2, miner3, seller0, seller1, trader, trader2] = await ethers.getSigners();
 
     // deploy a factory
@@ -191,19 +205,23 @@ describe("swap", function () {
     expect(currX.toFixed(0)).to.equal('0');
     y_5100_Liquid = l2y(BigNumber("20000"), 5100, rate, true);
     expect(y_5100_Liquid.toFixed(0)).to.equal(currY.toFixed(0));
+    // part of y of 5100 from liquidity
     acquireY_5100 = BigNumber(y_5100_Liquid.times(5).div(16).toFixed(0));
     costX_5100 = y2xAt(5100, rate, acquireY_5100);
     costX_5100_WithFee = amountAddFee(costX_5100);
     
+    // contract to call swap
     const testSwapFactory = await ethers.getContractFactory("TestSwap");
     const testSwap = await testSwapFactory.deploy(factory.address);
     await testSwap.deployed();
     await tokenX.transfer(trader.address, 10000000000);
     await tokenX.connect(trader).approve(testSwap.address, costX_5100_WithFee.times(2).toFixed(0));
+    // trader swap to acquire y
     await testSwap.connect(trader).swapX2Y(
         tokenX.address, tokenY.address, 3000, costX_5100_WithFee.toFixed(0), 5100);
+    // check cost and acquire of trader
     expect(costX_5100_WithFee.plus(blockNum2BigNumber(await tokenX.balanceOf(trader.address))).toFixed(0)).to.equal("10000000000");
-    console.log("acquireY_5100: ",acquireY_5100.toFixed(0));
+
     expect(acquireY_5100.toFixed(0)).to.equal(blockNum2BigNumber(await tokenY.balanceOf(trader.address)).toFixed(0));
 
     [currPt, currX, currY, liquidity, allX, locked] = await printState(poolAddr);
@@ -211,14 +229,20 @@ describe("swap", function () {
     expect(currX.toFixed(0)).to.equal(costX_5100.toFixed(0));
 
     // now for trader2
+    // trader 2 sell x to acquire y
     acquireY_5100_Remain = currY.plus('0');
     costX_5100_Remain = y2xAt(5100, rate, acquireY_5100_Remain);
     acquireY_5050_5100 = yInRange(BigNumber("50000"), 5050, 5100, rate, false);
     costX_5050_5100 = xInRange(BigNumber("50000"), 5050, 5100, rate, true);
     acquireY_5000_5050 = yInRange(BigNumber("30000"), 5000, 5050, rate, false);
     costX_5000_5050 = xInRange(BigNumber("30000"), 5000, 5050, rate, true);
-    acquireY_4900_5000 = yInRange(BigNumber("40000"), 4900, 5000, rate, false);
-    costX_4900_5000 = xInRange(BigNumber("40000"), 4900, 5000, rate, true);
+    
+    // a lim order at 4950 split the liquid
+    acquireY_4950_5000 = yInRange(BigNumber("40000"), 4950, 5000, rate, false);
+    costX_4950_5000 = xInRange(BigNumber("40000"), 4950, 5000, rate, true);
+    acquireY_4900_4950 = yInRange(BigNumber("40000"), 4900, 4950, rate, false);
+    costX_4900_4950 = xInRange(BigNumber("40000"), 4900, 4950, rate, true);
+
     acquireY_4870_4900 = yInRange(BigNumber("10000"), 4870, 4900, rate, false);
     costX_4870_4900 = xInRange(BigNumber("10000"), 4870, 4900, rate, true);
     amountY_4869_Liquid = l2y(BigNumber("10000"), 4869, rate, false);
@@ -228,191 +252,115 @@ describe("swap", function () {
     // console.log("aayaay: ", aay.toFixed(0));
     // console.log("ccxccx: ", ccx.toFixed(0));
 
+    // limorder, 2 order to sell x (expect unchanged), 3 order to sell y
+    const testAddLimOrderFactory = await ethers.getContractFactory("TestAddLimOrder");
+    const testAddLimOrder = await testAddLimOrderFactory.deploy(factory.address);
+    await testAddLimOrder.deployed();
+    await addLimOrderWithX(tokenX, tokenY, seller0, testAddLimOrder, 100000000, 5150);
+    await addLimOrderWithX(tokenX, tokenY, seller0, testAddLimOrder, 200000000, 5100);
+    await addLimOrderWithY(tokenX, tokenY, seller1, testAddLimOrder, 300000000, 5050);
+    await addLimOrderWithY(tokenX, tokenY, seller1, testAddLimOrder, 400000000, 4950);
+    await addLimOrderWithY(tokenX, tokenY, seller1, testAddLimOrder, 500000000, 4850);
+
+    acquireY_5050_Lim = BigNumber(300000000);
+    costX_5050_Lim = y2xAt(5050, rate, acquireY_5050_Lim);
+    acquireY_4950_Lim = BigNumber(400000000);
+    costX_4950_Lim = y2xAt(4950, rate, acquireY_4950_Lim);
+
     acquireYRange = acquireY_5100_Remain.plus(
         acquireY_5050_5100).plus(
         acquireY_5000_5050).plus(
-        acquireY_4900_5000).plus(
+        acquireY_4950_5000).plus(
+        acquireY_4900_4950).plus(
         acquireY_4870_4900).plus(
-        acquireY_4869_Remain);
+        acquireY_4869_Remain).plus("700000000");
+    
     
     costXRangeWithFee = amountAddFee(costX_5100_Remain).plus(
         amountAddFee(costX_5050_5100)).plus(
         amountAddFee(costX_5000_5050)).plus(
-        amountAddFee(costX_4900_5000)).plus(
+        amountAddFee(costX_4950_5000)).plus(
+        amountAddFee(costX_4900_4950)).plus(
         amountAddFee(costX_4870_4900)).plus(
-        amountAddFee(costX_4869_Remain));
-
-    console.log("******************");
-    console.log("== costX: ", costX_5100_Remain.toFixed(0));
-    console.log("== acquireY: ", acquireY_5100_Remain.toFixed(0));
-    console.log("== currPt: 5100");
-
-    console.log("******************");
-    console.log("== costX: ", costX_5050_5100.toFixed(0));
-    console.log("== acquireY: ", acquireY_5050_5100.toFixed(0));
-    console.log("== [5050, 5100)");
-
-    console.log("******************");
-    console.log("== costX: ", costX_5000_5050.toFixed(0));
-    console.log("== acquireY: ", acquireY_5000_5050.toFixed(0));
-    console.log("== [5000, 5050)");
-
-    console.log("******************");
-    console.log("== costX: ", costX_4900_5000.toFixed(0));
-    console.log("== acquireY: ", acquireY_4900_5000.toFixed(0));
-    console.log("== [4900, 5000)");
-
-    console.log("******************");
-    console.log("== costX: ", costX_4870_4900.toFixed(0));
-    console.log("== acquireY: ", acquireY_4870_4900.toFixed(0));
-    console.log("== [4870, 4900)");
-
-    console.log("******************");
-    console.log("== costX: ", costX_4869_Remain.toFixed(0));
-    console.log("== acquireY: ", acquireY_4869_Remain.toFixed(0));
-    console.log("== currPt: 4869");
+        amountAddFee(costX_4869_Remain)).plus(costX_5050_Lim).plus(costX_4950_Lim);
 
     await tokenX.transfer(trader2.address, 10000000000);
     await tokenX.connect(trader2).approve(testSwap.address, costXRangeWithFee.times(2).toFixed(0));
+    // trader2 swap to acquire y
     await testSwap.connect(trader2).swapX2Y(
         tokenX.address, tokenY.address, 3000, costXRangeWithFee.toFixed(0), 4860);
+    // check cost and acquire of trader
     expect(costXRangeWithFee.plus(blockNum2BigNumber(await tokenX.balanceOf(trader2.address))).toFixed(0)).to.equal("10000000000");
     expect(acquireYRange.toFixed(0)).to.equal(blockNum2BigNumber(await tokenY.balanceOf(trader2.address)).toFixed(0));
-    console.log("==========");
-
-    // await tokenY.transfer(trader.address, 10000000000);
-    // x_5100 = l2x(BigNumber(50000), 5002, rate, false);
-    // console.log(x_5001.toFixed(0));
-
-    // amountY_5002 = BigNumber(12000);
-    // amountY_5002_WithFee = ceil(BigNumber(12000).times(1003).div(1000));
-    // [acquireX, costY] = y2xAt(5002, rate, amountY_5002);
-    // costY_WithFee = ceil(costY.times(1003).div(1000));
-
-    // // add lim order to sell y and sell x
-    // const testAddLimOrderFactory = await ethers.getContractFactory("TestAddLimOrder");
-    // const testAddLimOrder = await testAddLimOrderFactory.deploy(factory.address);
-    // await testAddLimOrder.deployed();
-    // await tokenY.transfer(seller0.address, 10000000000);
-    // await tokenY.connect(seller0).approve(testAddLimOrder.address, 10000000);
-    // await testAddLimOrder.connect(seller0).addLimOrderWithY(
-    //     tokenX.address, tokenY.address, 3000, 5000, 10000000
-    // );
-    // await tokenX.transfer(seller1.address, 10000000000);
-    // await tokenX.connect(seller1).approve(testAddLimOrder.address, 30000000);
-    // await testAddLimOrder.connect(seller1).addLimOrderWithX(
-    //     tokenX.address, tokenY.address, 3000, 5050, 10000000
-    // );
-    // await testAddLimOrder.connect(seller1).addLimOrderWithX(
-    //     tokenX.address, tokenY.address, 3000, 5100, 20000000
-    // );
-    // acquireX_5050_Lim = BigNumber("10000000");
-    // acquireX_5100_Lim = BigNumber("20000000");
-    // costY_5050_Lim = x2yAt(5050, rate, acquireX_5050_Lim);
-    // costY_5100_Lim = x2yAt(5100, rate, acquireX_5100_Lim);
     
-    // const testSwapFactory = await ethers.getContractFactory("TestSwap");
-    // const testSwap = await testSwapFactory.deploy(factory.address);
-    // await testSwap.deployed();
-    // await tokenY.connect(trader).approve(testSwap.address, amountY_5001_WithFee.times(2).toFixed(0));
-    // await testSwap.connect(trader).swapY2X(
-    //     tokenX.address, tokenY.address, 3000, amountY_5001_WithFee.toFixed(0), 5003);
-    // // for trader 2
-    // [currPt, currX, currY, liquidity, allX, locked] = await printState(poolAddr);
+    // check status at curr point after swap
+    [currPt, currX, currY, liquidity, allX, locked] = await printState(poolAddr);
+    expect(currPt).to.equal(4869);
+    expect(liquidity.toFixed(0)).to.equal("10000");
+    expect(currX.toFixed(0)).to.equal(costX_4869_Remain.toFixed(0));
+    expect(currY.toFixed(0)).to.equal(amountY_4869_Liquid.minus(acquireY_4869_Remain).toFixed(0));
 
-    // costY_5002_Remain = x2yAt(5002, rate, currX);
-    // costY_5003_5050 = yInRange(BigNumber("30000"), 5003, 5050, rate, true);
-    // costY_5050_5100 = yInRange(BigNumber("50000"), 5050, 5100, rate, true);
-    // costY_5100_5125 = yInRange(BigNumber("20000"), 5100, 5125, rate, true);
-    // currX_5125_Origin = l2x(BigNumber("20000"), 5125, rate, false);
-    // console.log("originx at 5125: " + currX_5125_Origin.toFixed(0));
-    // currX_5125_part = BigNumber(currX_5125_Origin.times(3).div(13).toFixed(0));
-    // currX_5125_Remain = currX_5125_Origin.minus(currX_5125_part);
-    // costY_5125_Remain = x2yAt(5125, rate, currX_5125_part);
-    // costYRange = costY_5001_Remain.plus(
-    //     costY_5003_5050).plus(
-    //     costY_5050_5100).plus(
-    //     costY_5100_5125).plus(
-    //     costY_5125_Remain).plus(
-    //     costY_5050_Lim).plus(
-    //     costY_5100_Lim);
-    // costYRangeWithFee = amountAddFee(costY_5002_Remain).plus(
-    //     amountAddFee(costY_5003_5050)).plus(
-    //     amountAddFee(costY_5050_5100)).plus(
-    //     amountAddFee(costY_5100_5125)).plus(
-    //     amountAddFee(costY_5125_Remain)).plus(
-    //     costY_5050_Lim).plus(
-    //     costY_5100_Lim);
-    // acquireX_5002_Remain = currX.plus("0");
-    // acquireX_5003_5050 = xInRange(BigNumber("30000"), 5003, 5050, rate, false);
-    // acquireX_5050_5100 = xInRange(BigNumber("50000"), 5050, 5100, rate, false);
-    // acquireX_5100_5125 = xInRange(BigNumber("20000"), 5100, 5125, rate, false);
-    // acquireX_5125_Remain = currX_5125_part.plus("0");
-    // acquireXRange = acquireX_5002_Remain.plus(
-    //     acquireX_5003_5050).plus(
-    //     acquireX_5050_5100).plus(
-    //     acquireX_5100_5125).plus(
-    //     acquireX_5125_Remain).plus(
-    //     acquireX_5050_Lim).plus(
-    //     acquireX_5100_Lim);
-
-    // await tokenY.transfer(trader2.address, 10000000000);
-
-    // await tokenY.connect(trader2).approve(testSwap.address, costYRangeWithFee.times(2).toFixed(0));
-    // await testSwap.connect(trader2).swapY2X(
-    //     tokenX.address, tokenY.address, 3000, costYRangeWithFee.toFixed(0), 5200);
-    
-    // // expect acquireX should equal
-    // expect(acquireXRange.toFixed(0)).to.equal(blockNum2BigNumber(await tokenX.balanceOf(trader2.address)).toFixed(0));
-    // // expect costY should equal
-    // expect(
-    //     costYRangeWithFee.plus(blockNum2BigNumber(await tokenY.balanceOf(trader2.address))).toFixed(0),
-    //     "10000000000");
-
-    // [currPt, currX, currY, liquidity, allX, locked] = await printState(poolAddr);
-    // expect(currPt).to.equal(5125);
-    // expect(liquidity.toFixed(0)).to.equal("20000");
-    // expect(currX.toFixed(0)).to.equal(currX_5125_Remain.toFixed(0));
-    // expect(currY.toFixed(0)).to.equal(costY_5125_Remain.toFixed(0));
-
-    // // check limit order
-    // await checkLimOrder(
-    //     BigNumber('0'),
-    //     BigNumber('0'),
-    //     BigNumber("10000000"),
-    //     BigNumber("0"),
-    //     BigNumber("0"),
-    //     BigNumber("0"),
-    //     poolAddr,
-    //     5000
-    // );
-    // await checkLimOrder(
-    //     BigNumber('0'),
-    //     BigNumber('0'),
-    //     BigNumber("0"),
-    //     costY_5050_Lim,
-    //     BigNumber("0"),
-    //     costY_5050_Lim,
-    //     poolAddr,
-    //     5050
-    // );
-    // await checkLimOrder(
-    //     BigNumber('0'),
-    //     BigNumber('0'),
-    //     BigNumber("0"),
-    //     costY_5100_Lim,
-    //     BigNumber("0"),
-    //     costY_5100_Lim,
-    //     poolAddr,
-    //     5100
-    // );
-    // // check status val
-    // await checkStatusVal(1, poolAddr, 4850);
-    // await checkStatusVal(1, poolAddr, 4900);
-    // await checkStatusVal(0, poolAddr, 4950);
-    // await checkStatusVal(3, poolAddr, 5000);
-    // await checkStatusVal(1, poolAddr, 5050);
-    // await checkStatusVal(1, poolAddr, 5100);
-    // await checkStatusVal(1, poolAddr, 5150);
+    // check limit order
+    await checkLimOrder(
+        BigNumber('100000000'),
+        BigNumber('0'),
+        BigNumber("0"),
+        BigNumber("0"),
+        BigNumber("0"),
+        BigNumber("0"),
+        poolAddr,
+        5150
+    );
+    await checkLimOrder(
+        BigNumber('200000000'),
+        BigNumber('0'),
+        BigNumber("0"),
+        BigNumber("0"),
+        BigNumber("0"),
+        BigNumber("0"),
+        poolAddr,
+        5100
+    );
+    await checkLimOrder(
+        BigNumber('0'),
+        BigNumber(costX_5050_Lim),
+        BigNumber("0"),
+        BigNumber("0"),
+        BigNumber(costX_5050_Lim),
+        BigNumber("0"),
+        poolAddr,
+        5050
+    );
+    await checkLimOrder(
+        BigNumber('0'),
+        BigNumber(costX_4950_Lim),
+        BigNumber("0"),
+        BigNumber("0"),
+        BigNumber(costX_4950_Lim),
+        BigNumber("0"),
+        poolAddr,
+        4950
+    );
+    await checkLimOrder(
+        BigNumber('0'),
+        BigNumber('0'),
+        BigNumber("500000000"),
+        BigNumber("0"),
+        BigNumber("0"),
+        BigNumber('0'),
+        poolAddr,
+        4850
+    );
+    // check status val after swap
+    // 1: only endpt of liquidity
+    // 2: only limorder (sellingX>0 || sellingY > 0)
+    // 3: 1 & 2
+    await checkStatusVal(3, poolAddr, 4850);
+    await checkStatusVal(1, poolAddr, 4900);
+    await checkStatusVal(0, poolAddr, 4950);
+    await checkStatusVal(1, poolAddr, 5000);
+    await checkStatusVal(1, poolAddr, 5050);
+    await checkStatusVal(3, poolAddr, 5100);
+    await checkStatusVal(3, poolAddr, 5150);
   });
 });

@@ -90,8 +90,6 @@ library SwapMathY2XDesire {
             return ret;
         }
         ret.locPt = TickMath.getTickAtSqrtRatio(uint160(sqrtPriceLoc_96));
-        console.log("rightpt: %s", uint256(int256(rg.rightPt)));
-        console.log("locPt: %s", uint256(int256(ret.locPt)));
         if (ret.locPt >= rg.rightPt) {
             // also imposible
             ret.acquireX = maxX;
@@ -117,8 +115,6 @@ library SwapMathY2XDesire {
             rg.sqrtRate_96,
             false
         );
-        console.log("pl: %s", uint256(rg.sqrtPriceL_96));
-        console.log("pl: %s", uint256(ret.sqrtLoc_96));
         if (ret.sqrtLoc_96 < rg.sqrtPriceL_96) {
             ret.sqrtLoc_96 = rg.sqrtPriceL_96;
         }
@@ -145,7 +141,6 @@ library SwapMathY2XDesire {
             if (st.currX == 0) {
                 st.currPt += 1;
                 st.sqrtPrice_96 = uint160(FullMath.mulDiv(st.sqrtPrice_96, sqrtRate_96, FixedPoint96.Q96));
-                console.log("move right without swap, topt: %s", uint256(int256(st.currPt)));
             } else {
                 (retState.costY, retState.acquireX) = y2XAtPriceLiquidity(desireX, st.sqrtPrice_96, st.currX);
                 if (retState.acquireX < st.currX) {
@@ -188,19 +183,15 @@ library SwapMathY2XDesire {
                 }), 
                 desireX
             );
-            console.log("costY: %s", ret.costY);
-            console.log("acquireX: %s", ret.acquireX);
             retState.costY += ret.costY;
             retState.acquireX += ret.acquireX;
             desireX = (desireX <= ret.acquireX) ? 0 : desireX - uint128(ret.acquireX);
             if (ret.completeLiquidity) {
-                console.log("comp");
                 retState.finished = (desireX == 0);
                 retState.finalPt = rightPt;
                 retState.sqrtFinalPrice_96 = sqrtPriceR_96;
                 retState.finalAllX = true;
             } else {
-                console.log("uncomp");
                 uint256 locCurrX = st.liquidity * FixedPoint96.Q96 / ret.sqrtLoc_96;
                 (uint256 locCostY, uint128 locAcquireX) = y2XAtPriceLiquidity(desireX, ret.sqrtLoc_96, locCurrX);
                 retState.costY += locCostY;

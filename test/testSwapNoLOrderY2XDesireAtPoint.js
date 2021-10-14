@@ -109,8 +109,7 @@ describe("swap y2x desireX", function () {
     const testMint = await testMintFactory.deploy(factory.address);
     await testMint.deployed();
     getPoolAddr = await testMint.pool(txAddr, tyAddr, 3000);
-    console.log("poolAddr: " + poolAddr);
-    console.log("getPoolAddr: " + getPoolAddr);
+
     expect(getPoolAddr).to.equal(poolAddr);
 
     
@@ -123,14 +122,8 @@ describe("swap y2x desireX", function () {
 
     [currPt, currX, currY, liquidity, allX, locked] = await printState(poolAddr);
 
-    console.log("currPt: " + currPt);
-    console.log("currX: " + currX.toFixed(0));
-    console.log("currY: " + currY.toFixed(0));
-    console.log("liquidity: " + liquidity.toFixed(0));
-
     await tokenY.transfer(trader.address, 10000000000);
     x_5001 = l2x(BigNumber(30000), 5001, rate, false);
-    console.log(x_5001.toFixed(0));
 
     amountY_5001 = BigNumber(12000);
     amountY_5001_WithFee = ceil(BigNumber(12000).times(1003).div(1000));
@@ -141,8 +134,7 @@ describe("swap y2x desireX", function () {
     const testSwap = await testSwapFactory.deploy(factory.address);
     await testSwap.deployed();
     await tokenY.connect(trader).approve(testSwap.address, amountY_5001_WithFee.times(2).toFixed(0));
-    console.log("acquireX at test: ", acquireX.toFixed(0));
-    console.log("costY without fee exepct: ", costY.toFixed(0));
+
     await testSwap.connect(trader).swapY2XDesireX(
         tokenX.address, tokenY.address, 3000, acquireX.toFixed(0), 5002);
     expect(costY_WithFee.plus(blockNum2BigNumber(await tokenY.balanceOf(trader.address))).toFixed(0)).to.equal("10000000000");

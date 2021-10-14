@@ -88,4 +88,18 @@ contract TestSwap is IIzumiswapSwapCallback {
             abi.encode(SwapCallbackData({token: tokenX, payer: payer}))
         );
     }
+    function swapX2YDesireY(
+        address tokenX,
+        address tokenY,
+        uint24 fee,
+        uint128 desireY,
+        int24 highPt
+    ) external {
+        address poolAddr = pool(tokenX, tokenY, fee);
+        address payer = msg.sender;
+        IIzumiswapPool(poolAddr).swapX2YDesireY(
+            payer, desireY, highPt,
+            abi.encode(SwapCallbackData({token:tokenX, payer: payer}))
+        );
+    }
 }
