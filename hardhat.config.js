@@ -1,4 +1,7 @@
 require("@nomiclabs/hardhat-waffle");
+const secret = require('./.secret.js');
+const sk = secret.sk;
+const izumiRpcUrl = "http://47.241.103.6:9545";
 /**
  * @type import('hardhat/config').HardhatUserConfig
  */
@@ -28,6 +31,11 @@ module.exports = {
   networks: {
     hardhat: {
       allowUnlimitedContractSize: true,
-    }
+    },
+    izumi_test: {
+      url: izumiRpcUrl,
+      accounts: [sk],
+      allowUnlimitedContractSize: true,
+    },
   }
 };
