@@ -16,15 +16,13 @@ interface IIzumiswapPool {
     function decLimOrderWithX(
         address recipient,
         int24 pt,
-        uint128 deltaX,
-        uint128 acquireYLim
-    ) external returns (uint128 actualDeltaX, uint256 acquireY);
+        uint128 deltaX
+    ) external returns (uint128 actualDeltaX);
     function decLimOrderWithY(
         address recipient,
         int24 pt,
-        uint128 deltaY,
-        uint128 acquireXLim
-    ) external returns (uint128 actualDeltaY, uint256 acquireX);
+        uint128 deltaY
+    ) external returns (uint128 actualDeltaY);
     function addLimOrderWithX(
         address recipient,
         int24 pt,
@@ -89,6 +87,7 @@ interface IIzumiswapPool {
             bool allX,
             bool locked
         );
+    function sqrtRate_96() external view returns (uint160);
     function limitOrderData(int24 pt)
         external view
         returns(

@@ -9,6 +9,7 @@ library UserEarn {
         // uint256 lastSold;
         uint256 lastAccEarn;
         uint256 sellingRemain;
+        uint256 sellingDec;
         uint256 earn;
     }
     
@@ -88,6 +89,7 @@ library UserEarn {
             actualDelta = uint128(self.sellingRemain);
         }
         self.sellingRemain = self.sellingRemain - actualDelta;
+        self.sellingDec = self.sellingDec + actualDelta;
     }
 
 }

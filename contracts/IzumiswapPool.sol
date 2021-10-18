@@ -48,7 +48,7 @@ contract IzumiswapPool is IIzumiswapPool {
     uint256 public feeScaleX_128;
     uint256 public feeScaleY_128;
 
-    uint160 private sqrtRate_96;
+    uint160 public override sqrtRate_96;
 
     // struct State {
     //     uint160 sqrtPrice_96;
@@ -87,6 +87,7 @@ contract IzumiswapPool is IIzumiswapPool {
     mapping(int24 =>PointOrder.Data) public override limitOrderData;
     mapping(bytes32 => UserEarn.Data) userEarnX;
     mapping(bytes32 => UserEarn.Data) userEarnY;
+    address private immutable original;
 
     modifier lock() {
         require(!state.locked, 'LKD');
@@ -94,7 +95,10 @@ contract IzumiswapPool is IIzumiswapPool {
         _;
         state.locked = false;
     }
-
+    modifier noDelegateCall() {
+        require(address(this) == original);
+        _;
+    }
     function _setRange(int24 pd) private {
         rightMostPt = RIGHT_MOST_PT / pd * pd;
         leftMostPt = - rightMostPt;
@@ -111,6 +115,7 @@ contract IzumiswapPool is IIzumiswapPool {
         int24 pd
     ) public {
         require(pd > 1);
+        original = address(this);
         factory = fac;
         tokenX = tX;
         tokenY = tY;
@@ -376,9 +381,8 @@ contract IzumiswapPool is IIzumiswapPool {
     function decLimOrderWithX(
         address recipient,
         int24 pt,
-        uint128 deltaX,
-        uint128 acquireYLim
-    ) external override lock returns (uint128 actualDeltaX, uint256 acquireY) {
+        uint128 deltaX
+    ) external override noDelegateCall lock returns (uint128 actualDeltaX) {
         require(pt % ptDelta == 0, "PD");
         require(pt >= state.currPt, "PG");
 
@@ -387,11 +391,6 @@ contract IzumiswapPool is IIzumiswapPool {
         uint160 sqrtPrice_96 = TickMath.getSqrtRatioAtTick(pt);
         (actualDeltaX, pointOrder.earnY) = ue.dec(deltaX, pointOrder.accEarnY, sqrtPrice_96, pointOrder.earnY, true);
         pointOrder.sellingX -= actualDeltaX;
-        acquireY = acquireYLim;
-        if (acquireY > ue.earn) {
-            acquireY = ue.earn;
-        }
-        ue.earn -= acquireY;
         
         if (actualDeltaX > 0 && pointOrder.sellingX == 0) {
             int24 newVal = getStatusVal(pt, ptDelta) & 1;
@@ -400,23 +399,13 @@ contract IzumiswapPool is IIzumiswapPool {
                 pointBitmap.setZero(pt, ptDelta);
             }
         }
-
-        if (actualDeltaX > 0) {
-            TransferHelper.safeTransfer(tokenX, recipient, actualDeltaX);
-        }
-
-        if (acquireY > 0) {
-            TransferHelper.safeTransfer(tokenY, recipient, acquireY);
-        }
-
     }
 
     function decLimOrderWithY(
         address recipient,
         int24 pt,
-        uint128 deltaY,
-        uint128 acquireXLim
-    ) external override lock returns (uint128 actualDeltaY, uint256 acquireX) {
+        uint128 deltaY
+    ) external override noDelegateCall lock returns (uint128 actualDeltaY) {
         require(pt % ptDelta == 0, "PD");
         require(pt <= state.currPt, "PL");
 
@@ -425,11 +414,6 @@ contract IzumiswapPool is IIzumiswapPool {
         uint160 sqrtPrice_96 = TickMath.getSqrtRatioAtTick(pt);
         (actualDeltaY, pointOrder.earnX) = ue.dec(deltaY, pointOrder.accEarnX, sqrtPrice_96, pointOrder.earnX, false);
         pointOrder.sellingY -= actualDeltaY;
-        acquireX = acquireXLim;
-        if (acquireX > ue.earn) {
-            acquireX = ue.earn;
-        }
-        ue.earn -= acquireX;
         
         if (actualDeltaY > 0 && pointOrder.sellingY == 0) {
             int24 newVal = getStatusVal(pt, ptDelta) & 1;
@@ -438,22 +422,13 @@ contract IzumiswapPool is IIzumiswapPool {
                 pointBitmap.setZero(pt, ptDelta);
             }
         }
-
-        if (actualDeltaY > 0) {
-            TransferHelper.safeTransfer(tokenY, recipient, actualDeltaY);
-        }
-
-        if (acquireX > 0) {
-            TransferHelper.safeTransfer(tokenX, recipient, acquireX);
-        }
-
     }
 
     function addLimOrderWithX(
         address recipient,
         int24 pt,
         uint128 amountX
-    ) external override lock returns (uint128 orderX, uint256 acquireY) {
+    ) external override noDelegateCall lock returns (uint128 orderX, uint256 acquireY) {
         require(pt % ptDelta == 0, "PD");
         require(pt >= state.currPt, "PG");
         require(amountX > 0, "XP");
@@ -517,7 +492,7 @@ contract IzumiswapPool is IIzumiswapPool {
         address recipient,
         int24 pt,
         uint128 amountY
-    ) external override lock returns (uint128 orderY, uint256 acquireX) {
+    ) external override noDelegateCall lock returns (uint128 orderY, uint256 acquireX) {
         require(pt % ptDelta == 0, "PD");
         require(pt <= state.currPt, "PL");
         require(amountY > 0, "YP");
@@ -585,7 +560,7 @@ contract IzumiswapPool is IIzumiswapPool {
         int24 rightPt,
         uint128 liquidDelta,
         bytes calldata data
-    ) external override lock returns (uint128 amountX, uint128 amountY) {
+    ) external override noDelegateCall lock returns (uint128 amountX, uint128 amountY) {
         require(leftPt < rightPt, "LR");
         int24 pd = ptDelta;
         require(leftPt % pd == 0, "LPD");
@@ -648,8 +623,11 @@ contract IzumiswapPool is IIzumiswapPool {
         int24 leftPt,
         int24 rightPt,
         uint128 liquidDelta
-    ) external override lock returns (uint256 amountX, uint256 amountY) {
-        require(liquidDelta > 0, "LP");
+    ) external override noDelegateCall lock returns (uint256 amountX, uint256 amountY) {
+        require(leftPt < rightPt, "LR");
+        int24 pd = ptDelta;
+        require(leftPt % pd == 0, "LPD");
+        require(rightPt % pd == 0, "RPD");
         State memory st = state;
         uint128 liquidity = st.liquidity;
         // add a liquidity segment to the pool
@@ -690,7 +668,7 @@ contract IzumiswapPool is IIzumiswapPool {
         int24 rightPt,
         uint256 amountXLim,
         uint256 amountYLim
-    ) external override lock returns (uint256 actualAmountX, uint256 actualAmountY) {
+    ) external override noDelegateCall lock returns (uint256 actualAmountX, uint256 actualAmountY) {
         require(amountXLim > 0, "XLP");
         require(amountYLim > 0, "YLP");
         Liquidity.Data storage lq = liquidities.get(msg.sender, leftPt, rightPt);
@@ -737,7 +715,7 @@ contract IzumiswapPool is IIzumiswapPool {
         uint128 amount,
         int24 highPt,
         bytes calldata data
-    ) external override lock returns (uint256 amountX, uint256 amountY) {
+    ) external override noDelegateCall lock returns (uint256 amountX, uint256 amountY) {
         // todo we will consider -amount of desired x later
         require(amount > 0, "AP");
         amountX = 0;
@@ -872,7 +850,7 @@ contract IzumiswapPool is IIzumiswapPool {
         uint128 desireX,
         int24 highPt,
         bytes calldata data
-    ) external override lock returns (uint256 amountX, uint256 amountY) {
+    ) external override noDelegateCall lock returns (uint256 amountX, uint256 amountY) {
         require (desireX > 0, "XP");
         amountX = 0;
         amountY = 0;
@@ -1008,7 +986,7 @@ contract IzumiswapPool is IIzumiswapPool {
         uint128 amount,
         int24 lowPt,
         bytes calldata data
-    ) external override lock returns (uint256 amountX, uint256 amountY) {
+    ) external override noDelegateCall lock returns (uint256 amountX, uint256 amountY) {
         // todo we will consider -amount of desired y later
         require(amount > 0, "AP");
         amountX = 0;
@@ -1345,7 +1323,7 @@ contract IzumiswapPool is IIzumiswapPool {
         uint128 desireY,
         int24 lowPt,
         bytes calldata data
-    ) external override lock returns (uint256 amountX, uint256 amountY) {
+    ) external override noDelegateCall lock returns (uint256 amountX, uint256 amountY) {
         // todo we will consider -amount of desired y later
         require(desireY > 0, "AP");
         amountX = 0;

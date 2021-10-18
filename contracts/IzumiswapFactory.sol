@@ -14,12 +14,16 @@ contract IzumiswapFactory is IIzumiswapFactory {
         fee2pointDelta[500] = 10;
         fee2pointDelta[3000] = 50;
     }
+    modifier noDelegateCall() {
+        require(address(this) == only_addr_);
+        _;
+    }
     function newPool(
         address tokenX,
         address tokenY,
         uint24 fee,
         int24 cp
-    ) external override returns (address addr) {
+    ) external override noDelegateCall returns (address addr) {
         require(tokenX != tokenY, "SmTK");
         if (tokenX > tokenY) {
             (tokenX, tokenY) = (tokenY, tokenX);

@@ -30,7 +30,7 @@ library Point {
         uint256 feeScale_128,
         uint256 feeScaleBeyond_128
     ) internal pure returns (uint256 feeScaleL_128) {
-        if (endpt < currpt) {
+        if (endpt <= currpt) {
             feeScaleL_128 = feeScaleBeyond_128;
         } else {
             feeScaleL_128 = feeScale_128 - feeScaleBeyond_128;
@@ -42,7 +42,7 @@ library Point {
         uint256 feeScale_128,
         uint256 feeScaleBeyond_128
     ) internal pure returns (uint256 feeScaleGE_128) {
-        if (endpt >= currpt) {
+        if (endpt > currpt) {
             feeScaleGE_128 = feeScaleBeyond_128;
         } else {
             feeScaleGE_128 = feeScale_128 - feeScaleBeyond_128;
