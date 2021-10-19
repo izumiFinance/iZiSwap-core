@@ -1,4 +1,5 @@
 require("@nomiclabs/hardhat-waffle");
+require('hardhat-contract-sizer');
 const secret = require('./.secret.js');
 const sk = secret.sk;
 const izumiRpcUrl = "http://47.241.103.6:9545";
@@ -13,7 +14,7 @@ module.exports = {
         settings: {
           optimizer: {
             enabled: true,
-            runs: 1000
+            runs: 20
           }
         }
       },
@@ -22,7 +23,7 @@ module.exports = {
         settings: {
           optimizer: {
             enabled: true,
-            runs: 1000
+            runs: 20
           }
         }
       },
@@ -35,6 +36,8 @@ module.exports = {
     izumi_test: {
       url: izumiRpcUrl,
       accounts: [sk],
+      // gas: 90000000,
+      // gasPrice: 200000000,
       allowUnlimitedContractSize: true,
     },
   }
