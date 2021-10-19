@@ -19,6 +19,7 @@ library SwapMathY2X {
         uint256 finalCurrX;
         uint256 finalCurrY;
     }
+    
 /*
     /// @dev trader pays token y and acquire x at a certain price
     function y2XAtPriceLimit(

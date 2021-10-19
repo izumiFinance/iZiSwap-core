@@ -35,6 +35,7 @@ library SwapMathX2Y {
         // it is believed that costX <= amountX
         require(costX == cost);
     }
+    
     struct Range {
         uint128 liquidity;
         uint160 sqrtPriceL_96;
@@ -197,4 +198,5 @@ library SwapMathX2Y {
             retState.sqrtFinalPrice_96 = st.sqrtPrice_96;
         }
     }
+    
 }

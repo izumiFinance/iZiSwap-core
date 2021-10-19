@@ -9,6 +9,8 @@ interface IIzumiswapFactory {
         int24 pointDelta,
         address pool
     );
+    function poolPart() external returns (address);
+    function poolPartDesire() external returns (address);
     function newPool(
         address tokenX,
         address tokenY,

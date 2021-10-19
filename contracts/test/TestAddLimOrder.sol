@@ -31,6 +31,7 @@ contract TestAddLimOrder is IIzumiswapAddLimOrderCallback {
     function pool(address tokenX, address tokenY, uint24 fee) public view returns(address) {
         return IIzumiswapFactory(factory).pool(tokenX, tokenY, fee);
     }
+    
     function addLimOrderWithX(
         address tokenX,
         address tokenY,
@@ -51,4 +52,5 @@ contract TestAddLimOrder is IIzumiswapAddLimOrderCallback {
         address poolAddr = pool(tokenX, tokenY, fee);
         IIzumiswapPool(poolAddr).addLimOrderWithY(msg.sender, pt, amountY);
     }
+    
 }
