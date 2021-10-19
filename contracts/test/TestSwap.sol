@@ -9,8 +9,10 @@ import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 
 contract TestSwap is IIzumiswapSwapCallback {
     struct SwapCallbackData {
-        address token;
+        address tokenX;
+        address tokenY;
         address payer;
+        uint24 fee;
     }
     address public factory;
     function safeTransferFrom(
@@ -24,13 +26,17 @@ contract TestSwap is IIzumiswapSwapCallback {
         console.log("transfer value: %s", value);
         require(success && (data.length == 0 || abi.decode(data, (bool))), 'STF');
     }
+    function pool(address tokenX, address tokenY, uint24 fee) public view returns(address) {
+        return IIzumiswapFactory(factory).pool(tokenX, tokenY, fee);
+    }
     function swapY2XCallback(
         uint256 y,
         bytes calldata data
     ) external override {
         SwapCallbackData memory dt = abi.decode(data, (SwapCallbackData));
+        require(pool(dt.tokenX, dt.tokenY, dt.fee) == msg.sender, "sp");
         if (y > 0) {
-            safeTransferFrom(dt.token, dt.payer, msg.sender, y);
+            safeTransferFrom(dt.tokenY, dt.payer, msg.sender, y);
         }
     }
     function swapX2YCallback(
@@ -38,14 +44,12 @@ contract TestSwap is IIzumiswapSwapCallback {
         bytes calldata data
     ) external override {
         SwapCallbackData memory dt = abi.decode(data, (SwapCallbackData));
+        require(pool(dt.tokenX, dt.tokenY, dt.fee) == msg.sender, "sp");
         if (x > 0) {
-            safeTransferFrom(dt.token, dt.payer, msg.sender, x);
+            safeTransferFrom(dt.tokenX, dt.payer, msg.sender, x);
         }
     }
     constructor(address fac) { factory = fac; }
-    function pool(address tokenX, address tokenY, uint24 fee) public view returns(address) {
-        return IIzumiswapFactory(factory).pool(tokenX, tokenY, fee);
-    }
     function swapY2X(
         address tokenX,
         address tokenY,
@@ -57,7 +61,7 @@ contract TestSwap is IIzumiswapSwapCallback {
         address payer = msg.sender;
         IIzumiswapPool(poolAddr).swapY2X(
             payer, amount, highPt,
-            abi.encode(SwapCallbackData({token:tokenY, payer: payer}))
+            abi.encode(SwapCallbackData({tokenX: tokenX, tokenY:tokenY, fee: fee, payer: payer}))
         );
     }
     
@@ -72,7 +76,7 @@ contract TestSwap is IIzumiswapSwapCallback {
         address payer = msg.sender;
         IIzumiswapPool(poolAddr).swapY2XDesireX(
             payer, desireX, highPt,
-            abi.encode(SwapCallbackData({token:tokenY, payer: payer}))
+            abi.encode(SwapCallbackData({tokenX: tokenX, tokenY:tokenY, fee: fee, payer: payer}))
         );
     }
     
@@ -88,7 +92,7 @@ contract TestSwap is IIzumiswapSwapCallback {
         address payer = msg.sender;
         IIzumiswapPool(poolAddr).swapX2Y(
             payer, amount, lowPt,
-            abi.encode(SwapCallbackData({token: tokenX, payer: payer}))
+            abi.encode(SwapCallbackData({tokenX: tokenX, tokenY:tokenY, fee: fee, payer: payer}))
         );
     }
     
@@ -104,7 +108,7 @@ contract TestSwap is IIzumiswapSwapCallback {
         address payer = msg.sender;
         IIzumiswapPool(poolAddr).swapX2YDesireY(
             payer, desireY, highPt,
-            abi.encode(SwapCallbackData({token:tokenX, payer: payer}))
+            abi.encode(SwapCallbackData({tokenX: tokenX, tokenY:tokenY, fee: fee, payer: payer}))
         );
     }
 }
