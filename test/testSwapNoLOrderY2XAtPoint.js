@@ -80,14 +80,24 @@ function y2xAt(tick, rate, amountY) {
 function blockNum2BigNumber(blc) {
     return BigNumber(blc._hex);
 }
+async function getPoolParts() {
+  const IzumiswapPoolPartFactory = await ethers.getContractFactory("IzumiswapPoolPart");
+  const izumiswapPoolPart = await IzumiswapPoolPartFactory.deploy();
+  await izumiswapPoolPart.deployed();
+  const IzumiswapPoolPartDesireFactory = await ethers.getContractFactory("IzumiswapPoolPartDesire");
+  const izumiswapPoolPartDesire = await IzumiswapPoolPartDesireFactory.deploy();
+  await izumiswapPoolPartDesire.deployed();
+  return [izumiswapPoolPart.address, izumiswapPoolPartDesire.address];
+}
 describe("Mint", function () {
   it("check miner deposit", async function () {
     const [signer, miner1, miner2, miner3, trader] = await ethers.getSigners();
 
+    [poolPart, poolPartDesire] = await getPoolParts();
     // deploy a factory
     const IzumiswapFactory = await ethers.getContractFactory("IzumiswapFactory");
 
-    const factory = await IzumiswapFactory.deploy();
+    const factory = await IzumiswapFactory.deploy(poolPart, poolPartDesire);
     await factory.deployed();
 
     [tokenX, tokenY] = await getToken();

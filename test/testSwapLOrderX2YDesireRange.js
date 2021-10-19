@@ -163,14 +163,24 @@ async function addLimOrderWithX(tokenX, tokenY, seller, testAddLimOrder, amountX
         tokenX.address, tokenY.address, 3000, point, amountX
     );
 }
+async function getPoolParts() {
+  const IzumiswapPoolPartFactory = await ethers.getContractFactory("IzumiswapPoolPart");
+  const izumiswapPoolPart = await IzumiswapPoolPartFactory.deploy();
+  await izumiswapPoolPart.deployed();
+  const IzumiswapPoolPartDesireFactory = await ethers.getContractFactory("IzumiswapPoolPartDesire");
+  const izumiswapPoolPartDesire = await IzumiswapPoolPartDesireFactory.deploy();
+  await izumiswapPoolPartDesire.deployed();
+  return [izumiswapPoolPart.address, izumiswapPoolPartDesire.address];
+}
 describe("swap", function () {
   it("swap with limorder x2y desireY range complex", async function () {
     const [signer, miner1, miner2, miner3, seller0, seller1, trader, trader2] = await ethers.getSigners();
 
+    [poolPart, poolPartDesire] = await getPoolParts();
     // deploy a factory
     const IzumiswapFactory = await ethers.getContractFactory("IzumiswapFactory");
 
-    const factory = await IzumiswapFactory.deploy();
+    const factory = await IzumiswapFactory.deploy(poolPart, poolPartDesire);
     await factory.deployed();
 
     [tokenX, tokenY] = await getToken();
@@ -213,6 +223,7 @@ describe("swap", function () {
     const testSwapFactory = await ethers.getContractFactory("TestSwap");
     const testSwap = await testSwapFactory.deploy(factory.address);
     await testSwap.deployed();
+    
     await tokenX.transfer(trader.address, 10000000000);
     await tokenX.connect(trader).approve(testSwap.address, costX_5100_WithFee.times(2).toFixed(0));
 
