@@ -167,7 +167,7 @@ contract IzumiswapPoolPart {
         uint256 currX = pointOrder.sellingX;
         if (currY > 0) {
             uint128 costX;
-            (costX, acquireY) = SwapMathX2Y.x2YAtPriceLiquidity(amountX, sqrtPrice_96, currY);
+            (costX, acquireY) = SwapMathX2Y.x2YAtPrice(amountX, sqrtPrice_96, currY);
             orderX -= costX;
             currY -= acquireY;
             pointOrder.accEarnX = pointOrder.accEarnX + costX;
@@ -232,7 +232,7 @@ contract IzumiswapPoolPart {
         uint256 currX = pointOrder.sellingX;
         if (currX > 0) {
             uint128 costY;
-            (costY, acquireX) = SwapMathY2X.y2XAtPriceLiquidity(amountY, sqrtPrice_96, currX);
+            (costY, acquireX) = SwapMathY2X.y2XAtPrice(amountY, sqrtPrice_96, currX);
             orderY -= costY;
             currX -= acquireX;
             pointOrder.accEarnY = pointOrder.accEarnY + costY;
@@ -323,7 +323,7 @@ contract IzumiswapPoolPart {
                 // clear limit order first
                 PointOrder.Data storage od = limitOrderData[st.currPt];
                 uint256 currX = od.sellingX;
-                (uint128 costY, uint256 acquireX) = SwapMathY2X.y2XAtPriceLiquidity(
+                (uint128 costY, uint256 acquireX) = SwapMathY2X.y2XAtPrice(
                     amount, st.sqrtPrice_96, currX
                 );
                 if (acquireX < currX || costY >= amount) {
@@ -474,7 +474,7 @@ contract IzumiswapPoolPart {
             if (cache.currVal & 2 > 0) {
                 PointOrder.Data storage od = limitOrderData[st.currPt];
                 uint256 currY = od.sellingY;
-                (uint128 costX, uint256 acquireY) = SwapMathX2Y.x2YAtPriceLiquidity(
+                (uint128 costX, uint256 acquireY) = SwapMathX2Y.x2YAtPrice(
                     amount, st.sqrtPrice_96, currY
                 );
                 if (acquireY < currY || costX >= amount) {

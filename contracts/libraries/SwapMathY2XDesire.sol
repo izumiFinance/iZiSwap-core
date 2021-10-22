@@ -17,7 +17,7 @@ library SwapMathY2XDesire {
         uint256 finalCurrX;
         uint256 finalCurrY;
     }
-    function y2XAtPriceLiquidity(
+    function y2XAtPrice(
         uint128 desireX,
         uint160 sqrtPrice_96,
         uint256 currX
@@ -28,6 +28,23 @@ library SwapMathY2XDesire {
         }
         uint256 l = FullMath.mulDivRoundingUp(acquireX, sqrtPrice_96, FixedPoint96.Q96);
         costY = FullMath.mulDivRoundingUp(l, sqrtPrice_96, FixedPoint96.Q96);
+    }
+    function y2XAtPriceLiquidity(
+        uint128 desireX,
+        uint160 sqrtPrice_96,
+        uint256 currX,
+        uint256 currY,
+        uint128 liquidity
+    ) internal view returns (uint256 costY, uint128 acquireX) {
+        uint256 currYLim = FullMath.mulDivRoundingUp(liquidity, sqrtPrice_96, FixedPoint96.Q96);
+        uint256 deltaY = (currYLim >= currY) ? currYLim - currY : 0;
+        if (desireX >= currX) {
+            acquireX = uint128(currX);
+            costY = deltaY;
+        } else {
+            acquireX = desireX;
+            costY = FullMath.mulDivRoundingUp(acquireX, deltaY, currX);
+        }
     }
     struct Range {
         uint128 liquidity;
@@ -142,7 +159,7 @@ library SwapMathY2XDesire {
                 st.currPt += 1;
                 st.sqrtPrice_96 = uint160(FullMath.mulDiv(st.sqrtPrice_96, sqrtRate_96, FixedPoint96.Q96));
             } else {
-                (retState.costY, retState.acquireX) = y2XAtPriceLiquidity(desireX, st.sqrtPrice_96, st.currX);
+                (retState.costY, retState.acquireX) = y2XAtPriceLiquidity(desireX, st.sqrtPrice_96, st.currX, st.currY, st.liquidity);
                 if (retState.acquireX < st.currX) {
                     // currX remain, means desire runout
                     retState.finished = true;
@@ -192,8 +209,8 @@ library SwapMathY2XDesire {
                 retState.sqrtFinalPrice_96 = sqrtPriceR_96;
                 retState.finalAllX = true;
             } else {
-                uint256 locCurrX = st.liquidity * FixedPoint96.Q96 / ret.sqrtLoc_96;
-                (uint256 locCostY, uint128 locAcquireX) = y2XAtPriceLiquidity(desireX, ret.sqrtLoc_96, locCurrX);
+                uint256 locCurrX = uint256(st.liquidity) * FixedPoint96.Q96 / ret.sqrtLoc_96;
+                (uint256 locCostY, uint128 locAcquireX) = y2XAtPriceLiquidity(desireX, ret.sqrtLoc_96, locCurrX, 0, st.liquidity);
                 retState.costY += locCostY;
                 retState.acquireX += locAcquireX;
                 retState.finished = true;

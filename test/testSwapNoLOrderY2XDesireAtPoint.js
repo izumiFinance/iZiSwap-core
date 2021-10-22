@@ -77,6 +77,20 @@ function y2xAt(tick, rate, amountY) {
     costY = ceil(liquidity.times(sp));
     return [acquireX, costY];
 }
+function y2xAtLiquidity(point, rate, desireX, currX, currY, liquidity) {
+    sp = rate.pow(point).sqrt();
+    currYLim = ceil(liquidity.times(sp));
+    deltaY = BigNumber('0');
+    if (currYLim.gte(currY)) {
+      deltaY = currYLim.minus(currY);
+    }
+    if (desireX.gte(currX)) {
+      return [currX, deltaY];
+    }
+    acquireX = desireX.plus('0');
+    costY = ceil(acquireX.times(deltaY).div(currX));
+    return [acquireX, costY];
+}
 function blockNum2BigNumber(blc) {
     return BigNumber(blc._hex);
 }
@@ -135,15 +149,15 @@ describe("swap y2x desireX", function () {
     await tokenY.transfer(trader.address, 10000000000);
     x_5001 = l2x(BigNumber(30000), 5001, rate, false);
 
-    amountY_5001 = BigNumber(12000);
-    amountY_5001_WithFee = ceil(BigNumber(12000).times(1003).div(1000));
-    [acquireX, costY] = y2xAt(5001, rate, amountY_5001);
+    acquireX_5001 = floor(x_5001.times(11).div(53));
+    [acquireX, costY] = y2xAtLiquidity(5001, rate, acquireX_5001, x_5001, BigNumber('0'), BigNumber("30000"));
+    
     costY_WithFee = ceil(costY.times(1003).div(1000));
     
     const testSwapFactory = await ethers.getContractFactory("TestSwap");
     const testSwap = await testSwapFactory.deploy(factory.address);
     await testSwap.deployed();
-    await tokenY.connect(trader).approve(testSwap.address, amountY_5001_WithFee.times(2).toFixed(0));
+    await tokenY.connect(trader).approve(testSwap.address, costY_WithFee.times(2).toFixed(0));
 
     await testSwap.connect(trader).swapY2XDesireX(
         tokenX.address, tokenY.address, 3000, acquireX.toFixed(0), 5002);

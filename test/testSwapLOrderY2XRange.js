@@ -87,6 +87,22 @@ function floor(a) {
 function ceil(b) {
     return BigNumber(b.toFixed(0, 2));
 }
+function y2xAtLiquidity(point, rate, amountY, currX, currY, liquidity) {
+    sp = rate.pow(point).sqrt();
+    currYLim = ceil(liquidity.times(sp));
+    deltaY = BigNumber('0');
+    if (currYLim.gte(currY)) {
+        deltaY = currYLim.minus(currY);
+    }
+    if (amountY.gte(deltaY)) {
+        return [currX, deltaY];
+    }
+    acquireX = floor(amountY.times(currX).div(deltaY));
+    if (acquireX.eq('0')) {
+        return [BigNumber('0'), BigNumber('0')];
+    }
+    return [acquireX, amountY];
+}
 function y2xAt(point, rate, amountY) {
     sp = rate.pow(point).sqrt();
     liquidity = floor(amountY.div(sp));
@@ -199,11 +215,10 @@ describe("swap", function () {
     [currPt, currX, currY, liquidity, allX, locked] = await printState(poolAddr);
 
     await tokenY.transfer(trader.address, 10000000000);
-    x_5001 = l2x(BigNumber(30000), 5002, rate, false);
+    x_5002 = l2x(BigNumber(30000), 5002, rate, false);
 
     amountY_5002 = BigNumber(12000);
-    amountY_5002_WithFee = ceil(BigNumber(12000).times(1003).div(1000));
-    [acquireX, costY] = y2xAt(5002, rate, amountY_5002);
+    [acquireX, costY] = y2xAt(5002, rate, amountY_5002, x_5002, BigNumber('0'), liquidity);
     costY_WithFee = ceil(costY.times(1003).div(1000));
 
     // add lim order to sell y and sell x
@@ -231,9 +246,9 @@ describe("swap", function () {
     const testSwapFactory = await ethers.getContractFactory("TestSwap");
     const testSwap = await testSwapFactory.deploy(factory.address);
     await testSwap.deployed();
-    await tokenY.connect(trader).approve(testSwap.address, amountY_5001_WithFee.times(2).toFixed(0));
+    await tokenY.connect(trader).approve(testSwap.address, costY_WithFee.times(2).toFixed(0));
     await testSwap.connect(trader).swapY2X(
-        tokenX.address, tokenY.address, 3000, amountY_5001_WithFee.toFixed(0), 5003);
+        tokenX.address, tokenY.address, 3000, costY_WithFee.toFixed(0), 5003);
     // for trader 2
     [currPt, currX, currY, liquidity, allX, locked] = await printState(poolAddr);
 
@@ -244,9 +259,10 @@ describe("swap", function () {
     currX_5125_Origin = l2x(BigNumber("20000"), 5125, rate, false);
 
     currX_5125_part = BigNumber(currX_5125_Origin.times(3).div(13).toFixed(0));
-    currX_5125_Remain = currX_5125_Origin.minus(currX_5125_part);
     costY_5125_Remain = x2yAt(5125, rate, currX_5125_part);
-    costYRange = costY_5001_Remain.plus(
+    [currX_5125_part, costY_5125_Remain] = y2xAtLiquidity(5125, rate, costY_5125_Remain, currX_5125_Origin, BigNumber('0'), BigNumber("20000"));
+    currX_5125_Remain = currX_5125_Origin.minus(currX_5125_part);
+    costYRange = costY_5002_Remain.plus(
         costY_5003_5050).plus(
         costY_5050_5100).plus(
         costY_5100_5125).plus(

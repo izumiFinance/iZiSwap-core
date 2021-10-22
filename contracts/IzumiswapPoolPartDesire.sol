@@ -133,7 +133,7 @@ contract IzumiswapPoolPartDesire {
                 // clear limit order first
                 PointOrder.Data storage od = limitOrderData[st.currPt];
                 uint256 currX = od.sellingX;
-                (uint256 costY, uint128 acquireX) = SwapMathY2XDesire.y2XAtPriceLiquidity(
+                (uint256 costY, uint128 acquireX) = SwapMathY2XDesire.y2XAtPrice(
                     desireX, st.sqrtPrice_96, currX
                 );
                 if (acquireX >= desireX) {
@@ -269,7 +269,7 @@ contract IzumiswapPoolPartDesire {
             if (cache.currVal & 2 > 0) {
                 PointOrder.Data storage od = limitOrderData[st.currPt];
                 uint256 currY = od.sellingY;
-                (uint256 costX, uint256 acquireY) = SwapMathX2YDesire.x2YAtPriceLiquidity(
+                (uint256 costX, uint256 acquireY) = SwapMathX2YDesire.x2YAtPrice(
                     desireY, st.sqrtPrice_96, currY
                 );
                 if (acquireY >= desireY) {

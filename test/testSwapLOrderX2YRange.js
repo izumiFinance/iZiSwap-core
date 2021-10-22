@@ -93,13 +93,21 @@ function y2xAt(point, rate, amountY) {
     costX = ceil(liquidity.div(sp));
     return costX;
 }
-function x2yAt(point, rate, amountX) {
+function x2yAtLiquidity(point, rate, amountX, currX, currY, liquidity) {
     sp = rate.pow(point).sqrt();
-    liquidity = floor(amountX.times(sp));
-    acquireY = floor(liquidity.times(sp));
-    liquidity = ceil(acquireY.div(sp));
-    costX = ceil(liquidity.div(sp));
-    return [acquireY, costX];
+    currXLim = ceil(liquidity.div(sp));
+    deltaX = BigNumber('0');
+    if (currXLim.gte(currX)) {
+        deltaX = currXLim.minus(currX);
+    }
+    if (amountX.gte(deltaX)) {
+        return [currY, deltaX];
+    }
+    acquireY = floor(amountX.times(currY).div(deltaX));
+    if (acquireY.eq('0')) {
+        return [BigNumber('0'), BigNumber('0')];
+    }
+    return [acquireY, amountX];
 }
 
 function yInRange(liquidity, pl, pr, rate, up) {
@@ -218,6 +226,8 @@ describe("swap", function () {
     // part of y of 5100 from liquidity
     acquireY_5100 = BigNumber(y_5100_Liquid.times(5).div(16).toFixed(0));
     costX_5100 = y2xAt(5100, rate, acquireY_5100);
+    [acquireY_5100, costX_5100] = x2yAtLiquidity(5100, rate, costX_5100, currX, currY, BigNumber("20000"));
+    console.log("acquire y expect: ", acquireY_5100.toFixed(0));
     costX_5100_WithFee = amountAddFee(costX_5100);
     
     // contract to call swap
@@ -241,7 +251,8 @@ describe("swap", function () {
     // now for trader2
     // trader 2 sell x to acquire y
     acquireY_5100_Remain = currY.plus('0');
-    costX_5100_Remain = y2xAt(5100, rate, acquireY_5100_Remain);
+    currXLim = l2x(BigNumber("20000"), 5100, rate, true);
+    costX_5100_Remain = currXLim.minus(currX);
     acquireY_5050_5100 = yInRange(BigNumber("50000"), 5050, 5100, rate, false);
     costX_5050_5100 = xInRange(BigNumber("50000"), 5050, 5100, rate, true);
     acquireY_5000_5050 = yInRange(BigNumber("30000"), 5000, 5050, rate, false);
@@ -258,7 +269,7 @@ describe("swap", function () {
     amountY_4869_Liquid = l2y(BigNumber("10000"), 4869, rate, false);
     acquireY_4869_Remain = BigNumber(amountY_4869_Liquid.times(2).div(11).toFixed(0));
     costX_4869_Remain = y2xAt(4869, rate, acquireY_4869_Remain);
-    [acquireY_4869_Remain, costX_4869_Remain] = x2yAt(4869, rate, costX_4869_Remain);
+    [acquireY_4869_Remain, costX_4869_Remain] = x2yAtLiquidity(4869, rate, costX_4869_Remain, BigNumber('0'), amountY_4869_Liquid, BigNumber("10000"));
     // console.log("aayaay: ", aay.toFixed(0));
     // console.log("ccxccx: ", ccx.toFixed(0));
 

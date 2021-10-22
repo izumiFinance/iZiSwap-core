@@ -20,27 +20,7 @@ library SwapMathY2X {
         uint256 finalCurrY;
     }
     
-/*
-    /// @dev trader pays token y and acquire x at a certain price
-    function y2XAtPriceLimit(
-        uint256 price_96,
-        uint128 amountY,
-        uint256 amountXAtPoint
-    ) internal pure returns (uint128 costY, uint256 acquireX) {
-        uint256 allX = (amountY << 96) / price_96;
-        if (allX <= amountXAtPoint) {
-            // amountX at the point is enough
-            // it is believed that costY <= amountY
-            costY = FullMath.mulDivRoundingUp(allX, price_96, FixedPoint96.Q96);
-            acquireX = allX;
-        } else {
-            // it is beleived that costY <= amountY
-            costY = FullMath.mulDivRoundingUp(amountXAtPoint, price_96, FixedPoint96.Q96);
-            acquireX = amountXAtPoint;
-        }
-    }
-*/
-    function y2XAtPriceLiquidity(
+    function y2XAtPrice(
         uint128 amountY,
         uint160 sqrtPrice_96,
         uint256 currX
@@ -55,6 +35,24 @@ library SwapMathY2X {
         costY = uint128(cost);
         // it is believed that costY <= amountY
         require(costY == cost);
+    }
+
+    function y2XAtPriceLiquidity(
+        uint128 amountY,
+        uint160 sqrtPrice_96,
+        uint256 currX,
+        uint256 currY,
+        uint128 liquidity
+    ) internal view returns (uint128 costY, uint256 acquireX) {
+        uint256 currYLim = FullMath.mulDivRoundingUp(liquidity, sqrtPrice_96, FixedPoint96.Q96);
+        uint256 deltaY = (currYLim > currY) ? currYLim - currY : 0;
+        if (amountY >= deltaY) {
+            costY = uint128(deltaY);
+            acquireX = currX;
+        } else {
+            acquireX = FullMath.mulDiv(amountY, currX, deltaY);
+            costY = (acquireX > 0) ? amountY : 0;
+        }
     }
 
     struct Range {
@@ -189,7 +187,13 @@ library SwapMathY2X {
                 st.currPt += 1;
                 st.sqrtPrice_96 = TickMath.getSqrtRatioAtTick(st.currPt);
             } else {
-                (retState.costY, retState.acquireX) = y2XAtPriceLiquidity(amountY, st.sqrtPrice_96, st.currX);
+                (retState.costY, retState.acquireX) = y2XAtPriceLiquidity(
+                    amountY, 
+                    st.sqrtPrice_96, 
+                    st.currX,
+                    st.currY,
+                    st.liquidity
+                );
                 if (retState.acquireX < st.currX) {
                     // it means remaining y is not enough to rise current price to price*1.0001
                     // but y may remain, so we cannot simply use (costY == amountY)
@@ -251,7 +255,13 @@ library SwapMathY2X {
                 // trade at locPt
                 uint256 locCurrX = FullMath.mulDiv(st.liquidity, FixedPoint96.Q96, ret.sqrtLoc_96);
                 
-                (uint128 locCostY, uint256 locAcquireX) = y2XAtPriceLiquidity(amountY, ret.sqrtLoc_96, locCurrX);
+                (uint128 locCostY, uint256 locAcquireX) = y2XAtPriceLiquidity(
+                    amountY,
+                    ret.sqrtLoc_96,
+                    locCurrX,
+                    0,
+                    st.liquidity
+                );
                 
                 retState.costY += locCostY;
                 retState.acquireX += locAcquireX;

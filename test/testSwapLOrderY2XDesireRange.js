@@ -77,6 +77,20 @@ function y2xAt(point, rate, amountY) {
     costY = ceil(liquidity.times(sp));
     return [acquireX, costY];
 }
+function y2xAtLiquidity(point, rate, desireX, currX, currY, liquidity) {
+    sp = rate.pow(point).sqrt();
+    currYLim = ceil(liquidity.times(sp));
+    deltaY = BigNumber('0');
+    if (currYLim.gte(currY)) {
+      deltaY = currYLim.minus(currY);
+    }
+    if (desireX.gte(currX)) {
+      return [currX, deltaY];
+    }
+    acquireX = desireX.plus('0');
+    costY = ceil(acquireX.times(deltaY).div(currX));
+    return [acquireX, costY];
+}
 function x2yAt(point, rate, amountX) {
     sp = rate.pow(point).sqrt();
     liquidity = ceil(amountX.times(sp));
@@ -219,9 +233,8 @@ describe("swap", function () {
     await tokenY.transfer(trader.address, 10000000000);
     x_5001 = l2x(BigNumber(30000), 5001, rate, false);
 
-    amountY_5001 = BigNumber(12000);
-    amountY_5001_WithFee = ceil(BigNumber(12000).times(1003).div(1000));
-    [acquireX, costY] = y2xAt(5001, rate, amountY_5001);
+    acquireX_5001 = floor(x_5001.times(11).div(53));
+    [acquireX, costY] = y2xAtLiquidity(5001, rate, acquireX_5001, x_5001, BigNumber('0'), BigNumber("30000"));
     costY_WithFee = ceil(costY.times(1003).div(1000));
     
     // add lim order to sell y and sell x
@@ -239,9 +252,9 @@ describe("swap", function () {
     const testSwapFactory = await ethers.getContractFactory("TestSwap");
     const testSwap = await testSwapFactory.deploy(factory.address);
     await testSwap.deployed();
-    await tokenY.connect(trader).approve(testSwap.address, amountY_5001_WithFee.times(2).toFixed(0));
+    await tokenY.connect(trader).approve(testSwap.address, costY_WithFee.times(2).toFixed(0));
     await testSwap.connect(trader).swapY2X(
-        tokenX.address, tokenY.address, 3000, amountY_5001_WithFee.toFixed(0), 5002);
+        tokenX.address, tokenY.address, 3000, costY_WithFee.toFixed(0), 5002);
     // for trader 2
     [currPt, currX, currY, liquidity, allX, locked] = await printState(poolAddr);
 
@@ -257,7 +270,8 @@ describe("swap", function () {
     currX_5125_Origin = l2x(BigNumber("20000"), 5125, rate, false);
     desireX_5125_part = BigNumber(currX_5125_Origin.times(3).div(13).toFixed(0));
     currX_5125_Remain = currX_5125_Origin.minus(desireX_5125_part);
-    costY_5125_part = x2yAt(5125, rate, desireX_5125_part);
+    [acquireX_5125, costY_5125_part] = y2xAtLiquidity(5125, rate, desireX_5125_part, currX_5125_Origin, BigNumber('0'), BigNumber("20000"));
+    expect(acquireX_5125.toFixed(0)).to.equal(desireX_5125_part.toFixed(0));
 
     desireXRange = desireX_5001_Remain.plus(
         desireX_5002_5050).plus(

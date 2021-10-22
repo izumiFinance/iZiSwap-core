@@ -77,6 +77,28 @@ function y2xAt(point, rate, amountY) {
     costY = ceil(liquidity.times(sp));
     return [acquireX, costY];
 }
+function floor(a) {
+    return BigNumber(a.toFixed(0, 3));
+}
+function ceil(b) {
+    return BigNumber(b.toFixed(0, 2));
+}
+function y2xAtLiquidity(point, rate, amountY, currX, currY, liquidity) {
+    sp = rate.pow(point).sqrt();
+    currYLim = ceil(liquidity.times(sp));
+    deltaY = BigNumber('0');
+    if (currYLim.gte(currY)) {
+        deltaY = currYLim.minus(currY);
+    }
+    if (amountY.gte(deltaY)) {
+        return [currX, deltaY];
+    }
+    acquireX = floor(amountY.times(currX).div(deltaY));
+    if (acquireX.eq('0')) {
+        return [BigNumber('0'), BigNumber('0')];
+    }
+    return [acquireX, amountY];
+}
 function x2yAt(point, rate, amountX) {
     sp = rate.pow(point).sqrt();
     liquidity = ceil(amountX.times(sp));
@@ -164,25 +186,27 @@ describe("swap", function () {
     let rate = BigNumber('1.0001');
 
     [currPt, currX, currY, liquidity, allX, locked] = await printState(poolAddr);
+    expect(liquidity.toFixed(0)).to.equal("30000");
 
     await tokenY.transfer(trader.address, 10000000000);
     x_5001 = l2x(BigNumber(30000), 5001, rate, false);
 
     amountY_5001 = BigNumber(12000);
-    amountY_5001_WithFee = ceil(BigNumber(12000).times(1003).div(1000));
-    [acquireX, costY] = y2xAt(5001, rate, amountY_5001);
+    // [acquireX, costY] = y2xAt(5001, rate, amountY_5001);
+    [acquireX, costY] = y2xAtLiquidity(5001, rate, amountY_5001, x_5001, BigNumber('0'), liquidity)
+
     costY_WithFee = ceil(costY.times(1003).div(1000));
     
     const testSwapFactory = await ethers.getContractFactory("TestSwap");
     const testSwap = await testSwapFactory.deploy(factory.address);
     await testSwap.deployed();
-    await tokenY.connect(trader).approve(testSwap.address, amountY_5001_WithFee.times(2).toFixed(0));
+    await tokenY.connect(trader).approve(testSwap.address, costY_WithFee.times(2).toFixed(0));
     await testSwap.connect(trader).swapY2X(
-        tokenX.address, tokenY.address, 3000, amountY_5001_WithFee.toFixed(0), 5002);
+        tokenX.address, tokenY.address, 3000, costY_WithFee.toFixed(0), 5002);
     // for trader 2
     [currPt, currX, currY, liquidity, allX, locked] = await printState(poolAddr);
 
-    costY_5001_Remain = x2yAt(5001, rate, currX);
+    costY_5001_Remain = l2y(BigNumber("30000"), 5001, rate, true).minus(currY);
     costY_5002_5050 = yInRange(BigNumber("30000"), 5002, 5050, rate, true);
     costYRange = costY_5001_Remain.plus(costY_5002_5050);
     costYRangeWithFee = ceil(costYRange.times(1003).div(1000));
