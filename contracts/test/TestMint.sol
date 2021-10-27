@@ -60,4 +60,19 @@ contract TestMint is IIzumiswapMintCallback {
             abi.encode(MintCallbackData({tokenX: tokenX, tokenY: tokenY, fee: fee, payer: miner}))
         );
     }
+    
+    function liquidities(
+        address tokenX, address tokenY, uint24 fee, int24 pl, int24 pr
+    ) external view returns(
+        uint128 liquidity,
+        uint256 lastFeeScaleX_128,
+        uint256 lastFeeScaleY_128,
+        uint256 remainFeeX,
+        uint256 remainFeeY
+    ) {
+        require(tokenX < tokenY, "x<y");
+        address poolAddr = pool(tokenX, tokenY, fee);
+        address miner = msg.sender;
+        return IIzumiswapPool(poolAddr).liquidities(keccak256(abi.encodePacked(miner, pl, pr)));
+    }
 }

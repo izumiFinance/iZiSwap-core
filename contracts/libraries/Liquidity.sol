@@ -3,6 +3,7 @@ pragma solidity >=0.7.3;
 import './LiquidityMath.sol';
 import './FullMath.sol';
 import './FixedPoint128.sol';
+import 'hardhat/console.sol';
 
 library Liquidity {
     struct Data {

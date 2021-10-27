@@ -93,8 +93,31 @@ contract IzumiswapPoolPart {
     address private poolPartDesire;
     // address private immutable original;
 
+    function assignLimOrderEarnY(
+        int24 pt,
+        uint256 assignY
+    ) external returns (uint256 actualAssignY) {
+        actualAssignY = assignY;
+        UserEarn.Data storage ue = userEarnY.get(msg.sender, pt);
+        if (actualAssignY > ue.earn) {
+            actualAssignY = ue.earn;
+        }
+        ue.earn -= actualAssignY;
+        ue.earnAssign += actualAssignY;
+    }
+    function assignLimOrderEarnX(
+        int24 pt,
+        uint256 assignX
+    ) external returns (uint256 actualAssignX) {
+        actualAssignX = assignX;
+        UserEarn.Data storage ue = userEarnX.get(msg.sender, pt);
+        if (actualAssignX > ue.earn) {
+            actualAssignX = ue.earn;
+        }
+        ue.earn -= actualAssignX;
+        ue.earnAssign += actualAssignX;
+    }
     function decLimOrderWithX(
-        address recipient,
         int24 pt,
         uint128 deltaX
     ) external returns (uint128 actualDeltaX) {
@@ -120,7 +143,6 @@ contract IzumiswapPoolPart {
 
 
     function decLimOrderWithY(
-        address recipient,
         int24 pt,
         uint128 deltaY
     ) external returns (uint128 actualDeltaY) {
@@ -132,6 +154,7 @@ contract IzumiswapPoolPart {
         PointOrder.Data storage pointOrder = limitOrderData[pt];
         uint160 sqrtPrice_96 = TickMath.getSqrtRatioAtTick(pt);
         (actualDeltaY, pointOrder.earnX) = ue.dec(deltaY, pointOrder.accEarnX, sqrtPrice_96, pointOrder.earnX, false);
+
         pointOrder.sellingY -= actualDeltaY;
         
         if (actualDeltaY > 0 && pointOrder.sellingY == 0) {
@@ -148,8 +171,10 @@ contract IzumiswapPoolPart {
     function addLimOrderWithX(
         address recipient,
         int24 pt,
-        uint128 amountX
+        uint128 amountX,
+        bytes calldata data
     ) external returns (uint128 orderX, uint256 acquireY) {
+        console.log("add lim order with x");
         
         require(pt % ptDelta == 0, "PD");
         require(pt >= state.currPt, "PG");
@@ -177,9 +202,12 @@ contract IzumiswapPoolPart {
         if (orderX > 0) {
             currX += orderX;
             pointOrder.sellingX = currX;
-            UserEarn.Data storage ue = userEarnY.get(msg.sender, pt);
-            pointOrder.earnY = ue.add(orderX, pointOrder.accEarnY, sqrtPrice_96, pointOrder.earnY, true);
         }
+
+        UserEarn.Data storage ue = userEarnY.get(recipient, pt);
+        pointOrder.earnY = ue.add(orderX, pointOrder.accEarnY, sqrtPrice_96, pointOrder.earnY, true);
+        ue.earnAssign = ue.earnAssign + acquireY;
+        
         // update statusval and bitmap
         if (currX == 0 && currY == 0) {
             int24 val = getStatusVal(pt, ptDelta);
@@ -201,13 +229,9 @@ contract IzumiswapPoolPart {
             }
         }
 
-        if (acquireY > 0) {
-            // pay y to recipient
-            TransferHelper.safeTransfer(tokenY, recipient, acquireY);
-        }
         // trader pay x
         uint256 bx = balanceX();
-        IIzumiswapAddLimOrderCallback(msg.sender).payCallback(tokenX, recipient, amountX);
+        IIzumiswapAddLimOrderCallback(msg.sender).payCallback(amountX, 0, data);
         require(balanceX() >= bx + amountX, "XE");
         
     }
@@ -215,9 +239,11 @@ contract IzumiswapPoolPart {
     function addLimOrderWithY(
         address recipient,
         int24 pt,
-        uint128 amountY
+        uint128 amountY,
+        bytes calldata data
     ) external returns (uint128 orderY, uint256 acquireX) {
         
+        console.log("add lim order with y");
         require(pt % ptDelta == 0, "PD");
         require(pt <= state.currPt, "PL");
         require(amountY > 0, "YP");
@@ -242,9 +268,11 @@ contract IzumiswapPoolPart {
         if (orderY > 0) {
             currY += orderY;
             pointOrder.sellingY = currY;
-            UserEarn.Data storage ue = userEarnX.get(msg.sender, pt);
-            pointOrder.earnX = ue.add(orderY, pointOrder.accEarnY, sqrtPrice_96, pointOrder.earnX, false);
         }
+        UserEarn.Data storage ue = userEarnX.get(recipient, pt);
+        pointOrder.earnX = ue.add(orderY, pointOrder.accEarnY, sqrtPrice_96, pointOrder.earnX, false);
+        ue.earnAssign = ue.earnAssign + acquireX;
+
         // update statusval and bitmap
         if (currX == 0 && currY == 0) {
             int24 val = getStatusVal(pt, ptDelta);
@@ -266,17 +294,33 @@ contract IzumiswapPoolPart {
             }
         }
 
-        if (acquireX > 0) {
-            // pay x to recipient
-            TransferHelper.safeTransfer(tokenX, recipient, acquireX);
-        }
         // trader pay y
         uint256 by = balanceY();
-        IIzumiswapAddLimOrderCallback(msg.sender).payCallback(tokenY, recipient, amountY);
+        IIzumiswapAddLimOrderCallback(msg.sender).payCallback(0, amountY, data);
         require(balanceY() >= by + amountY, "YE");
         
     }
-    
+
+    function collectLimOrder(
+        address recipient, int24 pt, uint256 collectDec, uint256 collectEarn, bool isEarnY
+    ) external returns(uint256 actualCollectDec, uint256 actualCollectEarn) {
+        UserEarn.Data storage ue = isEarnY? userEarnY.get(msg.sender, pt) : userEarnX.get(msg.sender, pt);
+        actualCollectDec = collectDec;
+        if (actualCollectDec > ue.sellingDec) {
+            actualCollectDec = ue.sellingDec;
+        }
+        actualCollectEarn = collectEarn;
+        if (actualCollectEarn > ue.earn) {
+            actualCollectEarn = ue.earn;
+        }
+        (uint256 x, uint256 y) = isEarnY? (actualCollectDec, actualCollectEarn): (actualCollectEarn, actualCollectDec);
+        if (x > 0) {
+            TransferHelper.safeTransfer(tokenX, recipient, x);
+        }
+        if (y > 0) {
+            TransferHelper.safeTransfer(tokenY, recipient, y);
+        }
+    }
     function balanceX() private view returns (uint256) {
         (bool success, bytes memory data) =
             tokenX.staticcall(abi.encodeWithSelector(IERC20Minimal.balanceOf.selector, address(this)));
@@ -393,6 +437,7 @@ contract IzumiswapPoolPart {
                     amountX += retState.acquireX;
                     amountY = amountY + retState.costY + feeAmount;
                     amount -= (retState.costY + feeAmount);
+                    console.log("-- liquidity: %s,   cost: %s      fee: %s ", uint256(st.liquidity), uint256(retState.costY), uint256(feeAmount));
                     
                     cache.currFeeScaleY_128 = cache.currFeeScaleY_128 + FullMath.mulDiv(feeAmount, FixedPoint128.Q128, st.liquidity);
 
@@ -409,6 +454,7 @@ contract IzumiswapPoolPart {
                     // pass next point from left to right
                     endPt.passEndpt(cache.currFeeScaleX_128, cache.currFeeScaleY_128);
                     st.liquidity = LiquidityMath.addDelta(st.liquidity, endPt.liquidDelta);
+                    console.log("endpt: %s, feescale: %s", uint256(int256(nextPt)), endPt.feeScaleYBeyond_128);
                 }
                 if (st.currPt == nextPt) {
                     cache.currVal = nextVal;
@@ -524,6 +570,8 @@ contract IzumiswapPoolPart {
                     amountX = amountX + retState.costX + feeAmount;
                     amountY += retState.acquireY;
                     amount -= (retState.costX + feeAmount);
+                    console.log(" - liquidity: %s, feeAmount: %s, currPt: %s", uint256(st.liquidity), uint256(feeAmount), uint256(int256(st.currPt)));
+                    console.log(" fee scale X: %s", cache.currFeeScaleX_128);
                     st.currPt = retState.finalPt;
                     st.sqrtPrice_96 = retState.sqrtFinalPrice_96;
                     st.allX = retState.finalAllX;
@@ -578,6 +626,7 @@ contract IzumiswapPoolPart {
                         }
                     }
 
+                    console.log("liquidity: %s, feeAmount: %s, acquireY: %s", uint256(st.liquidity), uint256(feeAmount), retState.acquireY);
                     amountY += retState.acquireY;
                     amountX = amountX + retState.costX + feeAmount;
                     amount -= (retState.costX + feeAmount);

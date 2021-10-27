@@ -18,13 +18,24 @@ contract TestAddLimOrder is IIzumiswapAddLimOrderCallback {
             token.call(abi.encodeWithSelector(IERC20.transferFrom.selector, from, to, value));
         require(success && (data.length == 0 || abi.decode(data, (bool))), 'STF');
     }
+    
+    struct LimCallbackData {
+        address tokenX;
+        address tokenY;
+        uint24 fee;
+        address payer;
+    }
     function payCallback(
-        address token,
-        address payer,
-        uint256 amount
+        uint256 x,
+        uint256 y,
+        bytes calldata data
     ) external override {
-        if (amount > 0) {
-            safeTransferFrom(token, payer, msg.sender, amount);
+        LimCallbackData memory dt = abi.decode(data, (LimCallbackData));
+        if (x > 0) {
+            safeTransferFrom(dt.tokenX, dt.payer, msg.sender, x);
+        }
+        if (y > 0) {
+            safeTransferFrom(dt.tokenY, dt.payer, msg.sender, y);
         }
     }
     constructor(address fac) { factory = fac; }
@@ -40,7 +51,10 @@ contract TestAddLimOrder is IIzumiswapAddLimOrderCallback {
         uint128 amountX
     ) external {
         address poolAddr = pool(tokenX, tokenY, fee);
-        IIzumiswapPool(poolAddr).addLimOrderWithX(msg.sender, pt, amountX);
+        IIzumiswapPool(poolAddr).addLimOrderWithX(
+            msg.sender, pt, amountX,
+            abi.encode(LimCallbackData({tokenX: tokenX, tokenY: tokenY, fee: fee, payer: msg.sender}))
+        );
     }
     function addLimOrderWithY(
         address tokenX,
@@ -50,7 +64,10 @@ contract TestAddLimOrder is IIzumiswapAddLimOrderCallback {
         uint128 amountY
     ) external {
         address poolAddr = pool(tokenX, tokenY, fee);
-        IIzumiswapPool(poolAddr).addLimOrderWithY(msg.sender, pt, amountY);
+        IIzumiswapPool(poolAddr).addLimOrderWithY(
+            msg.sender, pt, amountY,
+            abi.encode(LimCallbackData({tokenX: tokenX, tokenY: tokenY, fee: fee, payer: msg.sender}))
+        );
     }
     
 }

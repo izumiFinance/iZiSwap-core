@@ -13,16 +13,41 @@ interface IIzumiswapPool {
             uint256 remainFeeX,
             uint256 remainFeeY
         );
-        
+    function userEarnX(bytes32 key)
+        external
+        view
+        returns (
+            uint256 lastAccEarn,
+            uint256 sellingRemain,
+            uint256 sellingDec,
+            uint256 earn,
+            uint256 earnAssign
+        );
+    function userEarnY(bytes32 key)
+        external
+        view
+        returns (
+            uint256 lastAccEarn,
+            uint256 sellingRemain,
+            uint256 sellingDec,
+            uint256 earn,
+            uint256 earnAssign
+        );
+    function assignLimOrderEarnY(
+        int24 pt,
+        uint256 assignY
+    ) external returns(uint256 actualAssignY);
+    function assignLimOrderEarnX(
+        int24 pt,
+        uint256 assignX
+    ) external returns(uint256 actualAssignX);
     function decLimOrderWithX(
-        address recipient,
         int24 pt,
         uint128 deltaX
     ) external returns (uint128 actualDeltaX);
     
     
     function decLimOrderWithY(
-        address recipient,
         int24 pt,
         uint128 deltaY
     ) external returns (uint128 actualDeltaY);
@@ -31,15 +56,21 @@ interface IIzumiswapPool {
     function addLimOrderWithX(
         address recipient,
         int24 pt,
-        uint128 amountX
+        uint128 amountX,
+        bytes calldata data
     ) external returns (uint128 orderX, uint256 acquireY);
 
     function addLimOrderWithY(
         address recipient,
         int24 pt,
-        uint128 amountY
+        uint128 amountY,
+        bytes calldata data
     ) external returns (uint128 orderY, uint256 acquireX);
-    
+
+    function collectLimOrder(
+        address recipient, int24 pt, uint256 collectDec, uint256 collectEarn, bool isEarnY
+    ) external returns(uint256 actualCollectDec, uint256 actualCollectEarn);
+
     function mint(
         address minter,
         int24 leftPt,

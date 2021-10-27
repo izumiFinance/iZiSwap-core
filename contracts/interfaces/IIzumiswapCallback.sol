@@ -24,8 +24,8 @@ interface IIzumiswapSwapCallback {
 
 interface IIzumiswapAddLimOrderCallback {
     function payCallback(
-        address token,
-        address payer,
-        uint256 amount
+        uint256 x,
+        uint256 y,
+        bytes calldata data
     ) external;
 }

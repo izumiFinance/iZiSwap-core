@@ -11,6 +11,7 @@ library UserEarn {
         uint256 sellingRemain;
         uint256 sellingDec;
         uint256 earn;
+        uint256 earnAssign;
     }
     
     function get(
