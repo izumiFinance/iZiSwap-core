@@ -61,6 +61,11 @@ async function getStatusVal(poolAddr, pt) {
     pool = await IzumiswapPool.attach(poolAddr);
     return await pool.statusVal(pt / 50);
 }
+async function burn(poolAddr, miner, pl, pr, liquidDelta) {
+    const IzumiswapPool = await ethers.getContractFactory("IzumiswapPool");
+    pool = await IzumiswapPool.attach(poolAddr);
+    await pool.connect(miner).burn(pl, pr, liquidDelta);
+}
 function l2y(liquidity, tick, rate, up) {
     price = rate.pow(tick);
     y = liquidity.times(price.sqrt());
@@ -150,7 +155,9 @@ function blockNum2BigNumber(blc) {
 function amountAddFee(amount) {
     return ceil(amount.times(1003).div(1000));
 }
-
+function getFee(amount) {
+    return ceil(amount.times(3).div(1000));
+}
 async function checkLimOrder(eSellingX, eAccEarnX, eSellingY, eAccEarnY, eEarnX, eEarnY, poolAddr, pt) {
     [sellingX, accEarnX, sellingY, accEarnY, earnX, earnY] = await getLimOrder(poolAddr, pt);
     expect(sellingX.toFixed(0)).to.equal(eSellingX.toFixed(0));
@@ -173,6 +180,20 @@ async function getPoolParts() {
   await izumiswapPoolPartDesire.deployed();
   return [izumiswapPoolPart.address, izumiswapPoolPartDesire.address];
 }
+
+async function getLiquidity(testMint, tokenX, tokenY, miner, pl, pr) {
+    [liquidity, lastFeeScaleX_128, lastFeeScaleY_128, remainFeeX, remainFeeY] = await testMint.connect(miner).liquidities(
+        tokenX.address, tokenY.address, 3000, pl, pr
+    );
+    return [
+        BigNumber(liquidity._hex),
+        BigNumber(lastFeeScaleX_128._hex),
+        BigNumber(lastFeeScaleY_128._hex),
+        BigNumber(remainFeeX._hex),
+        BigNumber(remainFeeY._hex)
+    ]
+}
+
 describe("swap", function () {
   it("swap with limorder y2x range complex", async function () {
     const [signer, miner1, miner2, miner3, seller0, seller1, trader, trader2] = await ethers.getSigners();
@@ -204,8 +225,6 @@ describe("swap", function () {
     getPoolAddr = await testMint.pool(txAddr, tyAddr, 3000);
     expect(getPoolAddr).to.equal(poolAddr);
 
-    
-
     await addLiquidity(testMint, miner1, tokenX, tokenY, 3000, 4850, 5000, 10000);
     await addLiquidity(testMint, miner2, tokenX, tokenY, 3000, 5050, 5150, 20000);
     await addLiquidity(testMint, miner3, tokenX, tokenY, 3000, 4900, 5100, 30000);
@@ -218,8 +237,9 @@ describe("swap", function () {
     x_5002 = l2x(BigNumber(30000), 5002, rate, false);
 
     amountY_5002 = BigNumber(12000);
-    [acquireX, costY] = y2xAt(5002, rate, amountY_5002, x_5002, BigNumber('0'), liquidity);
+    [acquireX, costY] = y2xAtLiquidity(5002, rate, amountY_5002, x_5002, BigNumber('0'), liquidity);
     costY_WithFee = ceil(costY.times(1003).div(1000));
+    feeScaleY_5002_RemainTrader1 = getFee(costY).div(BigNumber(30000));
 
     // add lim order to sell y and sell x
     const testAddLimOrderFactory = await ethers.getContractFactory("TestAddLimOrder");
@@ -252,28 +272,36 @@ describe("swap", function () {
     // for trader 2
     [currPt, currX, currY, liquidity, allX, locked] = await printState(poolAddr);
 
-    costY_5002_Remain = x2yAt(5002, rate, currX);
+    costY_5002_Remain = l2y(BigNumber("30000"), 5002, rate, true).minus(currY);
     costY_5003_5050 = yInRange(BigNumber("30000"), 5003, 5050, rate, true);
+    feeScaleY_5002_Remain_5003_5050 = getFee(costY_5003_5050.plus(costY_5002_Remain)).div(BigNumber("30000"));
+    console.log("liquidity: 30000,   cost:  ", costY_5003_5050.plus(costY_5002_Remain).toFixed(0), "   fee: ", getFee(costY_5003_5050.plus(costY_5002_Remain)).toFixed(0));
     costY_5050_5100 = yInRange(BigNumber("50000"), 5050, 5100, rate, true);
+    feeScaleY_5050_5100 = getFee(costY_5050_5100).div(BigNumber("50000"));
+    console.log("liquidity: 50000,   cost:  ", costY_5050_5100.toFixed(0), "   fee: ", getFee(costY_5050_5100).toFixed(0));
     costY_5100_5125 = yInRange(BigNumber("20000"), 5100, 5125, rate, true);
+
     currX_5125_Origin = l2x(BigNumber("20000"), 5125, rate, false);
 
     currX_5125_part = BigNumber(currX_5125_Origin.times(3).div(13).toFixed(0));
-    costY_5125_Remain = x2yAt(5125, rate, currX_5125_part);
-    [currX_5125_part, costY_5125_Remain] = y2xAtLiquidity(5125, rate, costY_5125_Remain, currX_5125_Origin, BigNumber('0'), BigNumber("20000"));
+    costY_5125_part = x2yAt(5125, rate, currX_5125_part);
+    [currX_5125_part, costY_5125_part] = y2xAtLiquidity(5125, rate, costY_5125_part, currX_5125_Origin, BigNumber('0'), BigNumber("20000"));
+    feeScaleY_5100_5125_with_part = getFee(costY_5100_5125.plus(costY_5125_part)).div(BigNumber("20000"));
+    console.log("liquidity: 20000,   cost:  ", costY_5100_5125.plus(costY_5125_part).toFixed(0), "   fee: ", getFee(costY_5100_5125.plus(costY_5125_part)).toFixed(0));
+
     currX_5125_Remain = currX_5125_Origin.minus(currX_5125_part);
     costYRange = costY_5002_Remain.plus(
         costY_5003_5050).plus(
         costY_5050_5100).plus(
         costY_5100_5125).plus(
-        costY_5125_Remain).plus(
+        costY_5125_part).plus(
         costY_5050_Lim).plus(
         costY_5100_Lim);
     costYRangeWithFee = amountAddFee(costY_5002_Remain).plus(
         amountAddFee(costY_5003_5050)).plus(
         amountAddFee(costY_5050_5100)).plus(
         amountAddFee(costY_5100_5125)).plus(
-        amountAddFee(costY_5125_Remain)).plus(
+        amountAddFee(costY_5125_part)).plus(
         costY_5050_Lim).plus(
         costY_5100_Lim);
     acquireX_5002_Remain = currX.plus("0");
@@ -306,7 +334,7 @@ describe("swap", function () {
     expect(currPt).to.equal(5125);
     expect(liquidity.toFixed(0)).to.equal("20000");
     expect(currX.toFixed(0)).to.equal(currX_5125_Remain.toFixed(0));
-    expect(currY.toFixed(0)).to.equal(costY_5125_Remain.toFixed(0));
+    expect(currY.toFixed(0)).to.equal(costY_5125_part.toFixed(0));
 
     // check limit order
     await checkLimOrder(
@@ -347,5 +375,21 @@ describe("swap", function () {
     await checkStatusVal(1, poolAddr, 5050);
     await checkStatusVal(1, poolAddr, 5100);
     await checkStatusVal(1, poolAddr, 5150);
+
+    // check miner 2
+    await burn(poolAddr, miner2, 5050, 5150, 0);
+    [liquid2, feeScaleX2, feeScaleY2, feeX2, feeY2] = await getLiquidity(testMint, tokenX, tokenY, miner2, 5050, 5150);
+
+    console.log("feeY of miner 2: ", feeY2.toFixed(0));
+    feeScaleYMiner2 = feeScaleY_5050_5100.plus(feeScaleY_5100_5125_with_part);
+    console.log("expect feeY of miner2: ", floor(feeScaleYMiner2.times(BigNumber("20000"))).toFixed(0));
+    expect(feeY2.toFixed(0)).to.equal(floor(feeScaleYMiner2.times(BigNumber("20000"))).toFixed(0));
+
+    await burn(poolAddr, miner3, 4900, 5100, 0);
+    [liquid3, feeScaleX3, feeScaleY3, feeX3, feeY3] = await getLiquidity(testMint, tokenX, tokenY, miner3, 4900, 5100);
+    console.log("feeY of miner3: ", feeY3.toFixed(0));
+    feeScaleYMiner3 = feeScaleY_5002_RemainTrader1.plus(feeScaleY_5002_Remain_5003_5050).plus(feeScaleY_5050_5100);
+    console.log("expect feeY of miner3: ", floor(feeScaleYMiner3.times(BigNumber("30000"))).toFixed(0));
+    expect(feeY3.toFixed(0)).to.equal(floor(feeScaleYMiner3.times(BigNumber("30000"))).toFixed(0));
   });
 });
