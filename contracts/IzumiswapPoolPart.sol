@@ -270,7 +270,7 @@ contract IzumiswapPoolPart {
             pointOrder.sellingY = currY;
         }
         UserEarn.Data storage ue = userEarnX.get(recipient, pt);
-        pointOrder.earnX = ue.add(orderY, pointOrder.accEarnY, sqrtPrice_96, pointOrder.earnX, false);
+        pointOrder.earnX = ue.add(orderY, pointOrder.accEarnX, sqrtPrice_96, pointOrder.earnX, false);
         ue.earnAssign = ue.earnAssign + acquireX;
 
         // update statusval and bitmap
