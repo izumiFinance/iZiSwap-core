@@ -7,16 +7,16 @@ async function getToken() {
 
     // deploy token
     const tokenFactory = await ethers.getContractFactory("Token")
-    tokenX = await tokenFactory.deploy('a', 'a');
+    var tokenX = await tokenFactory.deploy('a', 'a');
     await tokenX.deployed();
-    tokenY = await tokenFactory.deploy('b', 'b');
+    var tokenY = await tokenFactory.deploy('b', 'b');
     await tokenY.deployed();
 
     console.log("tokenX: " + tokenX.address.toLowerCase());
     console.log("tokenY: " + tokenY.address.toLowerCase());
 
-    txAddr = tokenX.address.toLowerCase();
-    tyAddr = tokenY.address.toLowerCase();
+    var txAddr = tokenX.address.toLowerCase();
+    var tyAddr = tokenY.address.toLowerCase();
 
     if (txAddr > tyAddr) {
       tmpAddr = tyAddr;
@@ -59,31 +59,31 @@ async function addLimOrderWithX(tokenX, tokenY, seller, testAddLimOrder, amountX
 }
 async function decLimOrderWithX(poolAddr, seller, pt, amountX) {
     const IzumiswapPool = await ethers.getContractFactory("IzumiswapPool");
-    pool = await IzumiswapPool.attach(poolAddr);
+    var pool = await IzumiswapPool.attach(poolAddr);
     await pool.connect(seller).decLimOrderWithX(pt, amountX);
 }
 function getCostY(point, rate, amountX) {
-    sp = rate.pow(point).sqrt();
-    liquidity = ceil(amountX.times(sp));
-    costY = ceil(liquidity.times(sp));
+    var sp = rate.pow(point).sqrt();
+    var liquidity = ceil(amountX.times(sp));
+    var costY = ceil(liquidity.times(sp));
     return costY;
 }
 function getCostX(point, rate, amountY) {
-    sp = rate.pow(point).sqrt();
-    liquidity = ceil(amountY.div(sp));
-    costX = ceil(liquidity.div(sp));
+    var sp = rate.pow(point).sqrt();
+    var liquidity = ceil(amountY.div(sp));
+    var costX = ceil(liquidity.div(sp));
     return costX;
 }
 function getAcquireY(point, rate, amountX) {
-    sp = rate.pow(point).sqrt();
-    liquidity = floor(amountX.times(sp));
-    acquireY = floor(liquidity.times(sp));
+    var sp = rate.pow(point).sqrt();
+    var liquidity = floor(amountX.times(sp));
+    var acquireY = floor(liquidity.times(sp));
     return acquireY;
 }
 function getAcquireX(point, rate, amountY) {
-    sp = rate.pow(point).sqrt();
-    liquidity = floor(amountY.div(sp));
-    acquireX = floor(liquidity.div(sp));
+    var sp = rate.pow(point).sqrt();
+    var liquidity = floor(amountY.div(sp));
+    var acquireX = floor(liquidity.div(sp));
     return acquireX;
 }
 function blockNum2BigNumber(blc) {
@@ -102,7 +102,7 @@ async function checkLimOrder(eSellingX, eAccEarnX, eSellingY, eAccEarnY, eEarnX,
     expect(earnY.toFixed(0)).to.equal(eEarnY.toFixed(0));
 }
 function list2BigNumber(valueList) {
-    bigList = [];
+    var bigList = [];
     for (var i = 0; i < valueList.length; i ++) {
         bigList.push(BigNumber(valueList[i]._hex));
     }
@@ -135,7 +135,7 @@ async function getPoolParts() {
 }
 async function getLimOrder(poolAddr, pt) {
     const IzumiswapPool = await ethers.getContractFactory("IzumiswapPool");
-    pool = await IzumiswapPool.attach(poolAddr);
+    var pool = await IzumiswapPool.attach(poolAddr);
     [sellingX, accEarnX, sellingY, accEarnY, earnX, earnY] = await pool.limitOrderData(pt);
     return [
         BigNumber(sellingX._hex),
@@ -148,11 +148,11 @@ async function getLimOrder(poolAddr, pt) {
 }
 async function getStatusVal(poolAddr, pt) {
     const IzumiswapPool = await ethers.getContractFactory("IzumiswapPool");
-    pool = await IzumiswapPool.attach(poolAddr);
+    var pool = await IzumiswapPool.attach(poolAddr);
     return await pool.statusVal(pt / 50);
 }
 async function checkStatusVal(eVal, poolAddr, pt) {
-    val = await getStatusVal(poolAddr, pt);
+    var val = await getStatusVal(poolAddr, pt);
     expect(eVal).to.equal(val);
 }
 describe("LimOrder SellX earn", function () {
@@ -299,6 +299,73 @@ describe("LimOrder SellX earn", function () {
             testAddLimOrder,
             poolAddr,
             seller1.address,
+            5050,
+            true
+        );
+    });
+    it("order after swap first could get reward before", async function() {
+        sellX1 = BigNumber("1000000000");
+        await addLimOrderWithX(tokenX, tokenY, seller1, testAddLimOrder, sellX1.toFixed(0), 5050);
+        sellX2 = BigNumber("2000000000");
+        await addLimOrderWithX(tokenX, tokenY, seller2, testAddLimOrder, sellX2.toFixed(0), 5050);
+        await checkBalance(tokenX, seller1.address, BigNumber(0));
+        await checkBalance(tokenY, seller1.address, BigNumber(0));
+        await checkBalance(tokenX, seller2.address, BigNumber(0));
+        await checkBalance(tokenY, seller2.address, BigNumber(0));
+
+        acquireXExpect = sellX1.plus(sellX2.div(3));
+        costY = getCostY(5050, rate, acquireXExpect);
+        acquireXExpect = getAcquireX(5050, rate, costY);
+        await testSwap.connect(trader).swapY2X(tokenX.address, tokenY.address, 3000, costY.toFixed(0), 5051);
+
+        sellX3 = BigNumber("2000000000");
+        await addLimOrderWithX(tokenX, tokenY, seller3, testAddLimOrder, sellX3.toFixed(0), 5050);
+        await checkBalance(tokenX, seller3.address, BigNumber(0));
+        await checkBalance(tokenY, seller3.address, BigNumber(0));
+        costY3 = BigNumber("10000");
+        acquireXExpect3 = getAcquireX(5050, rate, costY3);
+        costY3 = getCostY(5050, rate, acquireXExpect3);
+        await testSwap.connect(trader).swapY2X(tokenX.address, tokenY.address, 3000, costY3.toFixed(0), 5051);
+        await decLimOrderWithX(poolAddr, seller3, 5050, "20000");
+        await checkUserEarn(
+            costY.plus(costY3),
+            sellX3.minus(getCostX(5050, rate, costY3)).minus(BigNumber("20000")),
+            BigNumber("20000"),
+            costY3,
+            BigNumber("0"),
+            testAddLimOrder,
+            poolAddr,
+            seller3.address,
+            5050,
+            true
+        );
+
+        await decLimOrderWithX(poolAddr, seller1, 5050, "500000000");
+        seller1EarnPhase1 = getAcquireY(5050, rate, sellX1);
+        await checkUserEarn(
+            costY.plus(costY3),
+            BigNumber("0"),
+            BigNumber("0"),
+            seller1EarnPhase1,
+            BigNumber("0"),
+            testAddLimOrder,
+            poolAddr,
+            seller1.address,
+            5050,
+            true
+        );
+        await decLimOrderWithX(poolAddr, seller2, 5050, "10000");
+        seller2RemainPhase1 = sellX2.minus(getCostX(5050, rate, costY.minus(getAcquireY(5050, rate, sellX1)))).minus("10000")
+        seller2EarnPhase1 = costY.minus(getAcquireY(5050, rate, sellX1));
+        await checkUserEarn(
+            costY.plus(costY3),
+            seller2RemainPhase1,
+            BigNumber("10000"),
+            seller2EarnPhase1,
+            BigNumber("0"),
+            testAddLimOrder,
+            poolAddr,
+            seller2.address,
             5050,
             true
         );
