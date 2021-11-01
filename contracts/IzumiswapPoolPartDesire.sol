@@ -296,6 +296,7 @@ contract IzumiswapPoolPartDesire {
             int24 searchStart = st.currPt - 1;
             // second, clear the liquid if the currPt is an endpt
             if (cache.currVal & 1 > 0) {
+                if (st.liquidity > 0) {
                     SwapMathX2YDesire.RangeRetState memory retState = SwapMathX2YDesire.x2YRange(
                         st,
                         st.currPt,
@@ -315,16 +316,17 @@ contract IzumiswapPoolPartDesire {
                     st.allX = retState.finalAllX;
                     st.currX = retState.finalCurrX;
                     st.currY = retState.finalCurrY;
-                    if (!cache.finished) {
-                        Point.Data storage ptdata = points[st.currPt];
-                        ptdata.passEndpt(cache.currFeeScaleX_128, cache.currFeeScaleY_128);
-                        st.liquidity = LiquidityMath.addDelta(st.liquidity, - ptdata.liquidDelta);
-                        st.currPt = st.currPt - 1;
-                        st.sqrtPrice_96 = TickMath.getSqrtRatioAtTick(st.currPt);
-                        st.allX = false;
-                        st.currX = 0;
-                        st.currY = FullMath.mulDiv(st.liquidity, st.sqrtPrice_96, FixedPoint96.Q96);
-                    }
+                }
+                if (!cache.finished) {
+                    Point.Data storage ptdata = points[st.currPt];
+                    ptdata.passEndpt(cache.currFeeScaleX_128, cache.currFeeScaleY_128);
+                    st.liquidity = LiquidityMath.addDelta(st.liquidity, - ptdata.liquidDelta);
+                    st.currPt = st.currPt - 1;
+                    st.sqrtPrice_96 = TickMath.getSqrtRatioAtTick(st.currPt);
+                    st.allX = false;
+                    st.currX = 0;
+                    st.currY = FullMath.mulDiv(st.liquidity, st.sqrtPrice_96, FixedPoint96.Q96);
+                }
             }
             if (cache.finished || st.currPt < lowPt) {
                 break;

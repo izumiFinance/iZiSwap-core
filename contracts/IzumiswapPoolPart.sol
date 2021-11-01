@@ -174,7 +174,6 @@ contract IzumiswapPoolPart {
         uint128 amountX,
         bytes calldata data
     ) external returns (uint128 orderX, uint256 acquireY) {
-        console.log("add lim order with x");
         
         require(pt % ptDelta == 0, "PD");
         require(pt >= state.currPt, "PG");
@@ -243,7 +242,6 @@ contract IzumiswapPoolPart {
         bytes calldata data
     ) external returns (uint128 orderY, uint256 acquireX) {
         
-        console.log("add lim order with y");
         require(pt % ptDelta == 0, "PD");
         require(pt <= state.currPt, "PL");
         require(amountY > 0, "YP");
@@ -437,7 +435,6 @@ contract IzumiswapPoolPart {
                     amountX += retState.acquireX;
                     amountY = amountY + retState.costY + feeAmount;
                     amount -= (retState.costY + feeAmount);
-                    console.log("-- liquidity: %s,   cost: %s      fee: %s ", uint256(st.liquidity), uint256(retState.costY), uint256(feeAmount));
                     
                     cache.currFeeScaleY_128 = cache.currFeeScaleY_128 + FullMath.mulDiv(feeAmount, FixedPoint128.Q128, st.liquidity);
 
@@ -454,7 +451,6 @@ contract IzumiswapPoolPart {
                     // pass next point from left to right
                     endPt.passEndpt(cache.currFeeScaleX_128, cache.currFeeScaleY_128);
                     st.liquidity = LiquidityMath.addDelta(st.liquidity, endPt.liquidDelta);
-                    console.log("endpt: %s, feescale: %s", uint256(int256(nextPt)), endPt.feeScaleYBeyond_128);
                 }
                 if (st.currPt == nextPt) {
                     cache.currVal = nextVal;
@@ -549,34 +545,34 @@ contract IzumiswapPoolPart {
             if (cache.currVal & 1 > 0) {
                 uint128 amountNoFee = uint128(uint256(amount) * 1e6 / (1e6 + fee));
                 if (amountNoFee > 0) {
-                    SwapMathX2Y.RangeRetState memory retState = SwapMathX2Y.x2YRange(
-                        st,
-                        st.currPt,
-                        cache._sqrtRate_96,
-                        amountNoFee
-                    );
-                    cache.finished = retState.finished;
-                    uint128 feeAmount;
-                    if (retState.costX >= amountNoFee) {
-                        feeAmount = amount - retState.costX;
-                    } else {
-                        feeAmount = uint128(uint256(retState.costX) * fee / 1e6);
-                        uint256 mod = uint256(retState.costX) * fee % 1e6;
-                        if (mod > 0) {
-                            feeAmount += 1;
+                    if (st.liquidity > 0) {
+                        SwapMathX2Y.RangeRetState memory retState = SwapMathX2Y.x2YRange(
+                            st,
+                            st.currPt,
+                            cache._sqrtRate_96,
+                            amountNoFee
+                        );
+                        cache.finished = retState.finished;
+                        uint128 feeAmount;
+                        if (retState.costX >= amountNoFee) {
+                            feeAmount = amount - retState.costX;
+                        } else {
+                            feeAmount = uint128(uint256(retState.costX) * fee / 1e6);
+                            uint256 mod = uint256(retState.costX) * fee % 1e6;
+                            if (mod > 0) {
+                                feeAmount += 1;
+                            }
                         }
+                        cache.currFeeScaleX_128 = cache.currFeeScaleX_128 + FullMath.mulDiv(feeAmount, FixedPoint128.Q128, st.liquidity);
+                        amountX = amountX + retState.costX + feeAmount;
+                        amountY += retState.acquireY;
+                        amount -= (retState.costX + feeAmount);
+                        st.currPt = retState.finalPt;
+                        st.sqrtPrice_96 = retState.sqrtFinalPrice_96;
+                        st.allX = retState.finalAllX;
+                        st.currX = retState.finalCurrX;
+                        st.currY = retState.finalCurrY;
                     }
-                    cache.currFeeScaleX_128 = cache.currFeeScaleX_128 + FullMath.mulDiv(feeAmount, FixedPoint128.Q128, st.liquidity);
-                    amountX = amountX + retState.costX + feeAmount;
-                    amountY += retState.acquireY;
-                    amount -= (retState.costX + feeAmount);
-                    console.log(" - liquidity: %s, feeAmount: %s, currPt: %s", uint256(st.liquidity), uint256(feeAmount), uint256(int256(st.currPt)));
-                    console.log(" fee scale X: %s", cache.currFeeScaleX_128);
-                    st.currPt = retState.finalPt;
-                    st.sqrtPrice_96 = retState.sqrtFinalPrice_96;
-                    st.allX = retState.finalAllX;
-                    st.currX = retState.finalCurrX;
-                    st.currY = retState.finalCurrY;
                     if (!cache.finished) {
                         Point.Data storage ptdata = points[st.currPt];
                         ptdata.passEndpt(cache.currFeeScaleX_128, cache.currFeeScaleY_128);
@@ -626,7 +622,6 @@ contract IzumiswapPoolPart {
                         }
                     }
 
-                    console.log("liquidity: %s, feeAmount: %s, acquireY: %s", uint256(st.liquidity), uint256(feeAmount), retState.acquireY);
                     amountY += retState.acquireY;
                     amountX = amountX + retState.costX + feeAmount;
                     amount -= (retState.costX + feeAmount);
