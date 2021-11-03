@@ -307,10 +307,12 @@ contract IzumiswapPoolPart {
         if (actualCollectDec > ue.sellingDec) {
             actualCollectDec = ue.sellingDec;
         }
+        ue.sellingDec = ue.sellingDec - actualCollectDec;
         actualCollectEarn = collectEarn;
-        if (actualCollectEarn > ue.earn) {
-            actualCollectEarn = ue.earn;
+        if (actualCollectEarn > ue.earnAssign) {
+            actualCollectEarn = ue.earnAssign;
         }
+        ue.earnAssign = ue.earnAssign - actualCollectEarn;
         (uint256 x, uint256 y) = isEarnY? (actualCollectDec, actualCollectEarn): (actualCollectEarn, actualCollectDec);
         if (x > 0) {
             TransferHelper.safeTransfer(tokenX, recipient, x);
@@ -627,7 +629,6 @@ contract IzumiswapPoolPart {
                     amount -= (retState.costX + feeAmount);
                     
                     cache.currFeeScaleX_128 = cache.currFeeScaleX_128 + FullMath.mulDiv(feeAmount, FixedPoint128.Q128, st.liquidity);
-
                     st.currPt = retState.finalPt;
                     st.sqrtPrice_96 = retState.sqrtFinalPrice_96;
                     st.allX = retState.finalAllX;
