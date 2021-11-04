@@ -375,6 +375,9 @@ contract IzumiswapPoolPartDesire {
                     cache.currVal = 0;
                 }
             }
+            if (st.currPt <= lowPt) {
+                break;
+            }
         }
 
         // write back fee scale, no fee of y

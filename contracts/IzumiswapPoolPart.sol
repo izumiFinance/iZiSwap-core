@@ -141,6 +141,13 @@ contract IzumiswapPoolPart {
         
     }
 
+    function print(int256 pt) private view {
+        if (pt >= 0) {
+            console.log("data: %s", uint256(pt));
+        } else {
+            console.log("data: - %s", uint256(-pt));
+        }
+    }
 
     function decLimOrderWithY(
         int24 pt,
@@ -597,6 +604,7 @@ contract IzumiswapPoolPart {
                 nextPt = lowPt;
             }
             int24 nextVal = getStatusVal(nextPt, cache.pd);
+            
             // in [st.currPt, nextPt)
             if (st.liquidity == 0) {
 
@@ -623,7 +631,6 @@ contract IzumiswapPoolPart {
                             feeAmount += 1;
                         }
                     }
-
                     amountY += retState.acquireY;
                     amountX = amountX + retState.costX + feeAmount;
                     amount -= (retState.costX + feeAmount);
@@ -643,6 +650,9 @@ contract IzumiswapPoolPart {
                     // not necessary, because finished must be true
                     cache.currVal = 0;
                 }
+            }
+            if (st.currPt <= lowPt) {
+                break;
             }
         }
 
