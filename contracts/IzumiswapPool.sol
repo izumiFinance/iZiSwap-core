@@ -566,8 +566,6 @@ contract IzumiswapPool is IIzumiswapPool {
             state.currX = withRet.currX;
             state.currY = withRet.currY;
         }
-        console.log("x: %s", withRet.x);
-        console.log("y: %s", withRet.y);
         if (withRet.x > 0 || withRet.y > 0) {
             Liquidity.Data storage lq = liquidities.get(msg.sender, leftPt, rightPt);
             lq.remainFeeX += withRet.x;
