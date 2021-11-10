@@ -18,7 +18,7 @@ contract TestQuoter is IIzumiswapSwapCallback {
     }
     uint256 public amount;
     address public factory;
-        function swapY2XCallback(
+    function swapY2XCallback(
         uint256 x,
         uint256 y,
         bytes calldata data
