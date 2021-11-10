@@ -17,6 +17,8 @@ import './libraries/TransferHelper.sol';
 import './libraries/State.sol';
 import './interfaces/IIzumiswapCallback.sol';
 
+import 'hardhat/console.sol';
+
 contract IzumiswapPoolPart {
 
     // TODO following usings may need modify
@@ -139,14 +141,6 @@ contract IzumiswapPoolPart {
             }
         }
         
-    }
-
-    function print(int256 pt) private view {
-        if (pt >= 0) {
-            console.log("data: %s", uint256(pt));
-        } else {
-            console.log("data: - %s", uint256(-pt));
-        }
     }
 
     function decLimOrderWithY(
@@ -479,7 +473,7 @@ contract IzumiswapPoolPart {
             // trader pay y
             require(amountY > 0, "PP");
             uint256 by = balanceY();
-            IIzumiswapSwapCallback(msg.sender).swapY2XCallback(amountY, data);
+            IIzumiswapSwapCallback(msg.sender).swapY2XCallback(amountX, amountY, data);
             require(balanceY() >= by + amountY, "YE");
         }
         
@@ -666,7 +660,7 @@ contract IzumiswapPoolPart {
             // trader pay x
             require(amountX > 0, "PP");
             uint256 bx = balanceX();
-            IIzumiswapSwapCallback(msg.sender).swapX2YCallback(amountX, data);
+            IIzumiswapSwapCallback(msg.sender).swapX2YCallback(amountX, amountY, data);
             require(balanceX() >= bx + amountX, "XE");
         }
         

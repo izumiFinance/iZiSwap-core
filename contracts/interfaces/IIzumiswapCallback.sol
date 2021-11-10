@@ -13,11 +13,13 @@ interface IIzumiswapMintCallback {
 
 interface IIzumiswapSwapCallback {
     function swapY2XCallback(
+        uint256 x,
         uint256 y,
         bytes calldata data
     ) external;
     function swapX2YCallback(
         uint256 x,
+        uint256 y,
         bytes calldata data
     ) external;
 }

@@ -9,8 +9,10 @@ import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 
 contract TestSwap is IIzumiswapSwapCallback {
     struct SwapCallbackData {
-        address tokenX;
-        address tokenY;
+        // amount of token0 is input param
+        address token0;
+        // amount of token1 is calculated param
+        address token1;
         address payer;
         uint24 fee;
     }
@@ -30,25 +32,41 @@ contract TestSwap is IIzumiswapSwapCallback {
         return IIzumiswapFactory(factory).pool(tokenX, tokenY, fee);
     }
     function swapY2XCallback(
+        uint256 x,
         uint256 y,
         bytes calldata data
     ) external override {
         SwapCallbackData memory dt = abi.decode(data, (SwapCallbackData));
-        require(pool(dt.tokenX, dt.tokenY, dt.fee) == msg.sender, "sp");
-        if (y > 0) {
-            safeTransferFrom(dt.tokenY, dt.payer, msg.sender, y);
+        require(pool(dt.token0, dt.token1, dt.fee) == msg.sender, "sp");
+        if (dt.token0 < dt.token1) {
+            // token1 is y, amount of token1 is calculated
+            // called from swapY2XDesireX(...)
+            safeTransferFrom(dt.token1, dt.payer, msg.sender, y);
+        } else {
+            // token0 is y, amount of token0 is input param
+            // called from swapY2X(...)
+            safeTransferFrom(dt.token0, dt.payer, msg.sender, y);
         }
     }
+
     function swapX2YCallback(
         uint256 x,
+        uint256 y,
         bytes calldata data
     ) external override {
         SwapCallbackData memory dt = abi.decode(data, (SwapCallbackData));
-        require(pool(dt.tokenX, dt.tokenY, dt.fee) == msg.sender, "sp");
-        if (x > 0) {
-            safeTransferFrom(dt.tokenX, dt.payer, msg.sender, x);
+        require(pool(dt.token0, dt.token1, dt.fee) == msg.sender, "sp");
+        if (dt.token0 < dt.token1) {
+            // token0 is x, amount of token0 is input param
+            // called from swapX2Y(...)
+            safeTransferFrom(dt.token0, dt.payer, msg.sender, x);
+        } else {
+            // token1 is x, amount of token1 is calculated param
+            // called from swapX2YDesireY(...)
+            safeTransferFrom(dt.token1, dt.payer, msg.sender, x);
         }
     }
+    
     constructor(address fac) { factory = fac; }
     function swapY2X(
         address tokenX,
@@ -57,11 +75,12 @@ contract TestSwap is IIzumiswapSwapCallback {
         uint128 amount,
         int24 highPt
     ) external {
+        require(tokenX < tokenY, "x<y");
         address poolAddr = pool(tokenX, tokenY, fee);
         address payer = msg.sender;
         IIzumiswapPool(poolAddr).swapY2X(
             payer, amount, highPt,
-            abi.encode(SwapCallbackData({tokenX: tokenX, tokenY:tokenY, fee: fee, payer: payer}))
+            abi.encode(SwapCallbackData({token0: tokenY, token1:tokenX, fee: fee, payer: payer}))
         );
     }
     
@@ -72,11 +91,12 @@ contract TestSwap is IIzumiswapSwapCallback {
         uint128 desireX,
         int24 highPt
     ) external {
+        require(tokenX < tokenY, "x<y");
         address poolAddr = pool(tokenX, tokenY, fee);
         address payer = msg.sender;
         IIzumiswapPool(poolAddr).swapY2XDesireX(
             payer, desireX, highPt,
-            abi.encode(SwapCallbackData({tokenX: tokenX, tokenY:tokenY, fee: fee, payer: payer}))
+            abi.encode(SwapCallbackData({token0: tokenX, token1:tokenY, fee: fee, payer: payer}))
         );
     }
     
@@ -88,11 +108,12 @@ contract TestSwap is IIzumiswapSwapCallback {
         uint128 amount,
         int24 lowPt
     ) external {
+        require(tokenX < tokenY, "x<y");
         address poolAddr = pool(tokenX, tokenY, fee);
         address payer = msg.sender;
         IIzumiswapPool(poolAddr).swapX2Y(
             payer, amount, lowPt,
-            abi.encode(SwapCallbackData({tokenX: tokenX, tokenY:tokenY, fee: fee, payer: payer}))
+            abi.encode(SwapCallbackData({token0: tokenX, token1:tokenY, fee: fee, payer: payer}))
         );
     }
     
@@ -103,12 +124,13 @@ contract TestSwap is IIzumiswapSwapCallback {
         uint128 desireY,
         int24 highPt
     ) external {
+        require(tokenX < tokenY, "x<y");
         console.log("curr calling address: %s", address(this));
         address poolAddr = pool(tokenX, tokenY, fee);
         address payer = msg.sender;
         IIzumiswapPool(poolAddr).swapX2YDesireY(
             payer, desireY, highPt,
-            abi.encode(SwapCallbackData({tokenX: tokenX, tokenY:tokenY, fee: fee, payer: payer}))
+            abi.encode(SwapCallbackData({token0: tokenY, token1:tokenX, fee: fee, payer: payer}))
         );
     }
 }

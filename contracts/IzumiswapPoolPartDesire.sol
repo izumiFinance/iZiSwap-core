@@ -226,7 +226,7 @@ contract IzumiswapPoolPartDesire {
             // trader pay y
             require(amountY > 0, "PP");
             uint256 by = balanceY();
-            IIzumiswapSwapCallback(msg.sender).swapY2XCallback(amountY, data);
+            IIzumiswapSwapCallback(msg.sender).swapY2XCallback(amountX, amountY, data);
             require(balanceY() >= by + amountY, "YE");
         }
         
@@ -390,7 +390,7 @@ contract IzumiswapPoolPartDesire {
             // trader pay x
             require(amountX > 0, "PP");
             uint256 bx = balanceX();
-            IIzumiswapSwapCallback(msg.sender).swapX2YCallback(amountX, data);
+            IIzumiswapSwapCallback(msg.sender).swapX2YCallback(amountX, amountY, data);
             require(balanceX() >= bx + amountX, "XE");
         }
     }

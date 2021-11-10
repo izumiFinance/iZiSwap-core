@@ -615,6 +615,22 @@ contract IzumiswapPool is IIzumiswapPool {
         require(success && data.length >= 32);
         return abi.decode(data, (uint256));
     }
+    function revertDCData(bytes memory data) private view {
+        if (data.length != 32) {
+            if (data.length < 68) revert('dc');
+            assembly {
+                data := add(data, 0x04)
+            }
+            revert(abi.decode(data, (string)));
+        }
+        assembly {
+            data:= add(data, 0x20)
+            let w := mload(data)
+            let t := mload(0x40)
+            mstore(t, w)
+            revert(t, 32)
+        }
+    }
 
     /// @dev swap pay tokeny and buy token x
     /// @param recipient address of actual trader
@@ -632,8 +648,11 @@ contract IzumiswapPool is IIzumiswapPool {
             abi.encodeWithSignature("swapY2X(address,uint128,int24,bytes)", 
             recipient, amount, highPt, data)
         );
-        require(success, "dc");
-        (amountX, amountY) = abi.decode(data, (uint256, uint256));
+        if (success) {
+            (amountX, amountY) = abi.decode(data, (uint256, uint256));
+        } else {
+            revertDCData(data);
+        }
     }
 
     function swapY2XDesireX(
@@ -646,8 +665,11 @@ contract IzumiswapPool is IIzumiswapPool {
             abi.encodeWithSignature("swapY2XDesireX(address,uint128,int24,bytes)", 
             recipient, desireX, highPt, data)
         );
-        require(success, "dc");
-        (amountX, amountY) = abi.decode(data, (uint256, uint256));
+        if (success) {
+            (amountX, amountY) = abi.decode(data, (uint256, uint256));
+        } else {
+            revertDCData(data);
+        }
     }
 
     function getStatusVal(int24 pt, int24 pd) internal view returns(int24 val) {
@@ -676,8 +698,11 @@ contract IzumiswapPool is IIzumiswapPool {
             abi.encodeWithSignature("swapX2Y(address,uint128,int24,bytes)", 
             recipient, amount, lowPt, data)
         );
-        require(success, "dc");
-        (amountX, amountY) = abi.decode(data, (uint256, uint256));
+        if (success) {
+            (amountX, amountY) = abi.decode(data, (uint256, uint256));
+        } else {
+            revertDCData(data);
+        }
     }
 
     
@@ -694,7 +719,10 @@ contract IzumiswapPool is IIzumiswapPool {
         (bool success, bytes memory d) = poolPartDesire.delegatecall(
             abi.encodeWithSignature("swapX2YDesireY(address,uint128,int24,bytes)", recipient, desireY, lowPt,data)
         );
-        require(success, "dc");
-        (amountX, amountY) = abi.decode(data, (uint256, uint256));
+        if (success) {
+            (amountX, amountY) = abi.decode(data, (uint256, uint256));
+        } else {
+            revertDCData(data);
+        }
     }
 }
