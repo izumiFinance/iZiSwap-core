@@ -13,7 +13,7 @@ import './libraries/SwapMathX2Y.sol';
 import './libraries/SwapMathY2XDesire.sol';
 import './libraries/SwapMathX2YDesire.sol';
 import './libraries/UserEarn.sol';
-import './libraries/TransferHelper.sol';
+import './libraries/TokenTransfer.sol';
 import './libraries/State.sol';
 import './interfaces/IIzumiswapCallback.sol';
 import 'hardhat/console.sol';
@@ -94,6 +94,15 @@ contract IzumiswapPoolPartDesire {
     address private poolPart;
     address private poolPartDesire;
 
+    // delta cannot be int128.min and it can be proofed that
+    // liquidDelta of any one point will not be int128.min
+    function liquidityAddDelta(uint128 l, int128 delta) private pure returns (uint128 nl) {
+        if (delta < 0) {
+            require((nl = l - uint128(-delta)) < l, 'LSUB');
+        } else {
+            require((nl = l + uint128(delta)) >= l, 'LADD');
+        }
+    }
     
     function balanceX() private view returns (uint256) {
         (bool success, bytes memory data) =
@@ -176,7 +185,7 @@ contract IzumiswapPoolPartDesire {
                     endPt.passEndpt(cache.currFeeScaleX_128, cache.currFeeScaleY_128);
                     // we should add delta liquid of nextPt
                     int128 liquidDelta = endPt.liquidDelta;
-                    st.liquidity = LiquidityMath.addDelta(st.liquidity, liquidDelta);
+                    st.liquidity = liquidityAddDelta(st.liquidity, liquidDelta);
                 }
                 cache.currVal = nextVal;
             } else {
@@ -206,7 +215,7 @@ contract IzumiswapPoolPartDesire {
                     Point.Data storage endPt = points[nextPt];
                     // pass next point from left to right
                     endPt.passEndpt(cache.currFeeScaleX_128, cache.currFeeScaleY_128);
-                    st.liquidity = LiquidityMath.addDelta(st.liquidity, endPt.liquidDelta);
+                    st.liquidity = liquidityAddDelta(st.liquidity, endPt.liquidDelta);
                 }
                 if (st.currPt == nextPt) {
                     cache.currVal = nextVal;
@@ -222,7 +231,7 @@ contract IzumiswapPoolPartDesire {
         state = st;
         // transfer x to trader
         if (amountX > 0) {
-            TransferHelper.safeTransfer(tokenX, recipient, amountX);
+            TokenTransfer.transferToken(tokenX, recipient, amountX);
             // trader pay y
             require(amountY > 0, "PP");
             uint256 by = balanceY();
@@ -316,7 +325,7 @@ contract IzumiswapPoolPartDesire {
                 if (!cache.finished) {
                     Point.Data storage ptdata = points[st.currPt];
                     ptdata.passEndpt(cache.currFeeScaleX_128, cache.currFeeScaleY_128);
-                    st.liquidity = LiquidityMath.addDelta(st.liquidity, - ptdata.liquidDelta);
+                    st.liquidity = liquidityAddDelta(st.liquidity, - ptdata.liquidDelta);
                     st.currPt = st.currPt - 1;
                     st.sqrtPrice_96 = LogPowMath.getSqrtPrice(st.currPt);
                     st.allX = false;
@@ -382,7 +391,7 @@ contract IzumiswapPoolPartDesire {
         state = st;
         // transfer y to trader
         if (amountY > 0) {
-            TransferHelper.safeTransfer(tokenY, recipient, amountY);
+            TokenTransfer.transferToken(tokenY, recipient, amountY);
             // trader pay x
             require(amountX > 0, "PP");
             uint256 bx = balanceX();

@@ -21,10 +21,10 @@ library Point {
         require((r = int128(v)) == v);
     }
 
-    function addDelta(int256 w, int128 delta) internal pure returns (int256 r) {
+    function addDelta(int256 w, int256 delta) internal pure returns (int256 r) {
         require((r = w + delta) >= w == (delta >= 0));
     }
-    function subDelta(int256 w, int128 delta) internal pure returns (int256 r) {
+    function subDelta(int256 w, int256 delta) internal pure returns (int256 r) {
         require((r = w - delta) <= w == (delta >= 0));
     }
     function _getFeeScaleL(

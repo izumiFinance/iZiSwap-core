@@ -11,7 +11,7 @@ import './libraries/FixedPoint96.sol';
 import './libraries/PointOrder.sol';
 import './libraries/AmountMath.sol';
 import './libraries/UserEarn.sol';
-import './libraries/TransferHelper.sol';
+import './libraries/TokenTransfer.sol';
 import './libraries/State.sol';
 import './interfaces/IIzumiswapCallback.sol';
 import 'hardhat/console.sol';
@@ -94,8 +94,8 @@ contract IzumiswapPool is IIzumiswapPool {
     function _setRange(int24 pd) private {
         rightMostPt = RIGHT_MOST_PT / pd * pd;
         leftMostPt = - rightMostPt;
-        int32 ptNum = (int32(rightMostPt) - int32(leftMostPt)) / pd;
-        maxLiquidPt = type(uint128).max / uint32(ptNum);
+        uint24 ptNum = uint24((rightMostPt - leftMostPt) / pd) + 1;
+        maxLiquidPt = type(uint128).max / ptNum;
     }
 
     constructor(
@@ -595,10 +595,10 @@ contract IzumiswapPool is IIzumiswapPool {
         lq.remainFeeX -= actualAmountX;
         lq.remainFeeY -= actualAmountY;
         if (actualAmountX > 0) {
-            TransferHelper.safeTransfer(tokenX, recipient, actualAmountX);
+            TokenTransfer.transferToken(tokenX, recipient, actualAmountX);
         }
         if (actualAmountY > 0) {
-            TransferHelper.safeTransfer(tokenY, recipient, actualAmountY);
+            TokenTransfer.transferToken(tokenY, recipient, actualAmountY);
         }
     }
     

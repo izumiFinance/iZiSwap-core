@@ -1,6 +1,5 @@
 pragma solidity >=0.7.3;
 
-import './LiquidityMath.sol';
 import './MulDivMath.sol';
 import './FixedPoint128.sol';
 import 'hardhat/console.sol';
@@ -14,6 +13,15 @@ library Liquidity {
         uint256 remainFeeY;
     }
     
+    // delta cannot be int128.min and it can be proofed that
+    // liquidDelta of any one point will not be int128.min
+    function liquidityAddDelta(uint128 l, int128 delta) internal pure returns (uint128 nl) {
+        if (delta < 0) {
+            require((nl = l - uint128(-delta)) < l, 'LSUB');
+        } else {
+            require((nl = l + uint128(delta)) >= l, 'LADD');
+        }
+    }
     function get(
         mapping(bytes32 => Data) storage self,
         address minter,
@@ -35,7 +43,7 @@ library Liquidity {
             require(data.liquidity > 0, "L>0");
             liquidity = data.liquidity;
         } else {
-            liquidity = LiquidityMath.addDelta(data.liquidity, delta);
+            liquidity = liquidityAddDelta(data.liquidity, delta);
         }
         uint128 feeX = uint128(
             MulDivMath.mulDivFloor(feeScaleX_128 - data.lastFeeScaleX_128, data.liquidity, FixedPoint128.Q128)
