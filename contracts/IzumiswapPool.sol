@@ -120,6 +120,9 @@ contract IzumiswapPool is IIzumiswapPool {
         ptDelta = pd;
         _setRange(pd);
 
+        require(cp >= leftMostPt, "LO");
+        require(cp <= rightMostPt, "HO");
+
         // current state
         state.currPt = cp;
         state.sqrtPrice_96 = LogPowMath.getSqrtPrice(cp);
@@ -474,6 +477,8 @@ contract IzumiswapPool is IIzumiswapPool {
         bytes calldata data
     ) external override noDelegateCall lock returns (uint128 amountX, uint128 amountY) {
         require(leftPt < rightPt, "LR");
+        require(leftPt >= leftMostPt, "LO");
+        require(rightPt <= rightMostPt, "HO");
         int24 pd = ptDelta;
         require(leftPt % pd == 0, "LPD");
         require(rightPt % pd == 0, "RPD");
@@ -536,6 +541,8 @@ contract IzumiswapPool is IIzumiswapPool {
         int24 rightPt,
         uint128 liquidDelta
     ) external override noDelegateCall lock returns (uint256 amountX, uint256 amountY) {
+        // it is not necessary to check leftPt rightPt with [leftMostPt, rightMostPt]
+        // because we haved checked it in the mint(...)
         require(leftPt < rightPt, "LR");
         int24 pd = ptDelta;
         require(leftPt % pd == 0, "LPD");

@@ -187,6 +187,7 @@ contract IzumiswapPoolPart {
         
         require(pt % ptDelta == 0, "PD");
         require(pt >= state.currPt, "PG");
+        require(pt <= rightMostPt, "HO");
         require(amountX > 0, "XP");
 
         
@@ -254,6 +255,7 @@ contract IzumiswapPoolPart {
         
         require(pt % ptDelta == 0, "PD");
         require(pt <= state.currPt, "PL");
+        require(pt >= leftMostPt, "LO");
         require(amountY > 0, "YP");
 
         // update point order
@@ -358,8 +360,8 @@ contract IzumiswapPoolPart {
         bytes calldata data
     ) external returns (uint256 amountX, uint256 amountY) {
         
-        // todo we will consider -amount of desired x later
         require(amount > 0, "AP");
+        require(highPt <= rightMostPt, "HO");
         amountX = 0;
         amountY = 0;
         State memory st = state;
@@ -513,6 +515,7 @@ contract IzumiswapPoolPart {
         
         // todo we will consider -amount of desired y later
         require(amount > 0, "AP");
+        require(lowPt >= leftMostPt, "LO");
         amountX = 0;
         amountY = 0;
         State memory st = state;

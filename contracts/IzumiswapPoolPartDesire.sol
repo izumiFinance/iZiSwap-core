@@ -127,6 +127,7 @@ contract IzumiswapPoolPartDesire {
     ) external returns (uint256 amountX, uint256 amountY) {
         
         require (desireX > 0, "XP");
+        require (highPt <= rightMostPt, "HO");
         amountX = 0;
         amountY = 0;
         State memory st = state;
@@ -259,6 +260,7 @@ contract IzumiswapPoolPartDesire {
     ) external returns (uint256 amountX, uint256 amountY) {
         // todo we will consider -amount of desired y later
         require(desireY > 0, "AP");
+        require(lowPt >= leftMostPt, "LO");
         amountX = 0;
         amountY = 0;
         State memory st = state;
