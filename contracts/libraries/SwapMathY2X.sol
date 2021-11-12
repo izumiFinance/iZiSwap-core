@@ -1,6 +1,6 @@
 pragma solidity >=0.7.3;
 
-import './FullMath.sol';
+import './MulDivMath.sol';
 import './FixedPoint96.sol';
 import './AmountMath.sol';
 import './State.sol';
@@ -25,13 +25,13 @@ library SwapMathY2X {
         uint160 sqrtPrice_96,
         uint256 currX
     ) internal view returns (uint128 costY, uint256 acquireX) {
-        uint256 l = FullMath.mulDivFloor(amountY, FixedPoint96.Q96, sqrtPrice_96);
-        acquireX = FullMath.mulDivFloor(l, FixedPoint96.Q96, sqrtPrice_96);
+        uint256 l = MulDivMath.mulDivFloor(amountY, FixedPoint96.Q96, sqrtPrice_96);
+        acquireX = MulDivMath.mulDivFloor(l, FixedPoint96.Q96, sqrtPrice_96);
         if (acquireX > currX) {
             acquireX = currX;
         }
-        l = FullMath.mulDivCeil(acquireX, sqrtPrice_96, FixedPoint96.Q96);
-        uint256 cost = FullMath.mulDivCeil(l, sqrtPrice_96, FixedPoint96.Q96);
+        l = MulDivMath.mulDivCeil(acquireX, sqrtPrice_96, FixedPoint96.Q96);
+        uint256 cost = MulDivMath.mulDivCeil(l, sqrtPrice_96, FixedPoint96.Q96);
         costY = uint128(cost);
         // it is believed that costY <= amountY
         require(costY == cost);
@@ -44,13 +44,13 @@ library SwapMathY2X {
         uint256 currY,
         uint128 liquidity
     ) internal view returns (uint128 costY, uint256 acquireX) {
-        uint256 currYLim = FullMath.mulDivCeil(liquidity, sqrtPrice_96, FixedPoint96.Q96);
+        uint256 currYLim = MulDivMath.mulDivCeil(liquidity, sqrtPrice_96, FixedPoint96.Q96);
         uint256 deltaY = (currYLim > currY) ? currYLim - currY : 0;
         if (amountY >= deltaY) {
             costY = uint128(deltaY);
             acquireX = currX;
         } else {
-            acquireX = FullMath.mulDivFloor(amountY, currX, deltaY);
+            acquireX = MulDivMath.mulDivFloor(amountY, currX, deltaY);
             costY = (acquireX > 0) ? amountY : 0;
         }
     }
@@ -90,7 +90,7 @@ library SwapMathY2X {
             ret.completeLiquidity = true;
         } else {
             // we should locate highest price
-            uint256 sqrtLoc256_96 = FullMath.mulDivFloor(
+            uint256 sqrtLoc256_96 = MulDivMath.mulDivFloor(
                 amountY,
                 rg.sqrtRate_96 - FixedPoint96.Q96,
                 rg.liquidity
@@ -253,7 +253,7 @@ library SwapMathY2X {
                 retState.finalAllX = true;
             } else {
                 // trade at locPt
-                uint256 locCurrX = FullMath.mulDivFloor(st.liquidity, FixedPoint96.Q96, ret.sqrtLoc_96);
+                uint256 locCurrX = MulDivMath.mulDivFloor(st.liquidity, FixedPoint96.Q96, ret.sqrtLoc_96);
                 
                 (uint128 locCostY, uint256 locAcquireX) = y2XAtPriceLiquidity(
                     amountY,

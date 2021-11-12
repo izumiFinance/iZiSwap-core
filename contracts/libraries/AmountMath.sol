@@ -1,6 +1,6 @@
 pragma solidity >=0.7.3;
 
-import './FullMath.sol';
+import './MulDivMath.sol';
 import './FixedPoint96.sol';
 import './LogPowMath.sol';
 
@@ -17,9 +17,9 @@ library AmountMath {
         uint160 numerator = sqrtPriceR_96 - sqrtPriceL_96;
         uint160 denominator = sqrtRate_96 - uint160(FixedPoint96.Q96);
         if (!upper) {
-            amount = FullMath.mulDivFloor(liquidity, numerator, denominator);
+            amount = MulDivMath.mulDivFloor(liquidity, numerator, denominator);
         } else {
-            amount = FullMath.mulDivCeil(liquidity, numerator, denominator);
+            amount = MulDivMath.mulDivCeil(liquidity, numerator, denominator);
         }
     }
 
@@ -38,9 +38,9 @@ library AmountMath {
         uint160 numerator = sqrtPricePrPc_96 - sqrtRate_96;
         uint160 denominator = sqrtPricePrPd_96 - sqrtPriceR_96;
         if (!upper) {
-            amount = FullMath.mulDivFloor(liquidity, numerator, denominator);
+            amount = MulDivMath.mulDivFloor(liquidity, numerator, denominator);
         } else {
-            amount = FullMath.mulDivCeil(liquidity, numerator, denominator);
+            amount = MulDivMath.mulDivCeil(liquidity, numerator, denominator);
         }
     }
 

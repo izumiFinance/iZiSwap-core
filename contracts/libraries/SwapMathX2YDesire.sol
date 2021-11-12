@@ -1,6 +1,6 @@
 pragma solidity ^0.8.4;
 
-import './FullMath.sol';
+import './MulDivMath.sol';
 import './FixedPoint96.sol';
 import './AmountMath.sol';
 import './State.sol';
@@ -27,8 +27,8 @@ library SwapMathX2YDesire {
         if (acquireY > currY) {
             acquireY = currY;
         }
-        uint256 l = FullMath.mulDivCeil(acquireY, FixedPoint96.Q96, sqrtPrice_96);
-        costX = FullMath.mulDivCeil(l, FixedPoint96.Q96, sqrtPrice_96);
+        uint256 l = MulDivMath.mulDivCeil(acquireY, FixedPoint96.Q96, sqrtPrice_96);
+        costX = MulDivMath.mulDivCeil(l, FixedPoint96.Q96, sqrtPrice_96);
     }
     function x2YAtPriceLiquidity(
         uint128 desireY,
@@ -37,14 +37,14 @@ library SwapMathX2YDesire {
         uint256 currX,
         uint128 liquidity
     ) internal view returns (uint256 costX, uint128 acquireY) {
-        uint256 currXLim = FullMath.mulDivCeil(liquidity, FixedPoint96.Q96, sqrtPrice_96);
+        uint256 currXLim = MulDivMath.mulDivCeil(liquidity, FixedPoint96.Q96, sqrtPrice_96);
         uint256 deltaX = (currXLim > currX) ? currXLim - currX : 0;
         if (desireY >= currY) {
             costX = deltaX;
             acquireY = uint128(currY);
         } else {
             acquireY = desireY;
-            costX = FullMath.mulDivCeil(acquireY, deltaX, currY);
+            costX = MulDivMath.mulDivCeil(acquireY, deltaX, currY);
         }
     }
     struct Range {
@@ -136,7 +136,7 @@ library SwapMathX2YDesire {
             }
         } else if (!st.allX) { // all y
             st.currPt = st.currPt + 1;
-            st.sqrtPrice_96 = uint160(FullMath.mulDivFloor(st.sqrtPrice_96, sqrtRate_96, FixedPoint96.Q96));
+            st.sqrtPrice_96 = uint160(MulDivMath.mulDivFloor(st.sqrtPrice_96, sqrtRate_96, FixedPoint96.Q96));
         }
         if (retState.finished) {
             return retState;
@@ -166,9 +166,9 @@ library SwapMathX2YDesire {
             } else {
                 // locPt > leftPt
                 ret.locPt = ret.locPt - 1;
-                ret.sqrtLoc_96 = uint160(FullMath.mulDivFloor(ret.sqrtLoc_96, FixedPoint96.Q96, sqrtRate_96));
+                ret.sqrtLoc_96 = uint160(MulDivMath.mulDivFloor(ret.sqrtLoc_96, FixedPoint96.Q96, sqrtRate_96));
                 // trade at locPt
-                uint256 locCurrY = FullMath.mulDivFloor(st.liquidity, ret.sqrtLoc_96, FixedPoint96.Q96);
+                uint256 locCurrY = MulDivMath.mulDivFloor(st.liquidity, ret.sqrtLoc_96, FixedPoint96.Q96);
                 (uint256 locCostX, uint256 locAcquireY) = x2YAtPriceLiquidity(desireY, ret.sqrtLoc_96, locCurrY, 0, st.liquidity);
                 retState.costX += locCostX;
                 retState.acquireY += locAcquireY;

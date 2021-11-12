@@ -1,7 +1,7 @@
 pragma solidity >=0.7.3;
 
 import './LiquidityMath.sol';
-import './FullMath.sol';
+import './MulDivMath.sol';
 import './FixedPoint128.sol';
 import 'hardhat/console.sol';
 
@@ -38,10 +38,10 @@ library Liquidity {
             liquidity = LiquidityMath.addDelta(data.liquidity, delta);
         }
         uint128 feeX = uint128(
-            FullMath.mulDivFloor(feeScaleX_128 - data.lastFeeScaleX_128, data.liquidity, FixedPoint128.Q128)
+            MulDivMath.mulDivFloor(feeScaleX_128 - data.lastFeeScaleX_128, data.liquidity, FixedPoint128.Q128)
         );
         uint128 feeY = uint128(
-            FullMath.mulDivFloor(feeScaleY_128 - data.lastFeeScaleY_128, data.liquidity, FixedPoint128.Q128)
+            MulDivMath.mulDivFloor(feeScaleY_128 - data.lastFeeScaleY_128, data.liquidity, FixedPoint128.Q128)
         );
         data.liquidity = liquidity;
 

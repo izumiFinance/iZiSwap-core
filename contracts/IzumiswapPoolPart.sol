@@ -5,7 +5,7 @@ import './libraries/Liquidity.sol';
 import './libraries/Point.sol';
 import './libraries/PointBitmap.sol';
 import './libraries/LogPowMath.sol';
-import './libraries/FullMath.sol';
+import './libraries/MulDivMath.sol';
 import './libraries/FixedPoint96.sol';
 import './libraries/PointOrder.sol';
 import './libraries/SwapMathY2X.sol';
@@ -394,7 +394,7 @@ contract IzumiswapPoolPart {
                 break;
             }
 
-            (int24 nextPt, bool inited) = pointBitmap.nextInitializedpointWithinOneWord(st.currPt, cache.pd, false);
+            int24 nextPt = pointBitmap.nearestRightOneOrBoundary(st.currPt, cache.pd);
             int24 nextVal = getStatusVal(nextPt, cache.pd);
             if (nextPt > highPt) {
                 nextVal = 0;
@@ -439,7 +439,7 @@ contract IzumiswapPoolPart {
                     amountY = amountY + retState.costY + feeAmount;
                     amount -= (retState.costY + feeAmount);
                     
-                    cache.currFeeScaleY_128 = cache.currFeeScaleY_128 + FullMath.mulDivFloor(feeAmount, FixedPoint128.Q128, st.liquidity);
+                    cache.currFeeScaleY_128 = cache.currFeeScaleY_128 + MulDivMath.mulDivFloor(feeAmount, FixedPoint128.Q128, st.liquidity);
 
                     st.currPt = retState.finalPt;
                     st.sqrtPrice_96 = retState.sqrtFinalPrice_96;
@@ -566,7 +566,7 @@ contract IzumiswapPoolPart {
                                 feeAmount += 1;
                             }
                         }
-                        cache.currFeeScaleX_128 = cache.currFeeScaleX_128 + FullMath.mulDivFloor(feeAmount, FixedPoint128.Q128, st.liquidity);
+                        cache.currFeeScaleX_128 = cache.currFeeScaleX_128 + MulDivMath.mulDivFloor(feeAmount, FixedPoint128.Q128, st.liquidity);
                         amountX = amountX + retState.costX + feeAmount;
                         amountY += retState.acquireY;
                         amount -= (retState.costX + feeAmount);
@@ -584,7 +584,7 @@ contract IzumiswapPoolPart {
                         st.sqrtPrice_96 = LogPowMath.getSqrtPrice(st.currPt);
                         st.allX = false;
                         st.currX = 0;
-                        st.currY = FullMath.mulDivFloor(st.liquidity, st.sqrtPrice_96, FixedPoint96.Q96);
+                        st.currY = MulDivMath.mulDivFloor(st.liquidity, st.sqrtPrice_96, FixedPoint96.Q96);
                     }
                 } else {
                     cache.finished = true;
@@ -593,7 +593,7 @@ contract IzumiswapPoolPart {
             if (cache.finished || st.currPt < lowPt) {
                 break;
             }
-            (int24 nextPt, bool inited) = pointBitmap.nextInitializedpointWithinOneWord(searchStart, cache.pd, true);
+            int24 nextPt= pointBitmap.nearestLeftOneOrBoundary(searchStart, cache.pd);
             if (nextPt < lowPt) {
                 nextPt = lowPt;
             }
@@ -629,7 +629,7 @@ contract IzumiswapPoolPart {
                     amountX = amountX + retState.costX + feeAmount;
                     amount -= (retState.costX + feeAmount);
                     
-                    cache.currFeeScaleX_128 = cache.currFeeScaleX_128 + FullMath.mulDivFloor(feeAmount, FixedPoint128.Q128, st.liquidity);
+                    cache.currFeeScaleX_128 = cache.currFeeScaleX_128 + MulDivMath.mulDivFloor(feeAmount, FixedPoint128.Q128, st.liquidity);
                     st.currPt = retState.finalPt;
                     st.sqrtPrice_96 = retState.sqrtFinalPrice_96;
                     st.allX = retState.finalAllX;
@@ -664,11 +664,6 @@ contract IzumiswapPoolPart {
             require(balanceX() >= bx + amountX, "XE");
         }
         
-    }
-
-    function findLeft(int24 searchStart, int24 pd) private view returns (int24 nextPt) {
-        bool inited;
-        ( nextPt,  inited) = pointBitmap.nextInitializedpointWithinOneWord(searchStart, pd, true);
     }
     
 }

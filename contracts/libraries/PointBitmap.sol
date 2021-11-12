@@ -1,20 +1,82 @@
-// TODO: must modify!
-// SPDX-License-Identifier: BUSL-1.1
-pragma solidity >=0.5.0;
 
-import './BitMath.sol';
+pragma solidity ^0.8.4;
 
-/// @title Packed point initialized state library
-/// @notice Stores a packed mapping of point index to its initialized state
-/// @dev The mapping uses int16 for keys since points are represented as int24 and there are 256 (2^8) values per word.
 library PointBitmap {
-    /// @notice Computes the position in the mapping where the initialized bit for a point lives
-    /// @param point The point for which to compute the position
-    /// @return wordPos The key in the mapping containing the word in which the bit is stored
-    /// @return bitPos The bit position in the word where the flag is stored
-    function position(int24 point) private pure returns (int16 wordPos, uint8 bitPos) {
-        wordPos = int16(point >> 8);
-        bitPos = uint8(uint24(point % 256));
+
+    function MSB(uint256 number) internal pure returns (uint8 msb) {
+        require(number > 0);
+
+        if (number >= 0x100000000000000000000000000000000) {
+            number >>= 128;
+            msb += 128;
+        }
+        if (number >= 0x10000000000000000) {
+            number >>= 64;
+            msb += 64;
+        }
+        if (number >= 0x100000000) {
+            number >>= 32;
+            msb += 32;
+        }
+        if (number >= 0x10000) {
+            number >>= 16;
+            msb += 16;
+        }
+        if (number >= 0x100) {
+            number >>= 8;
+            msb += 8;
+        }
+        if (number >= 0x10) {
+            number >>= 4;
+            msb += 4;
+        }
+        if (number >= 0x4) {
+            number >>= 2;
+            msb += 2;
+        }
+        if (number >= 0x2) msb += 1;
+    }
+
+    function LSB(uint256 number) internal pure returns (uint8 msb) {
+        require(number > 0);
+
+        msb = 255;
+        if (number & type(uint128).max > 0) {
+            msb -= 128;
+        } else {
+            number >>= 128;
+        }
+        if (number & type(uint64).max > 0) {
+            msb -= 64;
+        } else {
+            number >>= 64;
+        }
+        if (number & type(uint32).max > 0) {
+            msb -= 32;
+        } else {
+            number >>= 32;
+        }
+        if (number & type(uint16).max > 0) {
+            msb -= 16;
+        } else {
+            number >>= 16;
+        }
+        if (number & type(uint8).max > 0) {
+            msb -= 8;
+        } else {
+            number >>= 8;
+        }
+        if (number & 0xf > 0) {
+            msb -= 4;
+        } else {
+            number >>= 4;
+        }
+        if (number & 0x3 > 0) {
+            msb -= 2;
+        } else {
+            number >>= 2;
+        }
+        if (number & 0x1 > 0) msb -= 1;
     }
 
     /// @notice Flips the initialized state for a given point from false to true, or vice versa
@@ -26,10 +88,11 @@ library PointBitmap {
         int24 point,
         int24 pointDelta
     ) internal {
-        require(point % pointDelta == 0); // ensure that the point is spaced
-        (int16 wordPos, uint8 bitPos) = position(point / pointDelta);
-        uint256 mask = 1 << bitPos;
-        self[wordPos] ^= mask;
+        require(point % pointDelta == 0);
+        int24 mapPt = point / pointDelta;
+        int16 wordIdx = int16(mapPt >> 8);
+        uint8 bitIdx = uint8(uint24(mapPt % 256));
+        self[wordIdx] ^= 1 << bitIdx;
     }
 
     function setOne(
@@ -38,9 +101,10 @@ library PointBitmap {
         int24 pointDelta
     ) internal {
         require(point % pointDelta == 0);
-        (int16 wordPos, uint8 bitPos) = position(point / pointDelta);
-        uint256 mask = 1 << bitPos;
-        self[wordPos] |= mask;
+        int24 mapPt = point / pointDelta;
+        int16 wordIdx = int16(mapPt >> 8);
+        uint8 bitIdx = uint8(uint24(mapPt % 256));
+        self[wordIdx] |= 1 << bitIdx;
     }
 
     function setZero(
@@ -49,53 +113,48 @@ library PointBitmap {
         int24 pointDelta
     ) internal {
         require(point % pointDelta == 0);
-        (int16 wordPos, uint8 bitPos) = position(point / pointDelta);
-        uint256 mask = ~(1 << bitPos);
-        self[wordPos] &= mask;
+        int24 mapPt = point / pointDelta;
+        int16 wordIdx = int16(mapPt >> 8);
+        uint8 bitIdx = uint8(uint24(mapPt % 256));
+        self[wordIdx] &= ~(1 << bitIdx);
     }
 
-    /// @notice Returns the next initialized point contained in the same word (or adjacent word) as the point that is either
-    /// to the left (less than or equal to) or right (greater than) of the given point
-    /// @param self The mapping in which to compute the next initialized point
-    /// @param point The starting point
-    /// @param pointDelta The spacing between usable points
-    /// @param lte Whether to search for the next initialized point to the left (less than or equal to the starting point)
-    /// @return next The next initialized or uninitialized point up to 256 points away from the current point
-    /// @return initialized Whether the next point is initialized, as the function only searches within up to 256 points
-    function nextInitializedpointWithinOneWord(
+    // find nearest one from point, or boundary in the same word
+    function nearestLeftOneOrBoundary(
         mapping(int16 => uint256) storage self,
         int24 point,
-        int24 pointDelta,
-        bool lte
-    ) internal view returns (int24 next, bool initialized) {
-        int24 compressed = point / pointDelta;
-        if (point < 0 && point % pointDelta != 0) compressed--; // round towards negative infinity
+        int24 pointDelta
+    ) internal view returns (int24 left) {
+        int24 mapPt = point / pointDelta;
+        if (point < 0 && point % pointDelta != 0) mapPt--; // round towards negative infinity
 
-        if (lte) {
-            (int16 wordPos, uint8 bitPos) = position(compressed);
-            // all the 1s at or to the right of the current bitPos
-            uint256 mask = (1 << bitPos) - 1 + (1 << bitPos);
-            uint256 masked = self[wordPos] & mask;
+        int16 wordIdx = int16(mapPt >> 8);
+        uint8 bitIdx = uint8(uint24(mapPt % 256));
+        
+        uint256 ones = self[wordIdx] & ((1 << bitIdx) - 1 + (1 << bitIdx));
 
-            // if there are no initialized points to the right of or at the current point, return rightmost in the word
-            initialized = masked != 0;
-            // overflow/underflow is possible, but prevented externally by limiting both pointDelta and point
-            next = initialized
-                ? (compressed - int24(uint24(bitPos - BitMath.mostSignificantBit(masked)))) * pointDelta
-                : (compressed - int24(uint24(bitPos))) * pointDelta;
-        } else {
-            // start from the word of the next point, since the current point state doesn't matter
-            (int16 wordPos, uint8 bitPos) = position(compressed + 1);
-            // all the 1s at or to the left of the bitPos
-            uint256 mask = ~((1 << bitPos) - 1);
-            uint256 masked = self[wordPos] & mask;
+        left = (ones != 0)
+            ? (mapPt - int24(uint24(bitIdx - MSB(ones)))) * pointDelta
+            : (mapPt - int24(uint24(bitIdx))) * pointDelta;
+        
+    }
+    // find nearest one from point, or boundary in the same word
+    function nearestRightOneOrBoundary(
+        mapping(int16 => uint256) storage self,
+        int24 point,
+        int24 pointDelta
+    ) internal view returns (int24 right) {
+        int24 mapPt = point / pointDelta;
+        if (point < 0 && point % pointDelta != 0) mapPt--; // round towards negative infinity
 
-            // if there are no initialized points to the left of the current point, return leftmost in the word
-            initialized = masked != 0;
-            // overflow/underflow is possible, but prevented externally by limiting both pointDelta and point
-            next = initialized
-                ? (compressed + 1 + int24(uint24(BitMath.leastSignificantBit(masked) - bitPos))) * pointDelta
-                : (compressed + 1 + int24(uint24(type(uint8).max - bitPos))) * pointDelta;
-        }
+        mapPt += 1;
+        int16 wordIdx = int16(mapPt >> 8);
+        uint8 bitIdx = uint8(uint24(mapPt % 256));
+        
+        uint256 ones = self[wordIdx] & (~((1 << bitIdx) - 1));
+
+        right = (ones != 0)
+            ? (mapPt + int24(uint24(LSB(ones) - bitIdx))) * pointDelta
+            : (mapPt + int24(uint24(type(uint8).max - bitIdx))) * pointDelta;
     }
 }

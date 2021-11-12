@@ -6,7 +6,7 @@ import './libraries/Liquidity.sol';
 import './libraries/Point.sol';
 import './libraries/PointBitmap.sol';
 import './libraries/LogPowMath.sol';
-import './libraries/FullMath.sol';
+import './libraries/MulDivMath.sol';
 import './libraries/FixedPoint96.sol';
 import './libraries/PointOrder.sol';
 import './libraries/AmountMath.sol';
@@ -204,7 +204,7 @@ contract IzumiswapPool is IIzumiswapPool {
         // to simplify computation
         // minter is required to deposit only
         // token y in point of current price
-        uint256 amount = FullMath.mulDivCeil(
+        uint256 amount = MulDivMath.mulDivCeil(
             liquidDelta,
             sqrtPrice_96,
             FixedPoint96.Q96
@@ -275,7 +275,7 @@ contract IzumiswapPool is IIzumiswapPool {
 
         // if only pay token y to minter
         // how many token y are needed
-        uint256 amountY = FullMath.mulDivFloor(
+        uint256 amountY = MulDivMath.mulDivFloor(
             liquidDelta,
             sqrtPrice_96,
             FixedPoint96.Q96
@@ -287,7 +287,7 @@ contract IzumiswapPool is IIzumiswapPool {
         } else {
             y = currY;
             // token x need to payed for rest liquidity
-            uint256 liquidY = FullMath.mulDivCeil(
+            uint256 liquidY = MulDivMath.mulDivCeil(
                 y,
                 FixedPoint96.Q96,
                 sqrtPrice_96
@@ -298,7 +298,7 @@ contract IzumiswapPool is IIzumiswapPool {
                 x = 0;
             } else {
                 uint128 liquidX = liquidDelta - uint128(liquidY);
-                x = FullMath.mulDivFloor(
+                x = MulDivMath.mulDivFloor(
                     liquidX,
                     FixedPoint96.Q96,
                     sqrtPrice_96
@@ -349,7 +349,7 @@ contract IzumiswapPool is IIzumiswapPool {
         if (pl <= pc && pr > pc) {
             if (st.allX) {
                 withRet.currY = 0;
-                withRet.currX = FullMath.mulDivFloor(st.liquidity, FixedPoint96.Q96, st.sqrtPrice_96);
+                withRet.currX = MulDivMath.mulDivFloor(st.liquidity, FixedPoint96.Q96, st.sqrtPrice_96);
             } else {
                 withRet.currX = st.currX;
                 withRet.currY = st.currY;
@@ -504,7 +504,7 @@ contract IzumiswapPool is IIzumiswapPool {
                 state.currY = st.currY + yc;
             } else {
                 state.allX = false;
-                state.currX = FullMath.mulDivFloor(st.liquidity, FixedPoint96.Q96, st.sqrtPrice_96);
+                state.currX = MulDivMath.mulDivFloor(st.liquidity, FixedPoint96.Q96, st.sqrtPrice_96);
                 state.currY = yc;
             }
             state.liquidity = st.liquidity + liquidDelta;
@@ -705,11 +705,6 @@ contract IzumiswapPool is IIzumiswapPool {
         }
     }
 
-    
-    function findLeft(int24 searchStart, int24 pd) private view returns (int24 nextPt) {
-        bool inited;
-        ( nextPt,  inited) = pointBitmap.nextInitializedpointWithinOneWord(searchStart, pd, true);
-    }
     function swapX2YDesireY(
         address recipient,
         uint128 desireY,

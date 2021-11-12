@@ -1,7 +1,7 @@
 
 pragma solidity ^0.8.4;
 
-library FullMath {
+library MulDivMath {
 
     // compute res = floor(a * b / c), assuming res < 2^256
     function mulDivFloor(
