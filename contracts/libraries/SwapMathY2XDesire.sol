@@ -26,8 +26,8 @@ library SwapMathY2XDesire {
         if (acquireX > currX) {
             acquireX = uint128(currX);
         }
-        uint256 l = FullMath.mulDivRoundingUp(acquireX, sqrtPrice_96, FixedPoint96.Q96);
-        costY = FullMath.mulDivRoundingUp(l, sqrtPrice_96, FixedPoint96.Q96);
+        uint256 l = FullMath.mulDivCeil(acquireX, sqrtPrice_96, FixedPoint96.Q96);
+        costY = FullMath.mulDivCeil(l, sqrtPrice_96, FixedPoint96.Q96);
     }
     function y2XAtPriceLiquidity(
         uint128 desireX,
@@ -36,14 +36,14 @@ library SwapMathY2XDesire {
         uint256 currY,
         uint128 liquidity
     ) internal view returns (uint256 costY, uint128 acquireX) {
-        uint256 currYLim = FullMath.mulDivRoundingUp(liquidity, sqrtPrice_96, FixedPoint96.Q96);
+        uint256 currYLim = FullMath.mulDivCeil(liquidity, sqrtPrice_96, FixedPoint96.Q96);
         uint256 deltaY = (currYLim >= currY) ? currYLim - currY : 0;
         if (desireX >= currX) {
             acquireX = uint128(currX);
             costY = deltaY;
         } else {
             acquireX = desireX;
-            costY = FullMath.mulDivRoundingUp(acquireX, deltaY, currX);
+            costY = FullMath.mulDivCeil(acquireX, deltaY, currX);
         }
     }
     struct Range {
@@ -75,9 +75,9 @@ library SwapMathY2XDesire {
             return ret;
         }
         // sqrtPriceL / rate
-        uint256 sqrtPriceLM1 = FullMath.mulDivRoundingUp(rg.sqrtPriceL_96, FixedPoint96.Q96, rg.sqrtRate_96);
-        uint256 dcl = FullMath.mulDiv(desireX, rg.sqrtPriceL_96, rg.liquidity);
-        uint256 dclm1 = FullMath.mulDivRoundingUp(desireX, sqrtPriceLM1, rg.liquidity);
+        uint256 sqrtPriceLM1 = FullMath.mulDivCeil(rg.sqrtPriceL_96, FixedPoint96.Q96, rg.sqrtRate_96);
+        uint256 dcl = FullMath.mulDivFloor(desireX, rg.sqrtPriceL_96, rg.liquidity);
+        uint256 dclm1 = FullMath.mulDivCeil(desireX, sqrtPriceLM1, rg.liquidity);
         // dcl, dclm1 <= desireX * sqrtPriceL_96 / liquidity
         //            <= liquidity * 2^24 * Q96 / sqrtPriceL_96 * sqrtPriceL_96 / liquidity
         //            <= 2^120
@@ -106,7 +106,7 @@ library SwapMathY2XDesire {
             ret.completeLiquidity = false;
             return ret;
         }
-        ret.locPt = TickMath.getTickAtSqrtRatio(uint160(sqrtPriceLoc_96));
+        ret.locPt = LogPowMath.getLogSqrtPriceFloor(uint160(sqrtPriceLoc_96));
         if (ret.locPt >= rg.rightPt) {
             // also imposible
             ret.acquireX = maxX;
@@ -122,7 +122,7 @@ library SwapMathY2XDesire {
             ret.completeLiquidity = false;
             return ret;
         }
-        ret.sqrtLoc_96 = TickMath.getSqrtRatioAtTick(ret.locPt);
+        ret.sqrtLoc_96 = LogPowMath.getSqrtPrice(ret.locPt);
         ret.completeLiquidity = false;
         ret.acquireX = AmountMath.getAmountX(
             rg.liquidity,
@@ -157,7 +157,7 @@ library SwapMathY2XDesire {
         if (!st.allX) {
             if (st.currX == 0) {
                 st.currPt += 1;
-                st.sqrtPrice_96 = uint160(FullMath.mulDiv(st.sqrtPrice_96, sqrtRate_96, FixedPoint96.Q96));
+                st.sqrtPrice_96 = uint160(FullMath.mulDivFloor(st.sqrtPrice_96, sqrtRate_96, FixedPoint96.Q96));
             } else {
                 (retState.costY, retState.acquireX) = y2XAtPriceLiquidity(desireX, st.sqrtPrice_96, st.currX, st.currY, st.liquidity);
                 if (retState.acquireX < st.currX) {
@@ -173,13 +173,13 @@ library SwapMathY2XDesire {
                         // currX not remain but desire runout
                         retState.finished = true;
                         retState.finalPt = st.currPt + 1;
-                        retState.sqrtFinalPrice_96 = TickMath.getSqrtRatioAtTick(retState.finalPt);
+                        retState.sqrtFinalPrice_96 = LogPowMath.getSqrtPrice(retState.finalPt);
                         retState.finalAllX = true;
                     } else {
                         // not finished
                         st.currPt += 1;
                         desireX -= uint128(retState.acquireX);
-                        st.sqrtPrice_96 = TickMath.getSqrtRatioAtTick(st.currPt);
+                        st.sqrtPrice_96 = LogPowMath.getSqrtPrice(st.currPt);
                     }
                 }
             }
@@ -188,7 +188,7 @@ library SwapMathY2XDesire {
             return retState;
         }
         if (st.currPt < rightPt) {
-            uint160 sqrtPriceR_96 = TickMath.getSqrtRatioAtTick(rightPt);
+            uint160 sqrtPriceR_96 = LogPowMath.getSqrtPrice(rightPt);
             RangeCompRet memory ret = y2XRangeComplete(
                 Range({
                     liquidity: st.liquidity,
@@ -216,7 +216,7 @@ library SwapMathY2XDesire {
                 retState.finished = true;
                 if (locAcquireX >= locCurrX) {
                     retState.finalPt = ret.locPt + 1;
-                    retState.sqrtFinalPrice_96 = TickMath.getSqrtRatioAtTick(retState.finalPt);
+                    retState.sqrtFinalPrice_96 = LogPowMath.getSqrtPrice(retState.finalPt);
                     retState.finalAllX = true;
                 } else {
                     retState.finalPt = ret.locPt;

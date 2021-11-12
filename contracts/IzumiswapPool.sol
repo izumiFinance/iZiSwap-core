@@ -5,7 +5,7 @@ import './interfaces/IIzumiswapFactory.sol';
 import './libraries/Liquidity.sol';
 import './libraries/Point.sol';
 import './libraries/PointBitmap.sol';
-import './libraries/TickMath.sol';
+import './libraries/LogPowMath.sol';
 import './libraries/FullMath.sol';
 import './libraries/FixedPoint96.sol';
 import './libraries/PointOrder.sol';
@@ -122,14 +122,14 @@ contract IzumiswapPool is IIzumiswapPool {
 
         // current state
         state.currPt = cp;
-        state.sqrtPrice_96 = TickMath.getSqrtRatioAtTick(cp);
+        state.sqrtPrice_96 = LogPowMath.getSqrtPrice(cp);
         state.liquidity = 0;
         state.allX = true;
         state.currX = 0;
         state.currY = 0;
         state.locked = false;
 
-        sqrtRate_96 = TickMath.getSqrtRatioAtTick(1);
+        sqrtRate_96 = LogPowMath.getSqrtPrice(1);
     }
 
     /// @dev Add / Dec liquidity of a minter
@@ -204,7 +204,7 @@ contract IzumiswapPool is IIzumiswapPool {
         // to simplify computation
         // minter is required to deposit only
         // token y in point of current price
-        uint256 amount = FullMath.mulDivRoundingUp(
+        uint256 amount = FullMath.mulDivCeil(
             liquidDelta,
             sqrtPrice_96,
             FixedPoint96.Q96
@@ -224,10 +224,10 @@ contract IzumiswapPool is IIzumiswapPool {
         uint256 amountY = 0;
         int24 pc = st.currPt;
         uint160 sqrtPrice_96 = st.sqrtPrice_96;
-        uint160 sqrtPriceR_96 = TickMath.getSqrtRatioAtTick(pr);
+        uint160 sqrtPriceR_96 = LogPowMath.getSqrtPrice(pr);
         uint160 _sqrtRate_96 = sqrtRate_96;
         if (pl < pc) {
-            uint160 sqrtPriceL_96 = TickMath.getSqrtRatioAtTick(pl);
+            uint160 sqrtPriceL_96 = LogPowMath.getSqrtPrice(pl);
             uint256 yl;
             if (pr < pc) {
                 yl = AmountMath.getAmountY(liquidDelta, sqrtPriceL_96, sqrtPriceR_96, _sqrtRate_96, true);
@@ -275,7 +275,7 @@ contract IzumiswapPool is IIzumiswapPool {
 
         // if only pay token y to minter
         // how many token y are needed
-        uint256 amountY = FullMath.mulDiv(
+        uint256 amountY = FullMath.mulDivFloor(
             liquidDelta,
             sqrtPrice_96,
             FixedPoint96.Q96
@@ -287,7 +287,7 @@ contract IzumiswapPool is IIzumiswapPool {
         } else {
             y = currY;
             // token x need to payed for rest liquidity
-            uint256 liquidY = FullMath.mulDivRoundingUp(
+            uint256 liquidY = FullMath.mulDivCeil(
                 y,
                 FixedPoint96.Q96,
                 sqrtPrice_96
@@ -298,7 +298,7 @@ contract IzumiswapPool is IIzumiswapPool {
                 x = 0;
             } else {
                 uint128 liquidX = liquidDelta - uint128(liquidY);
-                x = FullMath.mulDiv(
+                x = FullMath.mulDivFloor(
                     liquidX,
                     FixedPoint96.Q96,
                     sqrtPrice_96
@@ -321,10 +321,10 @@ contract IzumiswapPool is IIzumiswapPool {
         uint256 amountX = 0;
         int24 pc = st.currPt;
         uint160 sqrtPrice_96 = st.sqrtPrice_96;
-        uint160 sqrtPriceR_96 = TickMath.getSqrtRatioAtTick(pr);
+        uint160 sqrtPriceR_96 = LogPowMath.getSqrtPrice(pr);
         uint160 _sqrtRate_96 = sqrtRate_96;
         if (pl < pc) {
-            uint160 sqrtPriceL_96 = TickMath.getSqrtRatioAtTick(pl);
+            uint160 sqrtPriceL_96 = LogPowMath.getSqrtPrice(pl);
             uint256 yl;
             if (pr < pc) {
                 yl = AmountMath.getAmountY(liquidDelta, sqrtPriceL_96, sqrtPriceR_96, _sqrtRate_96, false);
@@ -349,7 +349,7 @@ contract IzumiswapPool is IIzumiswapPool {
         if (pl <= pc && pr > pc) {
             if (st.allX) {
                 withRet.currY = 0;
-                withRet.currX = FullMath.mulDiv(st.liquidity, FixedPoint96.Q96, st.sqrtPrice_96);
+                withRet.currX = FullMath.mulDivFloor(st.liquidity, FixedPoint96.Q96, st.sqrtPrice_96);
             } else {
                 withRet.currX = st.currX;
                 withRet.currY = st.currY;
@@ -504,7 +504,7 @@ contract IzumiswapPool is IIzumiswapPool {
                 state.currY = st.currY + yc;
             } else {
                 state.allX = false;
-                state.currX = FullMath.mulDiv(st.liquidity, FixedPoint96.Q96, st.sqrtPrice_96);
+                state.currX = FullMath.mulDivFloor(st.liquidity, FixedPoint96.Q96, st.sqrtPrice_96);
                 state.currY = yc;
             }
             state.liquidity = st.liquidity + liquidDelta;

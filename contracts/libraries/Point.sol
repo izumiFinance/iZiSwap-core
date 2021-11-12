@@ -1,13 +1,7 @@
-pragma solidity >=0.7.3;
-
-import "./LowGasSafeMath.sol";
-import "./SafeCast.sol";
+pragma solidity ^0.8.4;
 
 library Point {
-    // TODO may need modify
-    using LowGasSafeMath for int256;
-    // TODO may need modify
-    using SafeCast for int256;
+    
     struct Data {
         uint128 liquidAcc;
         // value to add when pass this slot from left to right
@@ -23,7 +17,16 @@ library Point {
         // whether the point is endpoint of a liquid segment
         bool isEndpt;
     }
+    function castInt128(int256 v) internal pure returns (int128 r) {
+        require((r = int128(v)) == v);
+    }
 
+    function addDelta(int256 w, int128 delta) internal pure returns (int256 r) {
+        require((r = w + delta) >= w == (delta >= 0));
+    }
+    function subDelta(int256 w, int128 delta) internal pure returns (int256 r) {
+        require((r = w - delta) <= w == (delta >= 0));
+    }
     function _getFeeScaleL(
         int24 endpt,
         int24 currpt,
@@ -77,7 +80,6 @@ library Point {
     }
     
     /// @dev update and endpoint of a liquidity segment,
-    ///      TODO: may need modify
     /// @param axies collections of points
     /// @param endpt endpoint of a segment
     /// @param isLeft left or right endpoint
@@ -111,11 +113,11 @@ library Point {
         }
         require(liquidAccAfter <= liquidLimPt, "L LIM PT");
         data.liquidAcc = liquidAccAfter;
-        // TODO need modify
+
         if (isLeft) {
-            data.liquidDelta = int256(data.liquidDelta).add(delta).toInt128();
+            data.liquidDelta = castInt128(addDelta(int256(data.liquidDelta), delta));
         } else {
-            data.liquidDelta = int256(data.liquidDelta).sub(delta).toInt128();
+            data.liquidDelta = castInt128(subDelta(int256(data.liquidDelta), delta));
         }
         bool new_or_erase = false;
         if (liquidAccBefore == 0) {
@@ -126,7 +128,6 @@ library Point {
             // for either left point or right point of the liquide segment
             // the feeScaleBeyond can be initialized to arbitrary value
             // we here set the initial val to total feeScale to delay overflow
-            // TODO may need modify
             if (endpt >= currpt) {
                 data.feeScaleXBeyond_128 = feeScaleX_128;
                 data.feeScaleYBeyond_128 = feeScaleY_128;

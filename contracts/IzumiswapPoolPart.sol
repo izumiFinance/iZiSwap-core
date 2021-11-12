@@ -4,7 +4,7 @@ import './interfaces/IIzumiswapPool.sol';
 import './libraries/Liquidity.sol';
 import './libraries/Point.sol';
 import './libraries/PointBitmap.sol';
-import './libraries/TickMath.sol';
+import './libraries/LogPowMath.sol';
 import './libraries/FullMath.sol';
 import './libraries/FixedPoint96.sol';
 import './libraries/PointOrder.sol';
@@ -129,7 +129,7 @@ contract IzumiswapPoolPart {
 
         UserEarn.Data storage ue = userEarnY.get(msg.sender, pt);
         PointOrder.Data storage pointOrder = limitOrderData[pt];
-        uint160 sqrtPrice_96 = TickMath.getSqrtRatioAtTick(pt);
+        uint160 sqrtPrice_96 = LogPowMath.getSqrtPrice(pt);
         (actualDeltaX, pointOrder.earnY) = ue.dec(deltaX, pointOrder.accEarnY, sqrtPrice_96, pointOrder.earnY, true);
         pointOrder.sellingX -= actualDeltaX;
         
@@ -153,7 +153,7 @@ contract IzumiswapPoolPart {
 
         UserEarn.Data storage ue = userEarnX.get(msg.sender, pt);
         PointOrder.Data storage pointOrder = limitOrderData[pt];
-        uint160 sqrtPrice_96 = TickMath.getSqrtRatioAtTick(pt);
+        uint160 sqrtPrice_96 = LogPowMath.getSqrtPrice(pt);
         (actualDeltaY, pointOrder.earnX) = ue.dec(deltaY, pointOrder.accEarnX, sqrtPrice_96, pointOrder.earnX, false);
 
         pointOrder.sellingY -= actualDeltaY;
@@ -186,7 +186,7 @@ contract IzumiswapPoolPart {
 
         orderX = amountX;
         acquireY = 0;
-        uint160 sqrtPrice_96 = TickMath.getSqrtRatioAtTick(pt);
+        uint160 sqrtPrice_96 = LogPowMath.getSqrtPrice(pt);
         
         uint256 currY = pointOrder.sellingY;
         uint256 currX = pointOrder.sellingX;
@@ -252,7 +252,7 @@ contract IzumiswapPoolPart {
 
         orderY = amountY;
         acquireX = 0;
-        uint160 sqrtPrice_96 = TickMath.getSqrtRatioAtTick(pt);
+        uint160 sqrtPrice_96 = LogPowMath.getSqrtPrice(pt);
         uint256 currY = pointOrder.sellingY;
         uint256 currX = pointOrder.sellingX;
         if (currX > 0) {
@@ -405,7 +405,7 @@ contract IzumiswapPoolPart {
 
                 // no liquidity in the range [st.currPoint, nextPt)
                 st.currPt = nextPt;
-                st.sqrtPrice_96 = TickMath.getSqrtRatioAtTick(st.currPt);
+                st.sqrtPrice_96 = LogPowMath.getSqrtPrice(st.currPt);
                 st.allX = true;
                 if (nextVal & 1 > 0) {
                     Point.Data storage endPt = points[nextPt];
@@ -439,7 +439,7 @@ contract IzumiswapPoolPart {
                     amountY = amountY + retState.costY + feeAmount;
                     amount -= (retState.costY + feeAmount);
                     
-                    cache.currFeeScaleY_128 = cache.currFeeScaleY_128 + FullMath.mulDiv(feeAmount, FixedPoint128.Q128, st.liquidity);
+                    cache.currFeeScaleY_128 = cache.currFeeScaleY_128 + FullMath.mulDivFloor(feeAmount, FixedPoint128.Q128, st.liquidity);
 
                     st.currPt = retState.finalPt;
                     st.sqrtPrice_96 = retState.sqrtFinalPrice_96;
@@ -566,7 +566,7 @@ contract IzumiswapPoolPart {
                                 feeAmount += 1;
                             }
                         }
-                        cache.currFeeScaleX_128 = cache.currFeeScaleX_128 + FullMath.mulDiv(feeAmount, FixedPoint128.Q128, st.liquidity);
+                        cache.currFeeScaleX_128 = cache.currFeeScaleX_128 + FullMath.mulDivFloor(feeAmount, FixedPoint128.Q128, st.liquidity);
                         amountX = amountX + retState.costX + feeAmount;
                         amountY += retState.acquireY;
                         amount -= (retState.costX + feeAmount);
@@ -581,10 +581,10 @@ contract IzumiswapPoolPart {
                         ptdata.passEndpt(cache.currFeeScaleX_128, cache.currFeeScaleY_128);
                         st.liquidity = LiquidityMath.addDelta(st.liquidity, - ptdata.liquidDelta);
                         st.currPt = st.currPt - 1;
-                        st.sqrtPrice_96 = TickMath.getSqrtRatioAtTick(st.currPt);
+                        st.sqrtPrice_96 = LogPowMath.getSqrtPrice(st.currPt);
                         st.allX = false;
                         st.currX = 0;
-                        st.currY = FullMath.mulDiv(st.liquidity, st.sqrtPrice_96, FixedPoint96.Q96);
+                        st.currY = FullMath.mulDivFloor(st.liquidity, st.sqrtPrice_96, FixedPoint96.Q96);
                     }
                 } else {
                     cache.finished = true;
@@ -604,7 +604,7 @@ contract IzumiswapPoolPart {
 
                 // no liquidity in the range [nextPt, st.currPt]
                 st.currPt = nextPt;
-                st.sqrtPrice_96 = TickMath.getSqrtRatioAtTick(st.currPt);
+                st.sqrtPrice_96 = LogPowMath.getSqrtPrice(st.currPt);
                 st.allX = true;
                 cache.currVal = nextVal;
             } else {
@@ -629,7 +629,7 @@ contract IzumiswapPoolPart {
                     amountX = amountX + retState.costX + feeAmount;
                     amount -= (retState.costX + feeAmount);
                     
-                    cache.currFeeScaleX_128 = cache.currFeeScaleX_128 + FullMath.mulDiv(feeAmount, FixedPoint128.Q128, st.liquidity);
+                    cache.currFeeScaleX_128 = cache.currFeeScaleX_128 + FullMath.mulDivFloor(feeAmount, FixedPoint128.Q128, st.liquidity);
                     st.currPt = retState.finalPt;
                     st.sqrtPrice_96 = retState.sqrtFinalPrice_96;
                     st.allX = retState.finalAllX;

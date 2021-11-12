@@ -25,13 +25,13 @@ library SwapMathY2X {
         uint160 sqrtPrice_96,
         uint256 currX
     ) internal view returns (uint128 costY, uint256 acquireX) {
-        uint256 l = FullMath.mulDiv(amountY, FixedPoint96.Q96, sqrtPrice_96);
-        acquireX = FullMath.mulDiv(l, FixedPoint96.Q96, sqrtPrice_96);
+        uint256 l = FullMath.mulDivFloor(amountY, FixedPoint96.Q96, sqrtPrice_96);
+        acquireX = FullMath.mulDivFloor(l, FixedPoint96.Q96, sqrtPrice_96);
         if (acquireX > currX) {
             acquireX = currX;
         }
-        l = FullMath.mulDivRoundingUp(acquireX, sqrtPrice_96, FixedPoint96.Q96);
-        uint256 cost = FullMath.mulDivRoundingUp(l, sqrtPrice_96, FixedPoint96.Q96);
+        l = FullMath.mulDivCeil(acquireX, sqrtPrice_96, FixedPoint96.Q96);
+        uint256 cost = FullMath.mulDivCeil(l, sqrtPrice_96, FixedPoint96.Q96);
         costY = uint128(cost);
         // it is believed that costY <= amountY
         require(costY == cost);
@@ -44,13 +44,13 @@ library SwapMathY2X {
         uint256 currY,
         uint128 liquidity
     ) internal view returns (uint128 costY, uint256 acquireX) {
-        uint256 currYLim = FullMath.mulDivRoundingUp(liquidity, sqrtPrice_96, FixedPoint96.Q96);
+        uint256 currYLim = FullMath.mulDivCeil(liquidity, sqrtPrice_96, FixedPoint96.Q96);
         uint256 deltaY = (currYLim > currY) ? currYLim - currY : 0;
         if (amountY >= deltaY) {
             costY = uint128(deltaY);
             acquireX = currX;
         } else {
-            acquireX = FullMath.mulDiv(amountY, currX, deltaY);
+            acquireX = FullMath.mulDivFloor(amountY, currX, deltaY);
             costY = (acquireX > 0) ? amountY : 0;
         }
     }
@@ -90,7 +90,7 @@ library SwapMathY2X {
             ret.completeLiquidity = true;
         } else {
             // we should locate highest price
-            uint256 sqrtLoc256_96 = FullMath.mulDiv(
+            uint256 sqrtLoc256_96 = FullMath.mulDivFloor(
                 amountY,
                 rg.sqrtRate_96 - FixedPoint96.Q96,
                 rg.liquidity
@@ -102,13 +102,13 @@ library SwapMathY2X {
             //     completeLiquidity = true;
             //     return;
             // }
-            (int24 locPtLo, int24 locPtHi) = TickMath.getTickAtSqrtRatioLH(uint160(sqrtLoc256_96));
+            (int24 locPtLo, int24 locPtHi) = LogPowMath.getLogSqrtPriceFU(uint160(sqrtLoc256_96));
             // to save one sqrt(1.0001^pt)
             bool has_sqrtLoc_96 = false;
             if (locPtLo == locPtHi) {
                 ret.locPt = locPtLo;
             } else {
-                ret.sqrtLoc_96 = TickMath.getSqrtRatioAtTick(locPtHi);
+                ret.sqrtLoc_96 = LogPowMath.getSqrtPrice(locPtHi);
                 if (ret.sqrtLoc_96 > sqrtLoc256_96) {
                     ret.locPt = locPtLo;
                 } else {
@@ -128,7 +128,7 @@ library SwapMathY2X {
                 ret.completeLiquidity = false;
             } else {
                 if (!has_sqrtLoc_96) {
-                    ret.sqrtLoc_96 = TickMath.getSqrtRatioAtTick(ret.locPt);
+                    ret.sqrtLoc_96 = LogPowMath.getSqrtPrice(ret.locPt);
                 }
                 ret.costY = uint128(AmountMath.getAmountY(
                     rg.liquidity,
@@ -185,7 +185,7 @@ library SwapMathY2X {
             if (st.currX == 0) {
                 // no x tokens
                 st.currPt += 1;
-                st.sqrtPrice_96 = TickMath.getSqrtRatioAtTick(st.currPt);
+                st.sqrtPrice_96 = LogPowMath.getSqrtPrice(st.currPt);
             } else {
                 (retState.costY, retState.acquireX) = y2XAtPriceLiquidity(
                     amountY, 
@@ -210,14 +210,14 @@ library SwapMathY2X {
                         // y run out
                         retState.finished = true;
                         retState.finalPt = st.currPt + 1;
-                        retState.sqrtFinalPrice_96 = TickMath.getSqrtRatioAtTick(retState.finalPt);
+                        retState.sqrtFinalPrice_96 = LogPowMath.getSqrtPrice(retState.finalPt);
                         retState.finalAllX = true;
                     } else {
                         // y not run out
                         // not finsihed
                         st.currPt += 1;
                         amountY -= retState.costY;
-                        st.sqrtPrice_96 = TickMath.getSqrtRatioAtTick(st.currPt);
+                        st.sqrtPrice_96 = LogPowMath.getSqrtPrice(st.currPt);
                     }
                 }
             }
@@ -229,7 +229,7 @@ library SwapMathY2X {
             return retState;
         }
         if (st.currPt < rightPt) {
-            uint160 sqrtPriceR_96 = TickMath.getSqrtRatioAtTick(rightPt);
+            uint160 sqrtPriceR_96 = LogPowMath.getSqrtPrice(rightPt);
             // (uint128 liquidCostY, uint256 liquidAcquireX, bool liquidComplete, int24 locPt, uint160 sqrtLoc_96)
             RangeCompRet memory ret = y2XRangeComplete(
                 Range({
@@ -253,7 +253,7 @@ library SwapMathY2X {
                 retState.finalAllX = true;
             } else {
                 // trade at locPt
-                uint256 locCurrX = FullMath.mulDiv(st.liquidity, FixedPoint96.Q96, ret.sqrtLoc_96);
+                uint256 locCurrX = FullMath.mulDivFloor(st.liquidity, FixedPoint96.Q96, ret.sqrtLoc_96);
                 
                 (uint128 locCostY, uint256 locAcquireX) = y2XAtPriceLiquidity(
                     amountY,
@@ -268,7 +268,7 @@ library SwapMathY2X {
                 retState.finished = true;
                 if (locAcquireX >= locCurrX) {
                     retState.finalPt = ret.locPt + 1;
-                    retState.sqrtFinalPrice_96 = TickMath.getSqrtRatioAtTick(retState.finalPt);
+                    retState.sqrtFinalPrice_96 = LogPowMath.getSqrtPrice(retState.finalPt);
                     retState.finalAllX = true;
                 } else {
                     retState.finalPt = ret.locPt;

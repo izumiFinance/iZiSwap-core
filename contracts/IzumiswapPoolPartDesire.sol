@@ -4,7 +4,7 @@ import './interfaces/IIzumiswapPool.sol';
 import './libraries/Liquidity.sol';
 import './libraries/Point.sol';
 import './libraries/PointBitmap.sol';
-import './libraries/TickMath.sol';
+import './libraries/LogPowMath.sol';
 import './libraries/FullMath.sol';
 import './libraries/FixedPoint96.sol';
 import './libraries/PointOrder.sol';
@@ -168,7 +168,7 @@ contract IzumiswapPoolPartDesire {
             if (st.liquidity == 0) {
                 // no liquidity in the range [st.currPoint, nextPt)
                 st.currPt = nextPt;
-                st.sqrtPrice_96 = TickMath.getSqrtRatioAtTick(st.currPt);
+                st.sqrtPrice_96 = LogPowMath.getSqrtPrice(st.currPt);
                 st.allX = true;
                 if (nextVal & 1 > 0) {
                     Point.Data storage endPt = points[nextPt];
@@ -186,13 +186,13 @@ contract IzumiswapPoolPartDesire {
                         st, nextPt, cache._sqrtRate_96, desireX
                     );
                     cache.finished = retState.finished;
-                    uint256 feeAmount = FullMath.mulDivRoundingUp(retState.costY, fee, 1e6);
+                    uint256 feeAmount = FullMath.mulDivCeil(retState.costY, fee, 1e6);
 
                     amountX += retState.acquireX;
                     amountY += (retState.costY + feeAmount);
                     desireX = (desireX <= retState.acquireX) ? 0 : desireX - uint128(retState.acquireX);
                     
-                    cache.currFeeScaleY_128 = cache.currFeeScaleY_128 + FullMath.mulDiv(feeAmount, FixedPoint128.Q128, st.liquidity);
+                    cache.currFeeScaleY_128 = cache.currFeeScaleY_128 + FullMath.mulDivFloor(feeAmount, FixedPoint128.Q128, st.liquidity);
 
                     st.currPt = retState.finalPt;
                     st.sqrtPrice_96 = retState.sqrtFinalPrice_96;
@@ -305,9 +305,9 @@ contract IzumiswapPoolPartDesire {
                     );
                     cache.finished = retState.finished;
                     
-                    uint256 feeAmount = FullMath.mulDivRoundingUp(retState.costX, fee, 1e6);
+                    uint256 feeAmount = FullMath.mulDivCeil(retState.costX, fee, 1e6);
 
-                    cache.currFeeScaleX_128 = cache.currFeeScaleX_128 + FullMath.mulDiv(feeAmount, FixedPoint128.Q128, st.liquidity);
+                    cache.currFeeScaleX_128 = cache.currFeeScaleX_128 + FullMath.mulDivFloor(feeAmount, FixedPoint128.Q128, st.liquidity);
                     amountX += (retState.costX + feeAmount);
                     amountY += retState.acquireY;
                     desireY = (desireY <= retState.acquireY) ? 0 : desireY - uint128(retState.acquireY);
@@ -322,10 +322,10 @@ contract IzumiswapPoolPartDesire {
                     ptdata.passEndpt(cache.currFeeScaleX_128, cache.currFeeScaleY_128);
                     st.liquidity = LiquidityMath.addDelta(st.liquidity, - ptdata.liquidDelta);
                     st.currPt = st.currPt - 1;
-                    st.sqrtPrice_96 = TickMath.getSqrtRatioAtTick(st.currPt);
+                    st.sqrtPrice_96 = LogPowMath.getSqrtPrice(st.currPt);
                     st.allX = false;
                     st.currX = 0;
-                    st.currY = FullMath.mulDiv(st.liquidity, st.sqrtPrice_96, FixedPoint96.Q96);
+                    st.currY = FullMath.mulDivFloor(st.liquidity, st.sqrtPrice_96, FixedPoint96.Q96);
                 }
             }
             if (cache.finished || st.currPt < lowPt) {
@@ -341,7 +341,7 @@ contract IzumiswapPoolPartDesire {
 
                 // no liquidity in the range [nextPt, st.currPt]
                 st.currPt = nextPt;
-                st.sqrtPrice_96 = TickMath.getSqrtRatioAtTick(st.currPt);
+                st.sqrtPrice_96 = LogPowMath.getSqrtPrice(st.currPt);
                 st.allX = true;
                 cache.currVal = nextVal;
             } else {
@@ -352,13 +352,13 @@ contract IzumiswapPoolPartDesire {
                     );
                     cache.finished = retState.finished;
                     
-                    uint256 feeAmount = FullMath.mulDivRoundingUp(retState.costX, fee, 1e6);
+                    uint256 feeAmount = FullMath.mulDivCeil(retState.costX, fee, 1e6);
 
                     amountY += retState.acquireY;
                     amountX += (retState.costX + feeAmount);
                     desireY = (desireY <= retState.acquireY) ? 0 : desireY - uint128(retState.acquireY);
                     
-                    cache.currFeeScaleX_128 = cache.currFeeScaleX_128 + FullMath.mulDiv(feeAmount, FixedPoint128.Q128, st.liquidity);
+                    cache.currFeeScaleX_128 = cache.currFeeScaleX_128 + FullMath.mulDivFloor(feeAmount, FixedPoint128.Q128, st.liquidity);
 
                     st.currPt = retState.finalPt;
                     st.sqrtPrice_96 = retState.sqrtFinalPrice_96;

@@ -1,126 +1,84 @@
-/// TODO: must modify!
 
-// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.4;
 
-/// @title Contains 512-bit math functions
-/// @notice Facilitates multiplication and division that can have overflow of an intermediate value without any loss of precision
-/// @dev Handles "phantom overflow" i.e., allows multiplication and division where an intermediate value overflows 256 bits
 library FullMath {
-    /// @notice Calculates floor(a×b÷denominator) with full precision. Throws if result overflows a uint256 or denominator == 0
-    /// @param a The multiplicand
-    /// @param b The multiplier
-    /// @param denominator The divisor
-    /// @return result The 256-bit result
-    /// @dev Credit to Remco Bloemen under MIT license https://xn--2-umb.com/21/muldiv
-    function mulDiv(
+
+    // compute res = floor(a * b / c), assuming res < 2^256
+    function mulDivFloor(
         uint256 a,
         uint256 b,
-        uint256 denominator
-    ) internal pure returns (uint256 result) {
-        // 512-bit multiply [prod1 prod0] = a * b
-        // Compute the product mod 2**256 and mod 2**256 - 1
-        // then use the Chinese Remainder Theorem to reconstruct
-        // the 512 bit result. The result is stored in two 256
-        // variables such that product = prod1 * 2**256 + prod0
-        uint256 prod0; // Least significant 256 bits of the product
-        uint256 prod1; // Most significant 256 bits of the product
+        uint256 c
+    ) internal pure returns (uint256 res) {
+        
+        // let prodMod2_256 = a * b % 2^256
+        uint256 prodMod2_256; 
+        // let prodDiv2_256 = a * b / 2^256
+        uint256 prodDiv2_256;
         assembly {
-            let mm := mulmod(a, b, not(0))
-            prod0 := mul(a, b)
-            prod1 := sub(sub(mm, prod0), lt(mm, prod0))
+            let prodModM1 := mulmod(a, b, not(0))
+            prodMod2_256 := mul(a, b)
+            prodDiv2_256 := sub(sub(prodModM1, prodMod2_256), lt(prodModM1, prodMod2_256))
         }
 
-        // Handle non-overflow cases, 256 by 256 division
-        if (prod1 == 0) {
-            require(denominator > 0);
+        if (prodDiv2_256 == 0) {
+            require(c > 0);
             assembly {
-                result := div(prod0, denominator)
+                res := div(prodMod2_256, c)
             }
-            return result;
+            return res;
         }
 
-        // Make sure the result is less than 2**256.
-        // Also prevents denominator == 0
-        require(denominator > prod1);
+        // we should ensure that a * b /c < 2^256 before calling
+        require(c > prodDiv2_256);
 
-        ///////////////////////////////////////////////
-        // 512 by 256 division.
-        ///////////////////////////////////////////////
+        // cInv * c = 1 (mod 2^4)
+        uint256 cInv = (3 * c) ^ 2;
+        cInv *= 2 - c * cInv; // shift to 2^8
+        cInv *= 2 - c * cInv; // shift to 2^16
+        cInv *= 2 - c * cInv; // shift to 2^32
+        cInv *= 2 - c * cInv; // shift to 2^64
+        cInv *= 2 - c * cInv; // shift to 2^128
+        cInv *= 2 - c * cInv; // shift to 2^256
+        // c * cInv = 1 (mod 2^256)
 
-        // Make division exact by subtracting the remainder from [prod1 prod0]
-        // Compute remainder using mulmod
-        uint256 remainder;
+        uint256 resMod;
         assembly {
-            remainder := mulmod(a, b, denominator)
+            resMod := mulmod(a, b, c)
         }
-        // Subtract 256 bit number from 512 bit number
+        // a * b - resMod
         assembly {
-            prod1 := sub(prod1, gt(remainder, prod0))
-            prod0 := sub(prod0, remainder)
+            prodDiv2_256 := sub(prodDiv2_256, gt(resMod, prodMod2_256))
+            prodMod2_256 := sub(prodMod2_256, resMod)
         }
 
-        // Factor powers of two out of denominator
-        // Compute largest power of two divisor of denominator.
-        // Always >= 1.
-        uint256 twos = ((~denominator) + 1) & denominator;
-        // Divide denominator by power of two
+        // a * b / lowbit
+        uint256 lowbit = ((~c) + 1) & c;
         assembly {
-            denominator := div(denominator, twos)
+            c := div(c, lowbit)
         }
 
-        // Divide [prod1 prod0] by the factors of two
+        // a * b / lowbit
         assembly {
-            prod0 := div(prod0, twos)
+            prodMod2_256 := div(prodMod2_256, lowbit)
         }
-        // Shift in bits from prod1 into prod0. For this we need
-        // to flip `twos` such that it is 2**256 / twos.
-        // If twos is zero, then it becomes one
         assembly {
-            twos := add(div(sub(0, twos), twos), 1)
+            lowbit := add(div(sub(0, lowbit), lowbit), 1)
         }
-        prod0 |= prod1 * twos;
+        prodMod2_256 |= prodDiv2_256 * lowbit;
 
-        // Invert denominator mod 2**256
-        // Now that denominator is an odd number, it has an inverse
-        // modulo 2**256 such that denominator * inv = 1 mod 2**256.
-        // Compute the inverse by starting with a seed that is correct
-        // correct for four bits. That is, denominator * inv = 1 mod 2**4
-        uint256 inv = (3 * denominator) ^ 2;
-        // Now use Newton-Raphson iteration to improve the precision.
-        // Thanks to Hensel's lifting lemma, this also works in modular
-        // arithmetic, doubling the correct bits in each step.
-        inv *= 2 - denominator * inv; // inverse mod 2**8
-        inv *= 2 - denominator * inv; // inverse mod 2**16
-        inv *= 2 - denominator * inv; // inverse mod 2**32
-        inv *= 2 - denominator * inv; // inverse mod 2**64
-        inv *= 2 - denominator * inv; // inverse mod 2**128
-        inv *= 2 - denominator * inv; // inverse mod 2**256
-
-        // Because the division is now exact we can divide by multiplying
-        // with the modular inverse of denominator. This will give us the
-        // correct result modulo 2**256. Since the precoditions guarantee
-        // that the outcome is less than 2**256, this is the final result.
-        // We don't need to compute the high bits of the result and prod1
-        // is no longer required.
-        result = prod0 * inv;
-        return result;
+        res = prodMod2_256 * cInv;
     }
 
-    /// @notice Calculates ceil(a×b÷denominator) with full precision. Throws if result overflows a uint256 or denominator == 0
-    /// @param a The multiplicand
-    /// @param b The multiplier
-    /// @param denominator The divisor
-    /// @return result The 256-bit result
-    function mulDivRoundingUp(
+    // compute res = ceil(a * b / c), assuming res < 2^256
+    function mulDivCeil(
         uint256 a,
         uint256 b,
-        uint256 denominator
-    ) internal pure returns (uint256 result) {
-        result = mulDiv(a, b, denominator);
-        if (mulmod(a, b, denominator) > 0) {
-            require(result < type(uint256).max);
-            result++;
+        uint256 c
+    ) internal pure returns (uint256 res) {
+        res = mulDivFloor(a, b, c);
+        if (mulmod(a, b, c) > 0) {
+            require(res < type(uint256).max);
+            res++;
         }
     }
 }

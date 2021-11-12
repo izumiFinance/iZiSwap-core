@@ -14,7 +14,6 @@ library Liquidity {
         uint256 remainFeeY;
     }
     
-    // TODO: may need modify
     function get(
         mapping(bytes32 => Data) storage self,
         address minter,
@@ -24,7 +23,6 @@ library Liquidity {
         data = self[keccak256(abi.encodePacked(minter, tl, tr))];
     }
 
-    // TODO: may need modity
     function update(
         Liquidity.Data storage self,
         int128 delta,
@@ -40,10 +38,10 @@ library Liquidity {
             liquidity = LiquidityMath.addDelta(data.liquidity, delta);
         }
         uint128 feeX = uint128(
-            FullMath.mulDiv(feeScaleX_128 - data.lastFeeScaleX_128, data.liquidity, FixedPoint128.Q128)
+            FullMath.mulDivFloor(feeScaleX_128 - data.lastFeeScaleX_128, data.liquidity, FixedPoint128.Q128)
         );
         uint128 feeY = uint128(
-            FullMath.mulDiv(feeScaleY_128 - data.lastFeeScaleY_128, data.liquidity, FixedPoint128.Q128)
+            FullMath.mulDivFloor(feeScaleY_128 - data.lastFeeScaleY_128, data.liquidity, FixedPoint128.Q128)
         );
         data.liquidity = liquidity;
 

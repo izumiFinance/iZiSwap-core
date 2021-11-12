@@ -2,7 +2,7 @@ pragma solidity >=0.7.3;
 
 import './FullMath.sol';
 import './FixedPoint96.sol';
-import './TickMath.sol';
+import './LogPowMath.sol';
 
 library AmountMath {
 
@@ -17,9 +17,9 @@ library AmountMath {
         uint160 numerator = sqrtPriceR_96 - sqrtPriceL_96;
         uint160 denominator = sqrtRate_96 - uint160(FixedPoint96.Q96);
         if (!upper) {
-            amount = FullMath.mulDiv(liquidity, numerator, denominator);
+            amount = FullMath.mulDivFloor(liquidity, numerator, denominator);
         } else {
-            amount = FullMath.mulDivRoundingUp(liquidity, numerator, denominator);
+            amount = FullMath.mulDivCeil(liquidity, numerator, denominator);
         }
     }
 
@@ -32,15 +32,15 @@ library AmountMath {
         bool upper
     ) internal pure returns (uint256 amount) {
         // rightPt - (leftPt - 1), pc = leftPt - 1
-        uint160 sqrtPricePrPc_96 = TickMath.getSqrtRatioAtTick(rightPt - leftPt + 1);
-        uint160 sqrtPricePrPd_96 = TickMath.getSqrtRatioAtTick(rightPt + 1);
+        uint160 sqrtPricePrPc_96 = LogPowMath.getSqrtPrice(rightPt - leftPt + 1);
+        uint160 sqrtPricePrPd_96 = LogPowMath.getSqrtPrice(rightPt + 1);
 
         uint160 numerator = sqrtPricePrPc_96 - sqrtRate_96;
         uint160 denominator = sqrtPricePrPd_96 - sqrtPriceR_96;
         if (!upper) {
-            amount = FullMath.mulDiv(liquidity, numerator, denominator);
+            amount = FullMath.mulDivFloor(liquidity, numerator, denominator);
         } else {
-            amount = FullMath.mulDivRoundingUp(liquidity, numerator, denominator);
+            amount = FullMath.mulDivCeil(liquidity, numerator, denominator);
         }
     }
 
