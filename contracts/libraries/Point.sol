@@ -36,6 +36,8 @@ library Point {
         if (endpt <= currpt) {
             feeScaleL_128 = feeScaleBeyond_128;
         } else {
+            // feeScaleBeyond will never exceed feeScale
+            // so, simply minus in 0.8 is safe
             feeScaleL_128 = feeScale_128 - feeScaleBeyond_128;
         }
     }
@@ -75,8 +77,10 @@ library Point {
         uint256 feeScaleGEX_128 = _getFeeScaleGE(pr, currpt, feeScaleX_128, prData.feeScaleXBeyond_128);
         uint256 feeScaleLY_128 = _getFeeScaleL(pl, currpt, feeScaleY_128, plData.feeScaleYBeyond_128);
         uint256 feeScaleGEY_128 = _getFeeScaleGE(pr, currpt, feeScaleY_128, prData.feeScaleYBeyond_128);
-        subFeeScaleX_128 = feeScaleX_128 - feeScaleLX_128 - feeScaleGEX_128;
-        subFeeScaleY_128 = feeScaleY_128 - feeScaleLY_128 - feeScaleGEY_128;
+        assembly{
+            subFeeScaleX_128 := sub(sub(feeScaleX_128, feeScaleLX_128), feeScaleGEX_128)
+            subFeeScaleY_128 := sub(sub(feeScaleY_128, feeScaleLY_128), feeScaleGEY_128)
+        }
     }
     
     /// @dev update and endpoint of a liquidity segment,
@@ -106,10 +110,10 @@ library Point {
         uint128 liquidAccAfter;
         if (delta > 0) {
             liquidAccAfter = liquidAccBefore + uint128(delta);
-            require(liquidAccAfter > liquidAccBefore, "LA OFL");
+            require(liquidAccAfter > liquidAccBefore, "LAAO");
         } else {
             liquidAccAfter = liquidAccBefore - uint128(-delta);
-            require(liquidAccAfter < liquidAccBefore, "LA OFL");
+            require(liquidAccAfter < liquidAccBefore, "LASO");
         }
         require(liquidAccAfter <= liquidLimPt, "L LIM PT");
         data.liquidAcc = liquidAccAfter;

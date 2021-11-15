@@ -1,8 +1,7 @@
-pragma solidity >=0.7.3;
+pragma solidity ^0.8.4;
 
 import './MulDivMath.sol';
-import './FixedPoint128.sol';
-import 'hardhat/console.sol';
+import './TwoPower.sol';
 
 library Liquidity {
     struct Data {
@@ -17,9 +16,9 @@ library Liquidity {
     // liquidDelta of any one point will not be int128.min
     function liquidityAddDelta(uint128 l, int128 delta) internal pure returns (uint128 nl) {
         if (delta < 0) {
-            require((nl = l - uint128(-delta)) < l, 'LSUB');
+            nl = l - uint128(-delta);
         } else {
-            require((nl = l + uint128(delta)) >= l, 'LADD');
+            nl = l + uint128(delta);
         }
     }
     function get(
@@ -45,12 +44,16 @@ library Liquidity {
         } else {
             liquidity = liquidityAddDelta(data.liquidity, delta);
         }
-        uint128 feeX = uint128(
-            MulDivMath.mulDivFloor(feeScaleX_128 - data.lastFeeScaleX_128, data.liquidity, FixedPoint128.Q128)
-        );
-        uint128 feeY = uint128(
-            MulDivMath.mulDivFloor(feeScaleY_128 - data.lastFeeScaleY_128, data.liquidity, FixedPoint128.Q128)
-        );
+        uint256 deltaScaleX = data.lastFeeScaleX_128;
+        uint256 deltaScaleY = data.lastFeeScaleY_128;
+        // we use assembly to prevent revert if overflow
+        // data.lastFeeScaleX(Y)_128 may be "negative" (>=2^255)
+        assembly {
+            deltaScaleX := sub(feeScaleX_128, deltaScaleX)
+            deltaScaleY := sub(feeScaleY_128, deltaScaleY)
+        }
+        uint256 feeX = MulDivMath.mulDivFloor(deltaScaleX, data.liquidity, TwoPower.Pow128);
+        uint256 feeY = MulDivMath.mulDivFloor(deltaScaleY, data.liquidity, TwoPower.Pow128);
         data.liquidity = liquidity;
 
         // update the position

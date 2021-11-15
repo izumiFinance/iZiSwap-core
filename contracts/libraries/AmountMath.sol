@@ -1,7 +1,7 @@
 pragma solidity >=0.7.3;
 
 import './MulDivMath.sol';
-import './FixedPoint96.sol';
+import './TwoPower.sol';
 import './LogPowMath.sol';
 
 library AmountMath {
@@ -15,7 +15,7 @@ library AmountMath {
         bool upper
     ) internal pure returns (uint256 amount) {
         uint160 numerator = sqrtPriceR_96 - sqrtPriceL_96;
-        uint160 denominator = sqrtRate_96 - uint160(FixedPoint96.Q96);
+        uint160 denominator = sqrtRate_96 - uint160(TwoPower.Pow96);
         if (!upper) {
             amount = MulDivMath.mulDivFloor(liquidity, numerator, denominator);
         } else {

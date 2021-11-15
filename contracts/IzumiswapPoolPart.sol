@@ -6,7 +6,7 @@ import './libraries/Point.sol';
 import './libraries/PointBitmap.sol';
 import './libraries/LogPowMath.sol';
 import './libraries/MulDivMath.sol';
-import './libraries/FixedPoint96.sol';
+import './libraries/TwoPower.sol';
 import './libraries/PointOrder.sol';
 import './libraries/SwapMathY2X.sol';
 import './libraries/SwapMathX2Y.sol';
@@ -99,9 +99,9 @@ contract IzumiswapPoolPart {
     // liquidDelta of any one point will not be int128.min
     function liquidityAddDelta(uint128 l, int128 delta) private pure returns (uint128 nl) {
         if (delta < 0) {
-            require((nl = l - uint128(-delta)) < l, 'LSUB');
+            nl = l - uint128(-delta);
         } else {
-            require((nl = l + uint128(delta)) >= l, 'LADD');
+            nl = l + uint128(delta);
         }
     }
     function assignLimOrderEarnY(
@@ -450,7 +450,7 @@ contract IzumiswapPoolPart {
                     amountY = amountY + retState.costY + feeAmount;
                     amount -= (retState.costY + feeAmount);
                     
-                    cache.currFeeScaleY_128 = cache.currFeeScaleY_128 + MulDivMath.mulDivFloor(feeAmount, FixedPoint128.Q128, st.liquidity);
+                    cache.currFeeScaleY_128 = cache.currFeeScaleY_128 + MulDivMath.mulDivFloor(feeAmount, TwoPower.Pow128, st.liquidity);
 
                     st.currPt = retState.finalPt;
                     st.sqrtPrice_96 = retState.sqrtFinalPrice_96;
@@ -578,7 +578,7 @@ contract IzumiswapPoolPart {
                                 feeAmount += 1;
                             }
                         }
-                        cache.currFeeScaleX_128 = cache.currFeeScaleX_128 + MulDivMath.mulDivFloor(feeAmount, FixedPoint128.Q128, st.liquidity);
+                        cache.currFeeScaleX_128 = cache.currFeeScaleX_128 + MulDivMath.mulDivFloor(feeAmount, TwoPower.Pow128, st.liquidity);
                         amountX = amountX + retState.costX + feeAmount;
                         amountY += retState.acquireY;
                         amount -= (retState.costX + feeAmount);
@@ -596,7 +596,7 @@ contract IzumiswapPoolPart {
                         st.sqrtPrice_96 = LogPowMath.getSqrtPrice(st.currPt);
                         st.allX = false;
                         st.currX = 0;
-                        st.currY = MulDivMath.mulDivFloor(st.liquidity, st.sqrtPrice_96, FixedPoint96.Q96);
+                        st.currY = MulDivMath.mulDivFloor(st.liquidity, st.sqrtPrice_96, TwoPower.Pow96);
                     }
                 } else {
                     cache.finished = true;
@@ -641,7 +641,7 @@ contract IzumiswapPoolPart {
                     amountX = amountX + retState.costX + feeAmount;
                     amount -= (retState.costX + feeAmount);
                     
-                    cache.currFeeScaleX_128 = cache.currFeeScaleX_128 + MulDivMath.mulDivFloor(feeAmount, FixedPoint128.Q128, st.liquidity);
+                    cache.currFeeScaleX_128 = cache.currFeeScaleX_128 + MulDivMath.mulDivFloor(feeAmount, TwoPower.Pow128, st.liquidity);
                     st.currPt = retState.finalPt;
                     st.sqrtPrice_96 = retState.sqrtFinalPrice_96;
                     st.allX = retState.finalAllX;

@@ -31,42 +31,39 @@ library MulDivMath {
         // we should ensure that a * b /c < 2^256 before calling
         require(c > prodDiv2_256);
 
-        // cInv * c = 1 (mod 2^4)
-        uint256 cInv = (3 * c) ^ 2;
-        cInv *= 2 - c * cInv; // shift to 2^8
-        cInv *= 2 - c * cInv; // shift to 2^16
-        cInv *= 2 - c * cInv; // shift to 2^32
-        cInv *= 2 - c * cInv; // shift to 2^64
-        cInv *= 2 - c * cInv; // shift to 2^128
-        cInv *= 2 - c * cInv; // shift to 2^256
-        // c * cInv = 1 (mod 2^256)
-
         uint256 resMod;
         assembly {
             resMod := mulmod(a, b, c)
-        }
-        // a * b - resMod
-        assembly {
+            // a * b - resMod
             prodDiv2_256 := sub(prodDiv2_256, gt(resMod, prodMod2_256))
             prodMod2_256 := sub(prodMod2_256, resMod)
-        }
 
-        // a * b / lowbit
-        uint256 lowbit = ((~c) + 1) & c;
-        assembly {
+            // compute lowbit of c
+            let lowbit := not(c)
+            lowbit := add(lowbit, 1)
+            lowbit := and(lowbit, c)
+
+            // c / lowbit
             c := div(c, lowbit)
-        }
-
-        // a * b / lowbit
-        assembly {
+            // a * b / lowbit
             prodMod2_256 := div(prodMod2_256, lowbit)
-        }
-        assembly {
             lowbit := add(div(sub(0, lowbit), lowbit), 1)
-        }
-        prodMod2_256 |= prodDiv2_256 * lowbit;
+            prodDiv2_256 := mul(prodDiv2_256, lowbit)
+            prodMod2_256 := or(prodMod2_256, prodDiv2_256)
 
-        res = prodMod2_256 * cInv;
+            // get inv of c
+            // cInv * c = 1 (mod 2^4)
+            let cInv := xor(mul(3, c), 2)
+            cInv := mul(cInv, sub(2, mul(c, cInv))) // shift to 2^8
+            cInv := mul(cInv, sub(2, mul(c, cInv))) // shift to 2^16
+            cInv := mul(cInv, sub(2, mul(c, cInv))) // shift to 2^32
+            cInv := mul(cInv, sub(2, mul(c, cInv))) // shift to 2^64
+            cInv := mul(cInv, sub(2, mul(c, cInv))) // shift to 2^128
+            cInv := mul(cInv, sub(2, mul(c, cInv))) // shift to 2^256
+
+            // a * b / c = prodMod2_256 * cInv (mod 2^256)
+            res := mul(prodMod2_256, cInv)
+        }
     }
 
     // compute res = ceil(a * b / c), assuming res < 2^256

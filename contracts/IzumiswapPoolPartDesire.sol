@@ -6,7 +6,7 @@ import './libraries/Point.sol';
 import './libraries/PointBitmap.sol';
 import './libraries/LogPowMath.sol';
 import './libraries/MulDivMath.sol';
-import './libraries/FixedPoint96.sol';
+import './libraries/TwoPower.sol';
 import './libraries/PointOrder.sol';
 import './libraries/SwapMathY2X.sol';
 import './libraries/SwapMathX2Y.sol';
@@ -98,9 +98,9 @@ contract IzumiswapPoolPartDesire {
     // liquidDelta of any one point will not be int128.min
     function liquidityAddDelta(uint128 l, int128 delta) private pure returns (uint128 nl) {
         if (delta < 0) {
-            require((nl = l - uint128(-delta)) < l, 'LSUB');
+            nl = l - uint128(-delta);
         } else {
-            require((nl = l + uint128(delta)) >= l, 'LADD');
+            nl = l + uint128(delta);
         }
     }
     
@@ -202,7 +202,7 @@ contract IzumiswapPoolPartDesire {
                     amountY += (retState.costY + feeAmount);
                     desireX = (desireX <= retState.acquireX) ? 0 : desireX - uint128(retState.acquireX);
                     
-                    cache.currFeeScaleY_128 = cache.currFeeScaleY_128 + MulDivMath.mulDivFloor(feeAmount, FixedPoint128.Q128, st.liquidity);
+                    cache.currFeeScaleY_128 = cache.currFeeScaleY_128 + MulDivMath.mulDivFloor(feeAmount, TwoPower.Pow128, st.liquidity);
 
                     st.currPt = retState.finalPt;
                     st.sqrtPrice_96 = retState.sqrtFinalPrice_96;
@@ -314,7 +314,7 @@ contract IzumiswapPoolPartDesire {
                     
                     uint256 feeAmount = MulDivMath.mulDivCeil(retState.costX, fee, 1e6);
 
-                    cache.currFeeScaleX_128 = cache.currFeeScaleX_128 + MulDivMath.mulDivFloor(feeAmount, FixedPoint128.Q128, st.liquidity);
+                    cache.currFeeScaleX_128 = cache.currFeeScaleX_128 + MulDivMath.mulDivFloor(feeAmount, TwoPower.Pow128, st.liquidity);
                     amountX += (retState.costX + feeAmount);
                     amountY += retState.acquireY;
                     desireY = (desireY <= retState.acquireY) ? 0 : desireY - uint128(retState.acquireY);
@@ -332,7 +332,7 @@ contract IzumiswapPoolPartDesire {
                     st.sqrtPrice_96 = LogPowMath.getSqrtPrice(st.currPt);
                     st.allX = false;
                     st.currX = 0;
-                    st.currY = MulDivMath.mulDivFloor(st.liquidity, st.sqrtPrice_96, FixedPoint96.Q96);
+                    st.currY = MulDivMath.mulDivFloor(st.liquidity, st.sqrtPrice_96, TwoPower.Pow96);
                 }
             }
             if (cache.finished || st.currPt < lowPt) {
@@ -365,7 +365,7 @@ contract IzumiswapPoolPartDesire {
                     amountX += (retState.costX + feeAmount);
                     desireY = (desireY <= retState.acquireY) ? 0 : desireY - uint128(retState.acquireY);
                     
-                    cache.currFeeScaleX_128 = cache.currFeeScaleX_128 + MulDivMath.mulDivFloor(feeAmount, FixedPoint128.Q128, st.liquidity);
+                    cache.currFeeScaleX_128 = cache.currFeeScaleX_128 + MulDivMath.mulDivFloor(feeAmount, TwoPower.Pow128, st.liquidity);
 
                     st.currPt = retState.finalPt;
                     st.sqrtPrice_96 = retState.sqrtFinalPrice_96;

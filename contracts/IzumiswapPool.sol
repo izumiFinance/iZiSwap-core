@@ -7,7 +7,7 @@ import './libraries/Point.sol';
 import './libraries/PointBitmap.sol';
 import './libraries/LogPowMath.sol';
 import './libraries/MulDivMath.sol';
-import './libraries/FixedPoint96.sol';
+import './libraries/TwoPower.sol';
 import './libraries/PointOrder.sol';
 import './libraries/AmountMath.sol';
 import './libraries/UserEarn.sol';
@@ -210,7 +210,7 @@ contract IzumiswapPool is IIzumiswapPool {
         uint256 amount = MulDivMath.mulDivCeil(
             liquidDelta,
             sqrtPrice_96,
-            FixedPoint96.Q96
+            TwoPower.Pow96
         );
         y = uint128(amount);
         require (y == amount, "YC OFL");
@@ -281,7 +281,7 @@ contract IzumiswapPool is IIzumiswapPool {
         uint256 amountY = MulDivMath.mulDivFloor(
             liquidDelta,
             sqrtPrice_96,
-            FixedPoint96.Q96
+            TwoPower.Pow96
         );
         // token y is enough to pay
         if (amountY <= currY) {
@@ -292,7 +292,7 @@ contract IzumiswapPool is IIzumiswapPool {
             // token x need to payed for rest liquidity
             uint256 liquidY = MulDivMath.mulDivCeil(
                 y,
-                FixedPoint96.Q96,
+                TwoPower.Pow96,
                 sqrtPrice_96
             );
 
@@ -303,7 +303,7 @@ contract IzumiswapPool is IIzumiswapPool {
                 uint128 liquidX = liquidDelta - uint128(liquidY);
                 x = MulDivMath.mulDivFloor(
                     liquidX,
-                    FixedPoint96.Q96,
+                    TwoPower.Pow96,
                     sqrtPrice_96
                 );
                 if (x > currX) {
@@ -352,7 +352,7 @@ contract IzumiswapPool is IIzumiswapPool {
         if (pl <= pc && pr > pc) {
             if (st.allX) {
                 withRet.currY = 0;
-                withRet.currX = MulDivMath.mulDivFloor(st.liquidity, FixedPoint96.Q96, st.sqrtPrice_96);
+                withRet.currX = MulDivMath.mulDivFloor(st.liquidity, TwoPower.Pow96, st.sqrtPrice_96);
             } else {
                 withRet.currX = st.currX;
                 withRet.currY = st.currY;
@@ -509,7 +509,7 @@ contract IzumiswapPool is IIzumiswapPool {
                 state.currY = st.currY + yc;
             } else {
                 state.allX = false;
-                state.currX = MulDivMath.mulDivFloor(st.liquidity, FixedPoint96.Q96, st.sqrtPrice_96);
+                state.currX = MulDivMath.mulDivFloor(st.liquidity, TwoPower.Pow96, st.sqrtPrice_96);
                 state.currY = yc;
             }
             state.liquidity = st.liquidity + liquidDelta;

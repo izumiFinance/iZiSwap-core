@@ -1,7 +1,7 @@
 pragma solidity >=0.7.3;
 
 import './MulDivMath.sol';
-import './FixedPoint96.sol';
+import './TwoPower.sol';
 import './AmountMath.sol';
 import './State.sol';
 import "hardhat/console.sol";
@@ -24,13 +24,13 @@ library SwapMathX2Y {
         uint160 sqrtPrice_96,
         uint256 currY
     ) internal pure returns (uint128 costX, uint256 acquireY) {
-        uint256 l = MulDivMath.mulDivFloor(amountX, sqrtPrice_96, FixedPoint96.Q96);
-        acquireY = MulDivMath.mulDivFloor(l, sqrtPrice_96, FixedPoint96.Q96);
+        uint256 l = MulDivMath.mulDivFloor(amountX, sqrtPrice_96, TwoPower.Pow96);
+        acquireY = MulDivMath.mulDivFloor(l, sqrtPrice_96, TwoPower.Pow96);
         if (acquireY > currY) {
             acquireY = currY;
         }
-        l = MulDivMath.mulDivCeil(acquireY, FixedPoint96.Q96, sqrtPrice_96);
-        uint256 cost = MulDivMath.mulDivCeil(l, FixedPoint96.Q96, sqrtPrice_96);
+        l = MulDivMath.mulDivCeil(acquireY, TwoPower.Pow96, sqrtPrice_96);
+        uint256 cost = MulDivMath.mulDivCeil(l, TwoPower.Pow96, sqrtPrice_96);
         costX = uint128(cost);
         // it is believed that costX <= amountX
         require(costX == cost);
@@ -43,7 +43,7 @@ library SwapMathX2Y {
         uint256 currX,
         uint128 liquidity
     ) internal view returns (uint128 costX, uint256 acquireY) {
-        uint256 currXLim = MulDivMath.mulDivCeil(liquidity, FixedPoint96.Q96, sqrtPrice_96);
+        uint256 currXLim = MulDivMath.mulDivCeil(liquidity, TwoPower.Pow96, sqrtPrice_96);
         uint256 deltaX = (currXLim > currX) ? currXLim - currX : 0;
         if (amountX >= deltaX) {
             costX = uint128(deltaX);
@@ -160,7 +160,7 @@ library SwapMathX2Y {
             }
         } else if (!st.allX) { // all y
             st.currPt = st.currPt + 1;
-            st.sqrtPrice_96 = uint160(MulDivMath.mulDivFloor(st.sqrtPrice_96, sqrtRate_96, FixedPoint96.Q96));
+            st.sqrtPrice_96 = uint160(MulDivMath.mulDivFloor(st.sqrtPrice_96, sqrtRate_96, TwoPower.Pow96));
         }
 
         if (retState.finished) {
@@ -190,9 +190,9 @@ library SwapMathX2Y {
                 retState.finalAllX = true;
             } else {
                 ret.locPt = ret.locPt - 1;
-                ret.sqrtLoc_96 = uint160(MulDivMath.mulDivFloor(ret.sqrtLoc_96, FixedPoint96.Q96, sqrtRate_96));
+                ret.sqrtLoc_96 = uint160(MulDivMath.mulDivFloor(ret.sqrtLoc_96, TwoPower.Pow96, sqrtRate_96));
                 // trade at locPt
-                uint256 locCurrY = MulDivMath.mulDivFloor(st.liquidity, ret.sqrtLoc_96, FixedPoint96.Q96);
+                uint256 locCurrY = MulDivMath.mulDivFloor(st.liquidity, ret.sqrtLoc_96, TwoPower.Pow96);
                 (uint128 locCostX, uint256 locAcquireY) = x2YAtPriceLiquidity(
                     amountX, ret.sqrtLoc_96, locCurrY, 0, st.liquidity);
                 retState.costX += locCostX;

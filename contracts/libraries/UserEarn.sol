@@ -1,7 +1,7 @@
 pragma solidity >=0.7.3;
 
 import './MulDivMath.sol';
-import './FixedPoint96.sol';
+import './TwoPower.sol';
 
 library UserEarn {
 
@@ -36,20 +36,20 @@ library UserEarn {
         }
         uint256 sold;
         if (isEarnY) {
-            uint256 l = MulDivMath.mulDivCeil(earn, FixedPoint96.Q96, sqrtPrice_96);
-            sold = MulDivMath.mulDivCeil(l, FixedPoint96.Q96, sqrtPrice_96);
+            uint256 l = MulDivMath.mulDivCeil(earn, TwoPower.Pow96, sqrtPrice_96);
+            sold = MulDivMath.mulDivCeil(l, TwoPower.Pow96, sqrtPrice_96);
         } else {
-            uint256 l = MulDivMath.mulDivCeil(earn, sqrtPrice_96, FixedPoint96.Q96);
-            sold = MulDivMath.mulDivCeil(l, sqrtPrice_96, FixedPoint96.Q96);
+            uint256 l = MulDivMath.mulDivCeil(earn, sqrtPrice_96, TwoPower.Pow96);
+            sold = MulDivMath.mulDivCeil(l, sqrtPrice_96, TwoPower.Pow96);
         }
         if (sold > data.sellingRemain) {
             sold = data.sellingRemain;
             if (isEarnY) {
-                uint256 l = MulDivMath.mulDivFloor(sold, sqrtPrice_96, FixedPoint96.Q96);
-                earn = MulDivMath.mulDivFloor(l, sqrtPrice_96, FixedPoint96.Q96);
+                uint256 l = MulDivMath.mulDivFloor(sold, sqrtPrice_96, TwoPower.Pow96);
+                earn = MulDivMath.mulDivFloor(l, sqrtPrice_96, TwoPower.Pow96);
             } else {
-                uint256 l = MulDivMath.mulDivFloor(sold, FixedPoint96.Q96, sqrtPrice_96);
-                earn = MulDivMath.mulDivFloor(l, FixedPoint96.Q96, sqrtPrice_96);
+                uint256 l = MulDivMath.mulDivFloor(sold, TwoPower.Pow96, sqrtPrice_96);
+                earn = MulDivMath.mulDivFloor(l, TwoPower.Pow96, sqrtPrice_96);
             }
         }
         data.earn += earn;
