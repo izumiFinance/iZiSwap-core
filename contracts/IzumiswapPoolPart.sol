@@ -134,7 +134,6 @@ contract IzumiswapPoolPart {
     ) external returns (uint128 actualDeltaX) {
         
         require(pt % ptDelta == 0, "PD");
-        require(pt >= state.currPt, "PG");
 
         UserEarn.Data storage ue = userEarnY.get(msg.sender, pt);
         PointOrder.Data storage pointOrder = limitOrderData[pt];
@@ -158,7 +157,6 @@ contract IzumiswapPoolPart {
     ) external returns (uint128 actualDeltaY) {
         
         require(pt % ptDelta == 0, "PD");
-        require(pt <= state.currPt, "PL");
 
         UserEarn.Data storage ue = userEarnX.get(msg.sender, pt);
         PointOrder.Data storage pointOrder = limitOrderData[pt];
