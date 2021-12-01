@@ -588,8 +588,7 @@ contract IzumiswapPool is IIzumiswapPool {
         uint256 amountXLim,
         uint256 amountYLim
     ) external override noDelegateCall lock returns (uint256 actualAmountX, uint256 actualAmountY) {
-        require(amountXLim > 0, "XLP");
-        require(amountYLim > 0, "YLP");
+        require(amountXLim > 0 || amountYLim > 0, "X+Y>0");
         Liquidity.Data storage lq = liquidities.get(msg.sender, leftPt, rightPt);
         actualAmountX = amountXLim;
         if (actualAmountX > lq.remainFeeX) {
