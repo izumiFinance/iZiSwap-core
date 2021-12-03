@@ -479,6 +479,7 @@ contract IzumiswapPool is IIzumiswapPool {
         require(leftPt < rightPt, "LR");
         require(leftPt >= leftMostPt, "LO");
         require(rightPt <= rightMostPt, "HO");
+        require(int256(rightPt) - int256(leftPt) < RIGHT_MOST_PT, "TL");
         int24 pd = ptDelta;
         require(leftPt % pd == 0, "LPD");
         require(rightPt % pd == 0, "RPD");
