@@ -651,14 +651,14 @@ contract IzumiswapPool is IIzumiswapPool {
         int24 highPt,
         bytes calldata data
     ) external override noDelegateCall lock returns (uint256 amountX, uint256 amountY) {
-        (bool success, bytes memory data) = poolPart.delegatecall(
+        (bool success, bytes memory d) = poolPart.delegatecall(
             abi.encodeWithSignature("swapY2X(address,uint128,int24,bytes)", 
             recipient, amount, highPt, data)
         );
         if (success) {
-            (amountX, amountY) = abi.decode(data, (uint256, uint256));
+            (amountX, amountY) = abi.decode(d, (uint256, uint256));
         } else {
-            revertDCData(data);
+            revertDCData(d);
         }
     }
 
@@ -668,14 +668,14 @@ contract IzumiswapPool is IIzumiswapPool {
         int24 highPt,
         bytes calldata data
     ) external override noDelegateCall lock returns (uint256 amountX, uint256 amountY) {
-        (bool success, bytes memory data) = poolPartDesire.delegatecall(
+        (bool success, bytes memory d) = poolPartDesire.delegatecall(
             abi.encodeWithSignature("swapY2XDesireX(address,uint128,int24,bytes)", 
             recipient, desireX, highPt, data)
         );
         if (success) {
-            (amountX, amountY) = abi.decode(data, (uint256, uint256));
+            (amountX, amountY) = abi.decode(d, (uint256, uint256));
         } else {
-            revertDCData(data);
+            revertDCData(d);
         }
     }
 
@@ -701,14 +701,14 @@ contract IzumiswapPool is IIzumiswapPool {
         int24 lowPt,
         bytes calldata data
     ) external override noDelegateCall lock returns (uint256 amountX, uint256 amountY) {
-        (bool success, bytes memory data) = poolPart.delegatecall(
+        (bool success, bytes memory d) = poolPart.delegatecall(
             abi.encodeWithSignature("swapX2Y(address,uint128,int24,bytes)", 
             recipient, amount, lowPt, data)
         );
         if (success) {
-            (amountX, amountY) = abi.decode(data, (uint256, uint256));
+            (amountX, amountY) = abi.decode(d, (uint256, uint256));
         } else {
-            revertDCData(data);
+            revertDCData(d);
         }
     }
 
@@ -722,9 +722,9 @@ contract IzumiswapPool is IIzumiswapPool {
             abi.encodeWithSignature("swapX2YDesireY(address,uint128,int24,bytes)", recipient, desireY, lowPt,data)
         );
         if (success) {
-            (amountX, amountY) = abi.decode(data, (uint256, uint256));
+            (amountX, amountY) = abi.decode(d, (uint256, uint256));
         } else {
-            revertDCData(data);
+            revertDCData(d);
         }
     }
 }
