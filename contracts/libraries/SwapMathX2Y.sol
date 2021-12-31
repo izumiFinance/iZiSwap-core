@@ -42,7 +42,7 @@ library SwapMathX2Y {
         uint256 currY,
         uint256 currX,
         uint128 liquidity
-    ) internal view returns (uint128 costX, uint256 acquireY) {
+    ) internal pure returns (uint128 costX, uint256 acquireY) {
         uint256 currXLim = MulDivMath.mulDivCeil(liquidity, TwoPower.Pow96, sqrtPrice_96);
         uint256 deltaX = (currXLim > currX) ? currXLim - currX : 0;
         if (amountX >= deltaX) {
@@ -120,7 +120,7 @@ library SwapMathX2Y {
         int24 leftPt,
         uint160 sqrtRate_96,
         uint128 amountX
-    ) internal view returns (
+    ) internal pure returns (
         // bool finished,
         // uint128 costX,
         // uint256 acquireY,

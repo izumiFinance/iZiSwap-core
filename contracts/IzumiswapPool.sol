@@ -267,7 +267,6 @@ contract IzumiswapPool is IIzumiswapPool {
         require(y == amountY, "YOFL");
     }
     function _computeWithdrawXYAtCurrPt(
-        uint128 liquidity,
         uint128 liquidDelta,
         uint160 sqrtPrice_96,
         uint256 currX,
@@ -359,7 +358,6 @@ contract IzumiswapPool is IIzumiswapPool {
             }
             // we nned compute yc at point of current price
             (withRet.xc, withRet.yc) = _computeWithdrawXYAtCurrPt(
-                st.liquidity,
                 liquidDelta,
                 sqrtPrice_96,
                 withRet.currX,
@@ -535,6 +533,8 @@ contract IzumiswapPool is IIzumiswapPool {
         if (y > 0) {
             require(by + y <= balanceY(), "NEY"); // not enough y from minter
         }
+        amountX = x;
+        amountY = y;
     }
 
     function burn(
@@ -622,7 +622,7 @@ contract IzumiswapPool is IIzumiswapPool {
         require(success && data.length >= 32);
         return abi.decode(data, (uint256));
     }
-    function revertDCData(bytes memory data) private view {
+    function revertDCData(bytes memory data) private pure {
         if (data.length != 32) {
             if (data.length < 68) revert('dc');
             assembly {
@@ -716,7 +716,7 @@ contract IzumiswapPool is IIzumiswapPool {
         address recipient,
         uint128 desireY,
         int24 lowPt,
-         bytes calldata data
+        bytes calldata data
     ) external override noDelegateCall lock returns (uint256 amountX, uint256 amountY) {
         (bool success, bytes memory d) = poolPartDesire.delegatecall(
             abi.encodeWithSignature("swapX2YDesireY(address,uint128,int24,bytes)", recipient, desireY, lowPt,data)

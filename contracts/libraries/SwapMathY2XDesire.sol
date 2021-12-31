@@ -35,7 +35,7 @@ library SwapMathY2XDesire {
         uint256 currX,
         uint256 currY,
         uint128 liquidity
-    ) internal view returns (uint256 costY, uint128 acquireX) {
+    ) internal pure returns (uint256 costY, uint128 acquireX) {
         uint256 currYLim = MulDivMath.mulDivCeil(liquidity, sqrtPrice_96, TwoPower.Pow96);
         uint256 deltaY = (currYLim >= currY) ? currYLim - currY : 0;
         if (desireX >= currX) {
@@ -64,7 +64,7 @@ library SwapMathY2XDesire {
     function y2XRangeComplete(
         Range memory rg,
         uint128 desireX
-    ) internal view returns (
+    ) internal pure returns (
         RangeCompRet memory ret
     ) {
         uint256 maxX = AmountMath.getAmountX(rg.liquidity, rg.leftPt, rg.rightPt, rg.sqrtPriceR_96, rg.sqrtRate_96, false);
@@ -149,7 +149,7 @@ library SwapMathY2XDesire {
         int24 rightPt,
         uint160 sqrtRate_96,
         uint128 desireX
-    ) internal view returns (
+    ) internal pure returns (
         RangeRetState memory retState
     ) {
         retState.costY = 0;
