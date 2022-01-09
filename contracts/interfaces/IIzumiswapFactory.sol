@@ -11,6 +11,7 @@ interface IIzumiswapFactory {
     );
     function poolPart() external returns (address);
     function poolPartDesire() external returns (address);
+    function enableFeeAmount(uint24 fee, uint24 ptDelta) external;
     function newPool(
         address tokenX,
         address tokenY,

@@ -24,6 +24,12 @@ contract IzumiswapFactory is IIzumiswapFactory {
         require(address(this) == only_addr_);
         _;
     }
+    function enableFeeAmount(uint24 fee, uint24 pointDelta) external override noDelegateCall {
+        require(msg.sender == owner, "ON");
+        require(pointDelta > 1, "P1");
+        require(fee2pointDelta[fee] == 0, "FD0");
+        fee2pointDelta[fee] = int24(pointDelta);
+    }
     function newPool(
         address tokenX,
         address tokenY,
