@@ -624,7 +624,7 @@ contract IzumiswapPool is IIzumiswapPool {
         return abi.decode(data, (uint256));
     }
     function revertDCData(bytes memory data) private pure {
-        if (data.length != 32) {
+        if (data.length != 64) {
             if (data.length < 68) revert('dc');
             assembly {
                 data := add(data, 0x04)
@@ -636,7 +636,9 @@ contract IzumiswapPool is IIzumiswapPool {
             let w := mload(data)
             let t := mload(0x40)
             mstore(t, w)
-            revert(t, 32)
+            let w2 := mload(add(data, 0x20))
+            mstore(add(t, 0x20), w2)
+            revert(t, 64)
         }
     }
 
