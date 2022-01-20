@@ -1,11 +1,11 @@
 pragma solidity ^0.8.4;
 
-import '../interfaces/IIzumiswapPool.sol';
-import '../interfaces/IIzumiswapCallback.sol';
-import '../interfaces/IIzumiswapFactory.sol';
+import '../interfaces/IiZiSwapPool.sol';
+import '../interfaces/IiZiSwapCallback.sol';
+import '../interfaces/IiZiSwapFactory.sol';
 import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 
-contract TestMint is IIzumiswapMintCallback {
+contract TestMint is IiZiSwapMintCallback {
     struct MintCallbackData {
         address tokenX;
         address tokenY;
@@ -25,7 +25,7 @@ contract TestMint is IIzumiswapMintCallback {
         require(success && (data.length == 0 || abi.decode(data, (bool))), 'STF');
     }
     function pool(address tokenX, address tokenY, uint24 fee) public view returns(address) {
-        return IIzumiswapFactory(factory).pool(tokenX, tokenY, fee);
+        return IiZiSwapFactory(factory).pool(tokenX, tokenY, fee);
     }
     function mintDepositCallback(
         uint256 x, uint256 y, bytes calldata data
@@ -52,7 +52,7 @@ contract TestMint is IIzumiswapMintCallback {
         require(tokenX < tokenY, "x<y");
         address poolAddr = pool(tokenX, tokenY, fee);
         address miner = msg.sender;
-        IIzumiswapPool(poolAddr).mint(
+        IiZiSwapPool(poolAddr).mint(
             miner,
             leftPt,
             rightPt,
@@ -73,6 +73,6 @@ contract TestMint is IIzumiswapMintCallback {
         require(tokenX < tokenY, "x<y");
         address poolAddr = pool(tokenX, tokenY, fee);
         address miner = msg.sender;
-        return IIzumiswapPool(poolAddr).liquidities(keccak256(abi.encodePacked(miner, pl, pr)));
+        return IiZiSwapPool(poolAddr).liquidities(keccak256(abi.encodePacked(miner, pl, pr)));
     }
 }

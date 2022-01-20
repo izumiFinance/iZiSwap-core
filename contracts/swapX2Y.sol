@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity ^0.8.4;
 
-import './interfaces/IIzumiswapPool.sol';
+import './interfaces/IiZiSwapPool.sol';
 import './libraries/Liquidity.sol';
 import './libraries/Point.sol';
 import './libraries/PointBitmap.sol';
@@ -16,11 +16,11 @@ import './libraries/SwapMathX2YDesire.sol';
 import './libraries/TokenTransfer.sol';
 import './libraries/UserEarn.sol';
 import './libraries/State.sol';
-import './interfaces/IIzumiswapCallback.sol';
+import './interfaces/IiZiSwapCallback.sol';
 
 import 'hardhat/console.sol';
 
-contract IzumiswapPoolPart {
+contract SwapX2YModule {
 
     // TODO following usings may need modify
     using Liquidity for mapping(bytes32 =>Liquidity.Data);
@@ -241,7 +241,7 @@ contract IzumiswapPoolPart {
 
         // trader pay x
         uint256 bx = balanceX();
-        IIzumiswapAddLimOrderCallback(msg.sender).payCallback(amountX, 0, data);
+        IiZiSwapAddLimOrderCallback(msg.sender).payCallback(amountX, 0, data);
         require(balanceX() >= bx + amountX, "XE");
         
     }
@@ -306,7 +306,7 @@ contract IzumiswapPoolPart {
 
         // trader pay y
         uint256 by = balanceY();
-        IIzumiswapAddLimOrderCallback(msg.sender).payCallback(0, amountY, data);
+        IiZiSwapAddLimOrderCallback(msg.sender).payCallback(0, amountY, data);
         require(balanceY() >= by + amountY, "YE");
         
     }
@@ -530,7 +530,7 @@ contract IzumiswapPoolPart {
             // trader pay x
             require(amountX > 0, "PP");
             uint256 bx = balanceX();
-            IIzumiswapSwapCallback(msg.sender).swapX2YCallback(amountX, amountY, data);
+            IiZiSwapSwapCallback(msg.sender).swapX2YCallback(amountX, amountY, data);
             require(balanceX() >= bx + amountX, "XE");
         }
         
@@ -681,7 +681,7 @@ contract IzumiswapPoolPart {
             // trader pay x
             require(amountX > 0, "PP");
             uint256 bx = balanceX();
-            IIzumiswapSwapCallback(msg.sender).swapX2YCallback(amountX, amountY, data);
+            IiZiSwapSwapCallback(msg.sender).swapX2YCallback(amountX, amountY, data);
             require(balanceX() >= bx + amountX, "XE");
         }
     }

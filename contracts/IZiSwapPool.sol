@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity ^0.8.4;
 
-import './interfaces/IIzumiswapPool.sol';
-import './interfaces/IIzumiswapFactory.sol';
+import './interfaces/IiZiSwapPool.sol';
+import './interfaces/IiZiSwapFactory.sol';
 import './libraries/Liquidity.sol';
 import './libraries/Point.sol';
 import './libraries/PointBitmap.sol';
@@ -14,13 +14,13 @@ import './libraries/AmountMath.sol';
 import './libraries/UserEarn.sol';
 import './libraries/TokenTransfer.sol';
 import './libraries/State.sol';
-import './interfaces/IIzumiswapCallback.sol';
+import './interfaces/IiZiSwapCallback.sol';
 import 'hardhat/console.sol';
 
 import './libraries/SwapMathY2X.sol';
 import './libraries/SwapMathX2Y.sol';
 
-contract IzumiswapPool is IIzumiswapPool {
+contract IZiSwapPool is IiZiSwapPool {
 
     // TODO following usings may need modify
     using Liquidity for mapping(bytes32 =>Liquidity.Data);
@@ -114,8 +114,8 @@ contract IzumiswapPool is IIzumiswapPool {
         require(pd > 1);
         original = address(this);
         factory = fac;
-        swapModuleX2Y = IIzumiswapFactory(fac).swapX2Y();
-        swapModuleY2X = IIzumiswapFactory(fac).swapY2X();
+        swapModuleX2Y = IiZiSwapFactory(fac).swapX2Y();
+        swapModuleY2X = IiZiSwapFactory(fac).swapY2X();
         console.log("swapX2Y: ", swapModuleX2Y);
         console.log("swapY2X: ", swapModuleY2X);
         tokenX = tX;
@@ -605,7 +605,7 @@ contract IzumiswapPool is IIzumiswapPool {
 
         // trader pay x
         uint256 bx = balanceX();
-        IIzumiswapAddLimOrderCallback(msg.sender).payCallback(amountX, 0, data);
+        IiZiSwapAddLimOrderCallback(msg.sender).payCallback(amountX, 0, data);
         require(balanceX() >= bx + amountX, "XE");
         
     }
@@ -670,7 +670,7 @@ contract IzumiswapPool is IIzumiswapPool {
 
         // trader pay y
         uint256 by = balanceY();
-        IIzumiswapAddLimOrderCallback(msg.sender).payCallback(0, amountY, data);
+        IiZiSwapAddLimOrderCallback(msg.sender).payCallback(0, amountY, data);
         require(balanceY() >= by + amountY, "YE");
         
     }
@@ -757,7 +757,7 @@ contract IzumiswapPool is IIzumiswapPool {
         }
         if (x > 0 || y > 0) {
             // minter's callback to pay
-            IIzumiswapMintCallback(msg.sender).mintDepositCallback(x, y, data);
+            IiZiSwapMintCallback(msg.sender).mintDepositCallback(x, y, data);
         }
         if (x > 0) {
             require(bx + x <= balanceX(), "NEX"); // not enough x from minter

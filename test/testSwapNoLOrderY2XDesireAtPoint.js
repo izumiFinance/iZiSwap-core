@@ -37,8 +37,8 @@ async function addLiquidity(testMint, miner, tokenX, tokenY, fee, pl, pr, liquid
 }
 
 async function printState(poolAddr) {
-  const IzumiswapPool = await ethers.getContractFactory("IzumiswapPool");
-  pool = await IzumiswapPool.attach(poolAddr);
+  const IZiSwapPool = await ethers.getContractFactory("IZiSwapPool");
+  pool = await IZiSwapPool.attach(poolAddr);
   [sqrtPrice_96, currPt, currX, currY, liquidity, allX, locked] = await pool.state();
   return [currPt, BigNumber(currX._hex), BigNumber(currY._hex), BigNumber(liquidity._hex), allX, locked]
 }
@@ -94,14 +94,15 @@ function y2xAtLiquidity(point, rate, desireX, currX, currY, liquidity) {
 function blockNum2BigNumber(blc) {
     return BigNumber(blc._hex);
 }
+
 async function getPoolParts() {
-  const IzumiswapPoolPartFactory = await ethers.getContractFactory("IzumiswapPoolPart");
-  const izumiswapPoolPart = await IzumiswapPoolPartFactory.deploy();
-  await izumiswapPoolPart.deployed();
-  const IzumiswapPoolPartDesireFactory = await ethers.getContractFactory("IzumiswapPoolPartDesire");
-  const izumiswapPoolPartDesire = await IzumiswapPoolPartDesireFactory.deploy();
-  await izumiswapPoolPartDesire.deployed();
-  return [izumiswapPoolPart.address, izumiswapPoolPartDesire.address];
+  const IZiSwapPoolPartFactory = await ethers.getContractFactory("SwapX2YModule");
+  const IZiSwapPoolPart = await IZiSwapPoolPartFactory.deploy();
+  await IZiSwapPoolPart.deployed();
+  const IZiSwapPoolPartDesireFactory = await ethers.getContractFactory("SwapY2XModule");
+  const IZiSwapPoolPartDesire = await IZiSwapPoolPartDesireFactory.deploy();
+  await IZiSwapPoolPartDesire.deployed();
+  return [IZiSwapPoolPart.address, IZiSwapPoolPartDesire.address];
 }
 describe("swap y2x desireX", function () {
   it("swap y2x desireX at single price", async function () {
@@ -109,9 +110,9 @@ describe("swap y2x desireX", function () {
 
     [poolPart, poolPartDesire] = await getPoolParts();
     // deploy a factory
-    const IzumiswapFactory = await ethers.getContractFactory("IzumiswapFactory");
+    const IZiSwapFactory = await ethers.getContractFactory("IZiSwapFactory");
 
-    const factory = await IzumiswapFactory.deploy(poolPart, poolPartDesire);
+    const factory = await IZiSwapFactory.deploy(poolPart, poolPartDesire);
     await factory.deployed();
 
     [tokenX, tokenY] = await getToken();

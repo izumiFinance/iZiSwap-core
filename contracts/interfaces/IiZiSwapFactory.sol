@@ -1,6 +1,6 @@
 pragma solidity ^0.8.4;
 
-interface IIzumiswapFactory {
+interface IiZiSwapFactory {
     // todo: may be similar
     event NewPool(
         address indexed tokenX,

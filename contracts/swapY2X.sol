@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity ^0.8.4;
 
-import './interfaces/IIzumiswapPool.sol';
+import './interfaces/IiZiSwapPool.sol';
 import './libraries/Liquidity.sol';
 import './libraries/Point.sol';
 import './libraries/PointBitmap.sol';
@@ -16,10 +16,10 @@ import './libraries/SwapMathX2YDesire.sol';
 import './libraries/UserEarn.sol';
 import './libraries/TokenTransfer.sol';
 import './libraries/State.sol';
-import './interfaces/IIzumiswapCallback.sol';
+import './interfaces/IiZiSwapCallback.sol';
 import 'hardhat/console.sol';
 
-contract IzumiswapPoolPartDesire {
+contract SwapY2XModule {
 
     // TODO following usings may need modify
     using Liquidity for mapping(bytes32 =>Liquidity.Data);
@@ -256,7 +256,7 @@ contract IzumiswapPoolPartDesire {
             // trader pay y
             require(amountY > 0, "PP");
             uint256 by = balanceY();
-            IIzumiswapSwapCallback(msg.sender).swapY2XCallback(amountX, amountY, data);
+            IiZiSwapSwapCallback(msg.sender).swapY2XCallback(amountX, amountY, data);
             require(balanceY() >= by + amountY, "YE");
         }
         
@@ -379,7 +379,7 @@ contract IzumiswapPoolPartDesire {
             // trader pay y
             require(amountY > 0, "PP");
             uint256 by = balanceY();
-            IIzumiswapSwapCallback(msg.sender).swapY2XCallback(amountX, amountY, data);
+            IiZiSwapSwapCallback(msg.sender).swapY2XCallback(amountX, amountY, data);
             require(balanceY() >= by + amountY, "YE");
         }
         

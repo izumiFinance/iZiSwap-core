@@ -1,11 +1,11 @@
 pragma solidity =0.8.4;
 
-import '../interfaces/IIzumiswapPool.sol';
-import '../interfaces/IIzumiswapCallback.sol';
-import '../interfaces/IIzumiswapFactory.sol';
+import '../interfaces/IiZiSwapPool.sol';
+import '../interfaces/IiZiSwapCallback.sol';
+import '../interfaces/IiZiSwapFactory.sol';
 import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 
-contract TestAddLimOrder is IIzumiswapAddLimOrderCallback {
+contract TestAddLimOrder is IiZiSwapAddLimOrderCallback {
 
     address public factory;
     function safeTransferFrom(
@@ -40,20 +40,20 @@ contract TestAddLimOrder is IIzumiswapAddLimOrderCallback {
     }
     constructor(address fac) { factory = fac; }
     function pool(address tokenX, address tokenY, uint24 fee) public view returns(address) {
-        return IIzumiswapFactory(factory).pool(tokenX, tokenY, fee);
+        return IiZiSwapFactory(factory).pool(tokenX, tokenY, fee);
     }
     function limOrderKey(address miner, int24 pt) internal pure returns(bytes32) {
         return keccak256(abi.encodePacked(miner, pt));
     }
 
     function getEarnX(address pool, bytes32 key) private view returns(uint256 lastAccEarn, uint256 sellingRemain, uint256 sellingDesc, uint256 earn, uint256 earnAssign) {
-        (lastAccEarn, sellingRemain, sellingDesc, earn, earnAssign) = IIzumiswapPool(pool).userEarnX(key);
+        (lastAccEarn, sellingRemain, sellingDesc, earn, earnAssign) = IiZiSwapPool(pool).userEarnX(key);
     }
     function getEarnX(address pool, address miner, int24 pt) public view returns(uint256 lastAccEarn, uint256 sellingRemain, uint256 sellingDesc, uint256 earn, uint256 earnAssign) {
         (lastAccEarn, sellingRemain, sellingDesc, earn, earnAssign) = getEarnX(pool, limOrderKey(miner, pt));
     }
     function getEarnY(address pool, bytes32 key) private view returns(uint256 lastAccEarn, uint256 sellingRemain, uint256 sellingDesc, uint256 earn, uint256 earnAssign) {
-        (lastAccEarn, sellingRemain, sellingDesc, earn, earnAssign) = IIzumiswapPool(pool).userEarnY(key);
+        (lastAccEarn, sellingRemain, sellingDesc, earn, earnAssign) = IiZiSwapPool(pool).userEarnY(key);
     }
     function getEarnY(address pool, address miner, int24 pt) public view returns(uint256 lastAccEarn, uint256 sellingRemain, uint256 sellingDesc, uint256 earn, uint256 earnAssign) {
         (lastAccEarn, sellingRemain, sellingDesc, earn, earnAssign) = getEarnY(pool, limOrderKey(miner, pt));
@@ -74,7 +74,7 @@ contract TestAddLimOrder is IIzumiswapAddLimOrderCallback {
         uint128 amountX
     ) external {
         address poolAddr = pool(tokenX, tokenY, fee);
-        IIzumiswapPool(poolAddr).addLimOrderWithX(
+        IiZiSwapPool(poolAddr).addLimOrderWithX(
             msg.sender, pt, amountX,
             abi.encode(LimCallbackData({tokenX: tokenX, tokenY: tokenY, fee: fee, payer: msg.sender}))
         );
@@ -87,7 +87,7 @@ contract TestAddLimOrder is IIzumiswapAddLimOrderCallback {
         uint128 amountY
     ) external {
         address poolAddr = pool(tokenX, tokenY, fee);
-        IIzumiswapPool(poolAddr).addLimOrderWithY(
+        IiZiSwapPool(poolAddr).addLimOrderWithY(
             msg.sender, pt, amountY,
             abi.encode(LimCallbackData({tokenX: tokenX, tokenY: tokenY, fee: fee, payer: msg.sender}))
         );

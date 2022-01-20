@@ -94,8 +94,8 @@ function depositXY(l, r, p, rate, liquidity) {
 }
 
 async function printState(poolAddr) {
-  const IzumiswapPool = await ethers.getContractFactory("IzumiswapPool");
-  pool = await IzumiswapPool.attach(poolAddr);
+  const IZiSwapPool = await ethers.getContractFactory("IZiSwapPool");
+  pool = await IZiSwapPool.attach(poolAddr);
   [sqrtPrice_96, currPt, currX, currY, liquidity, allX, locked] = await pool.state();
   console.log(sqrtPrice_96);
   console.log(currPt);
@@ -111,13 +111,13 @@ function ceil(b) {
 }
 
 async function getPoolParts() {
-  const IzumiswapPoolPartFactory = await ethers.getContractFactory("IzumiswapPoolPart");
-  const izumiswapPoolPart = await IzumiswapPoolPartFactory.deploy();
-  await izumiswapPoolPart.deployed();
-  const IzumiswapPoolPartDesireFactory = await ethers.getContractFactory("IzumiswapPoolPartDesire");
-  const izumiswapPoolPartDesire = await IzumiswapPoolPartDesireFactory.deploy();
-  await izumiswapPoolPartDesire.deployed();
-  return [izumiswapPoolPart.address, izumiswapPoolPartDesire.address];
+  const IZiSwapPoolPartFactory = await ethers.getContractFactory("SwapX2YModule");
+  const IZiSwapPoolPart = await IZiSwapPoolPartFactory.deploy();
+  await IZiSwapPoolPart.deployed();
+  const IZiSwapPoolPartDesireFactory = await ethers.getContractFactory("SwapY2XModule");
+  const IZiSwapPoolPartDesire = await IZiSwapPoolPartDesireFactory.deploy();
+  await IZiSwapPoolPartDesire.deployed();
+  return [IZiSwapPoolPart.address, IZiSwapPoolPartDesire.address];
 }
 describe("Mint", function () {
   it("check miner deposit", async function () {
@@ -128,9 +128,9 @@ describe("Mint", function () {
     [poolPart, poolPartDesire] = await getPoolParts();
 
     // deploy a factory
-    const IzumiswapFactory = await ethers.getContractFactory("IzumiswapFactory");
+    const IZiSwapFactory = await ethers.getContractFactory("IZiSwapFactory");
 
-    const factory = await IzumiswapFactory.deploy(poolPart, poolPartDesire);
+    const factory = await IZiSwapFactory.deploy(poolPart, poolPartDesire);
     await factory.deployed();
 
     console.log("factory addr: " + factory.address);

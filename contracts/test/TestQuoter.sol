@@ -1,13 +1,13 @@
 pragma solidity ^0.8.4;
 
-import '../interfaces/IIzumiswapPool.sol';
-import '../interfaces/IIzumiswapCallback.sol';
-import '../interfaces/IIzumiswapFactory.sol';
+import '../interfaces/IiZiSwapPool.sol';
+import '../interfaces/IiZiSwapCallback.sol';
+import '../interfaces/IiZiSwapFactory.sol';
 
 import "hardhat/console.sol";
 import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 
-contract TestQuoter is IIzumiswapSwapCallback {
+contract TestQuoter is IiZiSwapSwapCallback {
     struct SwapCallbackData {
         // amount of token0 is input param
         address token0;
@@ -35,7 +35,7 @@ contract TestQuoter is IIzumiswapSwapCallback {
             ,
             ,
             ,
-        ) = IIzumiswapPool(poolAddr).state();
+        ) = IiZiSwapPool(poolAddr).state();
 
         if (dt.token0 < dt.token1) {
             // token1 is y, amount of token1 is calculated
@@ -74,7 +74,7 @@ contract TestQuoter is IIzumiswapSwapCallback {
             ,
             ,
             ,
-        ) = IIzumiswapPool(poolAddr).state();
+        ) = IiZiSwapPool(poolAddr).state();
 
         if (dt.token0 < dt.token1) {
             // token0 is x, amount of token0 is input param
@@ -97,7 +97,7 @@ contract TestQuoter is IIzumiswapSwapCallback {
         }
     }
     function pool(address tokenX, address tokenY, uint24 fee) public view returns(address) {
-        return IIzumiswapFactory(factory).pool(tokenX, tokenY, fee);
+        return IiZiSwapFactory(factory).pool(tokenX, tokenY, fee);
     }
     constructor(address fac) {
         factory = fac;
@@ -143,7 +143,7 @@ contract TestQuoter is IIzumiswapSwapCallback {
         address poolAddr = pool(tokenX, tokenY, fee);
         address payer = msg.sender;
         try
-            IIzumiswapPool(poolAddr).swapY2X(
+            IiZiSwapPool(poolAddr).swapY2X(
                 payer, amount, highPt,
                 abi.encode(SwapCallbackData({token0: tokenY, token1:tokenX, fee: fee, payer: payer}))
             )
@@ -162,7 +162,7 @@ contract TestQuoter is IIzumiswapSwapCallback {
         address poolAddr = pool(tokenX, tokenY, fee);
         address payer = msg.sender;
         try
-            IIzumiswapPool(poolAddr).swapY2XDesireX(
+            IiZiSwapPool(poolAddr).swapY2XDesireX(
                 payer, desireX, highPt,
                 abi.encode(SwapCallbackData({token0: tokenX, token1:tokenY, fee: fee, payer: payer}))
             )
@@ -181,7 +181,7 @@ contract TestQuoter is IIzumiswapSwapCallback {
         address poolAddr = pool(tokenX, tokenY, fee);
         address payer = msg.sender;
         try
-            IIzumiswapPool(poolAddr).swapX2Y(
+            IiZiSwapPool(poolAddr).swapX2Y(
                 payer, amount, lowPt,
                 abi.encode(SwapCallbackData({token0: tokenX, token1:tokenY, fee: fee, payer: payer}))
             )
@@ -200,7 +200,7 @@ contract TestQuoter is IIzumiswapSwapCallback {
         address poolAddr = pool(tokenX, tokenY, fee);
         address payer = msg.sender;
         try 
-            IIzumiswapPool(poolAddr).swapX2YDesireY(
+            IiZiSwapPool(poolAddr).swapX2YDesireY(
                 payer, desireY, highPt,
                 abi.encode(SwapCallbackData({token0: tokenY, token1:tokenX, fee: fee, payer: payer}))
             )

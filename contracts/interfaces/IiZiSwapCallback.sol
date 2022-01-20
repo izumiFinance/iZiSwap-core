@@ -1,7 +1,7 @@
 // TODO may need modify
 pragma solidity >=0.7.3;
 
-interface IIzumiswapMintCallback {
+interface IiZiSwapMintCallback {
 
     function mintDepositCallback(
         uint256 x,
@@ -11,7 +11,7 @@ interface IIzumiswapMintCallback {
 
 }
 
-interface IIzumiswapSwapCallback {
+interface IiZiSwapSwapCallback {
     function swapY2XCallback(
         uint256 x,
         uint256 y,
@@ -24,7 +24,7 @@ interface IIzumiswapSwapCallback {
     ) external;
 }
 
-interface IIzumiswapAddLimOrderCallback {
+interface IiZiSwapAddLimOrderCallback {
     function payCallback(
         uint256 x,
         uint256 y,

@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity ^0.8.4;
 
-import './interfaces/IIzumiswapFactory.sol';
-import './IzumiswapPool.sol';
+import './interfaces/IiZiSwapFactory.sol';
+import './IZiSwapPool.sol';
 
-contract IzumiswapFactory is IIzumiswapFactory {
+contract IZiSwapFactory is IiZiSwapFactory {
     address public override owner;
     mapping(address => mapping(address => mapping(uint24 => address))) public override pool;
     mapping(uint24 => int24) public override fee2pointDelta;
@@ -46,7 +46,7 @@ contract IzumiswapFactory is IIzumiswapFactory {
         // now creating
         bytes32 salt = keccak256(abi.encode(tokenX, tokenY, fee));
         
-        addr = address(new IzumiswapPool{salt: salt}(
+        addr = address(new IZiSwapPool{salt: salt}(
             address(this),
             tokenX,
             tokenY,

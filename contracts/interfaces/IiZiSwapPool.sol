@@ -1,7 +1,7 @@
 // TODO may need modify
 pragma solidity >=0.7.3;
 
-interface IIzumiswapPool {
+interface IiZiSwapPool {
 
     function liquidities(bytes32 key)
         external
