@@ -37,8 +37,7 @@ module.exports = {
       url: izumiRpcUrl,
       accounts: [sk],
       // gas: 90000000,
-      // gasPrice: 200000000,
-      allowUnlimitedContractSize: true,
+      gasPrice: 100000000000,
     },
   }
 };
