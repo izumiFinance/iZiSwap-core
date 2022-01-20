@@ -8,17 +8,17 @@ contract IzumiswapFactory is IIzumiswapFactory {
     address public override owner;
     mapping(address => mapping(address => mapping(uint24 => address))) public override pool;
     mapping(uint24 => int24) public override fee2pointDelta;
-    address public immutable only_addr_;
+    address public only_addr_;
 
-    address public immutable override poolPart;
-    address public immutable override poolPartDesire;
-    constructor(address poolPartAddr, address poolPartDesireAddr) {
+    address public override swapX2Y;
+    address public override swapY2X;
+    constructor(address _swapX2Y, address _swapY2X) {
         only_addr_ = address(this);
         owner = msg.sender;
         fee2pointDelta[500] = 10;
         fee2pointDelta[3000] = 50;
-        poolPart = poolPartAddr;
-        poolPartDesire = poolPartDesireAddr;
+        swapX2Y = _swapX2Y;
+        swapY2X = _swapY2X;
     }
     modifier noDelegateCall() {
         require(address(this) == only_addr_);

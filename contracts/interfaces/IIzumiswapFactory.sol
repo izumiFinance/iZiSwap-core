@@ -1,4 +1,4 @@
-pragma solidity >=0.7.3;
+pragma solidity ^0.8.4;
 
 interface IIzumiswapFactory {
     // todo: may be similar
@@ -9,8 +9,8 @@ interface IIzumiswapFactory {
         int24 pointDelta,
         address pool
     );
-    function poolPart() external returns (address);
-    function poolPartDesire() external returns (address);
+    function swapX2Y() external returns (address);
+    function swapY2X() external returns (address);
     function enableFeeAmount(uint24 fee, uint24 ptDelta) external;
     function newPool(
         address tokenX,

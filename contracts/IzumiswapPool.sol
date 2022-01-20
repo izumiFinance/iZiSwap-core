@@ -17,6 +17,9 @@ import './libraries/State.sol';
 import './interfaces/IIzumiswapCallback.sol';
 import 'hardhat/console.sol';
 
+import './libraries/SwapMathY2X.sol';
+import './libraries/SwapMathX2Y.sol';
+
 contract IzumiswapPool is IIzumiswapPool {
 
     // TODO following usings may need modify
@@ -79,8 +82,8 @@ contract IzumiswapPool is IIzumiswapPool {
     mapping(bytes32 => UserEarn.Data) public override userEarnY;
     address private  original;
 
-    address private poolPart;
-    address private poolPartDesire;
+    address private swapModuleX2Y;
+    address private swapModuleY2X;
 
     modifier lock() {
         require(!state.locked, 'LKD');
@@ -111,10 +114,10 @@ contract IzumiswapPool is IIzumiswapPool {
         require(pd > 1);
         original = address(this);
         factory = fac;
-        poolPart = IIzumiswapFactory(fac).poolPart();
-        poolPartDesire = IIzumiswapFactory(fac).poolPartDesire();
-        console.log("pool part: ", poolPart);
-        console.log("pool part desire: " , poolPartDesire);
+        swapModuleX2Y = IIzumiswapFactory(fac).swapX2Y();
+        swapModuleY2X = IIzumiswapFactory(fac).swapY2X();
+        console.log("swapX2Y: ", swapModuleX2Y);
+        console.log("swapY2X: ", swapModuleY2X);
         tokenX = tX;
         tokenY = tY;
         fee = swapFee;
@@ -377,12 +380,12 @@ contract IzumiswapPool is IIzumiswapPool {
         withRet.x = uint128(amountX);
         require(withRet.x == amountX, "XOFL");
     }
-    
+    /*
     function decLimOrderWithX(
         int24 pt,
         uint128 deltaX
     ) external override noDelegateCall lock returns (uint128 actualDeltaX) {
-        (bool success, bytes memory data) = poolPart.delegatecall(
+        (bool success, bytes memory data) = poolPartX2YAddr.delegatecall(
             abi.encodeWithSignature("decLimOrderWithX(int24,uint128)", 
             pt, deltaX)
         );
@@ -395,7 +398,7 @@ contract IzumiswapPool is IIzumiswapPool {
         int24 pt,
         uint128 deltaY
     ) external override noDelegateCall lock returns (uint128 actualDeltaY) {
-        (bool success, bytes memory data) = poolPart.delegatecall(
+        (bool success, bytes memory data) = poolPartX2YAddr.delegatecall(
             abi.encodeWithSignature("decLimOrderWithY(int24,uint128)", 
             pt, deltaY)
         );
@@ -411,7 +414,7 @@ contract IzumiswapPool is IIzumiswapPool {
         bytes calldata data
     ) external override noDelegateCall lock returns (uint128 orderX, uint256 acquireY) {
         console.log("add limorder x");
-        (bool success, bytes memory retData) = poolPart.delegatecall(
+        (bool success, bytes memory retData) = poolPartX2YAddr.delegatecall(
             abi.encodeWithSignature("addLimOrderWithX(address,int24,uint128,bytes)", 
             recipient, pt, amountX, data)
         );
@@ -426,7 +429,7 @@ contract IzumiswapPool is IIzumiswapPool {
         bytes calldata data
     ) external override noDelegateCall lock returns (uint128 orderY, uint256 acquireX) {
         console.log("add limorder y");
-        (bool success, bytes memory retData) = poolPart.delegatecall(
+        (bool success, bytes memory retData) = poolPartX2YAddr.delegatecall(
             abi.encodeWithSignature("addLimOrderWithY(address,int24,uint128,bytes)", 
             recipient, pt, amountY, data)
         );
@@ -437,7 +440,7 @@ contract IzumiswapPool is IIzumiswapPool {
     function collectLimOrder(
         address recipient, int24 pt, uint256 collectDec, uint256 collectEarn, bool isEarnY
     ) external override returns(uint256 actualCollectDec, uint256 actualCollectEarn) {
-        (bool success, bytes memory data) = poolPart.delegatecall(
+        (bool success, bytes memory data) = poolPartX2YAddr.delegatecall(
             abi.encodeWithSignature("collectLimOrder(address,int24,uint256,uint256,bool)",
             recipient, pt, collectDec, collectEarn, isEarnY)
         );
@@ -448,7 +451,7 @@ contract IzumiswapPool is IIzumiswapPool {
         int24 pt,
         uint256 assignY
     ) external override returns (uint256 actualAssignY) {
-        (bool success, bytes memory data) = poolPart.delegatecall(
+        (bool success, bytes memory data) = poolPartX2YAddr.delegatecall(
             abi.encodeWithSignature("assignLimOrderEarnY(int24,uint256)",
             pt, assignY)
         );
@@ -459,12 +462,240 @@ contract IzumiswapPool is IIzumiswapPool {
         int24 pt,
         uint256 assignX
     ) external override returns (uint256 actualAssignX) {
-        (bool success, bytes memory data) = poolPart.delegatecall(
+        (bool success, bytes memory data) = poolPartX2YAddr.delegatecall(
             abi.encodeWithSignature("assignLimOrderEarnX(int24,uint256)",
             pt, assignX)
         );
         require(success, "dc");
         actualAssignX = abi.decode(data, (uint256));
+    }*/
+
+    function assignLimOrderEarnY(
+        int24 pt,
+        uint256 assignY
+    ) external override returns (uint256 actualAssignY) {
+        actualAssignY = assignY;
+        UserEarn.Data storage ue = userEarnY.get(msg.sender, pt);
+        if (actualAssignY > ue.earn) {
+            actualAssignY = ue.earn;
+        }
+        ue.earn -= actualAssignY;
+        ue.earnAssign += actualAssignY;
+    }
+    function assignLimOrderEarnX(
+        int24 pt,
+        uint256 assignX
+    ) external override returns (uint256 actualAssignX) {
+        actualAssignX = assignX;
+        UserEarn.Data storage ue = userEarnX.get(msg.sender, pt);
+        if (actualAssignX > ue.earn) {
+            actualAssignX = ue.earn;
+        }
+        ue.earn -= actualAssignX;
+        ue.earnAssign += actualAssignX;
+    }
+    function decLimOrderWithX(
+        int24 pt,
+        uint128 deltaX
+    ) external override returns (uint128 actualDeltaX) {
+        
+        require(pt % ptDelta == 0, "PD");
+
+        UserEarn.Data storage ue = userEarnY.get(msg.sender, pt);
+        PointOrder.Data storage pointOrder = limitOrderData[pt];
+        uint160 sqrtPrice_96 = LogPowMath.getSqrtPrice(pt);
+        (actualDeltaX, pointOrder.earnY) = ue.dec(deltaX, pointOrder.accEarnY, sqrtPrice_96, pointOrder.earnY, true);
+        pointOrder.sellingX -= actualDeltaX;
+        
+        if (actualDeltaX > 0 && pointOrder.sellingX == 0) {
+            int24 newVal = getStatusVal(pt, ptDelta) & 1;
+            setStatusVal(pt, ptDelta, newVal);
+            if (newVal == 0) {
+                pointBitmap.setZero(pt, ptDelta);
+            }
+        }
+        
+    }
+
+    function decLimOrderWithY(
+        int24 pt,
+        uint128 deltaY
+    ) external override returns (uint128 actualDeltaY) {
+        
+        require(pt % ptDelta == 0, "PD");
+
+        UserEarn.Data storage ue = userEarnX.get(msg.sender, pt);
+        PointOrder.Data storage pointOrder = limitOrderData[pt];
+        uint160 sqrtPrice_96 = LogPowMath.getSqrtPrice(pt);
+        (actualDeltaY, pointOrder.earnX) = ue.dec(deltaY, pointOrder.accEarnX, sqrtPrice_96, pointOrder.earnX, false);
+
+        pointOrder.sellingY -= actualDeltaY;
+        
+        if (actualDeltaY > 0 && pointOrder.sellingY == 0) {
+            int24 newVal = getStatusVal(pt, ptDelta) & 1;
+            setStatusVal(pt, ptDelta, newVal);
+            if (newVal == 0) {
+                pointBitmap.setZero(pt, ptDelta);
+            }
+        }
+        
+    }
+
+
+    function addLimOrderWithX(
+        address recipient,
+        int24 pt,
+        uint128 amountX,
+        bytes calldata data
+    ) external override returns (uint128 orderX, uint256 acquireY) {
+        
+        require(pt % ptDelta == 0, "PD");
+        require(pt >= state.currPt, "PG");
+        require(pt <= rightMostPt, "HO");
+        require(amountX > 0, "XP");
+
+        
+        // update point order
+        PointOrder.Data storage pointOrder = limitOrderData[pt];
+
+        orderX = amountX;
+        acquireY = 0;
+        uint160 sqrtPrice_96 = LogPowMath.getSqrtPrice(pt);
+        
+        uint256 currY = pointOrder.sellingY;
+        uint256 currX = pointOrder.sellingX;
+        if (currY > 0) {
+            uint128 costX;
+            (costX, acquireY) = SwapMathX2Y.x2YAtPrice(amountX, sqrtPrice_96, currY);
+            orderX -= costX;
+            currY -= acquireY;
+            pointOrder.accEarnX = pointOrder.accEarnX + costX;
+            pointOrder.earnX = pointOrder.earnX + costX;
+            pointOrder.sellingY = currY;
+        }
+        if (orderX > 0) {
+            currX += orderX;
+            pointOrder.sellingX = currX;
+        }
+
+        UserEarn.Data storage ue = userEarnY.get(recipient, pt);
+        pointOrder.earnY = ue.add(orderX, pointOrder.accEarnY, sqrtPrice_96, pointOrder.earnY, true);
+        ue.earnAssign = ue.earnAssign + acquireY;
+        
+        // update statusval and bitmap
+        if (currX == 0 && currY == 0) {
+            int24 val = getStatusVal(pt, ptDelta);
+            if (val & 2 != 0) {
+                int24 newVal = val & 1;
+                setStatusVal(pt, ptDelta, newVal);
+                if (newVal == 0) {
+                    pointBitmap.setZero(pt, ptDelta);
+                }
+            }
+        } else {
+            int24 val = getStatusVal(pt, ptDelta);
+            if (val & 2 == 0) {
+                int24 newVal = val | 2;
+                setStatusVal(pt, ptDelta, newVal);
+                if (val == 0) {
+                    pointBitmap.setOne(pt, ptDelta);
+                }
+            }
+        }
+
+        // trader pay x
+        uint256 bx = balanceX();
+        IIzumiswapAddLimOrderCallback(msg.sender).payCallback(amountX, 0, data);
+        require(balanceX() >= bx + amountX, "XE");
+        
+    }
+    
+    function addLimOrderWithY(
+        address recipient,
+        int24 pt,
+        uint128 amountY,
+        bytes calldata data
+    ) external override returns (uint128 orderY, uint256 acquireX) {
+        
+        require(pt % ptDelta == 0, "PD");
+        require(pt <= state.currPt, "PL");
+        require(pt >= leftMostPt, "LO");
+        require(amountY > 0, "YP");
+
+        // update point order
+        PointOrder.Data storage pointOrder = limitOrderData[pt];
+
+        orderY = amountY;
+        acquireX = 0;
+        uint160 sqrtPrice_96 = LogPowMath.getSqrtPrice(pt);
+        uint256 currY = pointOrder.sellingY;
+        uint256 currX = pointOrder.sellingX;
+        if (currX > 0) {
+            uint128 costY;
+            (costY, acquireX) = SwapMathY2X.y2XAtPrice(amountY, sqrtPrice_96, currX);
+            orderY -= costY;
+            currX -= acquireX;
+            pointOrder.accEarnY = pointOrder.accEarnY + costY;
+            pointOrder.earnY = pointOrder.earnY + costY;
+            pointOrder.sellingX = currX;
+        }
+        if (orderY > 0) {
+            currY += orderY;
+            pointOrder.sellingY = currY;
+        }
+        UserEarn.Data storage ue = userEarnX.get(recipient, pt);
+        pointOrder.earnX = ue.add(orderY, pointOrder.accEarnX, sqrtPrice_96, pointOrder.earnX, false);
+        ue.earnAssign = ue.earnAssign + acquireX;
+
+        // update statusval and bitmap
+        if (currX == 0 && currY == 0) {
+            int24 val = getStatusVal(pt, ptDelta);
+            if (val & 2 != 0) {
+                int24 newVal = val & 1;
+                setStatusVal(pt, ptDelta, newVal);
+                if (newVal == 0) {
+                    pointBitmap.setZero(pt, ptDelta);
+                }
+            }
+        } else {
+            int24 val = getStatusVal(pt, ptDelta);
+            if (val & 2 == 0) {
+                int24 newVal = val | 2;
+                setStatusVal(pt, ptDelta, newVal);
+                if (val == 0) {
+                    pointBitmap.setOne(pt, ptDelta);
+                }
+            }
+        }
+
+        // trader pay y
+        uint256 by = balanceY();
+        IIzumiswapAddLimOrderCallback(msg.sender).payCallback(0, amountY, data);
+        require(balanceY() >= by + amountY, "YE");
+        
+    }
+
+    function collectLimOrder(
+        address recipient, int24 pt, uint256 collectDec, uint256 collectEarn, bool isEarnY
+    ) external override returns(uint256 actualCollectDec, uint256 actualCollectEarn) {
+        UserEarn.Data storage ue = isEarnY? userEarnY.get(msg.sender, pt) : userEarnX.get(msg.sender, pt);
+        actualCollectDec = collectDec;
+        if (actualCollectDec > ue.sellingDec) {
+            actualCollectDec = ue.sellingDec;
+        }
+        ue.sellingDec = ue.sellingDec - actualCollectDec;
+        actualCollectEarn = collectEarn;
+        if (actualCollectEarn > ue.earnAssign) {
+            actualCollectEarn = ue.earnAssign;
+        }
+        ue.earnAssign = ue.earnAssign - actualCollectEarn;
+        (uint256 x, uint256 y) = isEarnY? (actualCollectDec, actualCollectEarn): (actualCollectEarn, actualCollectDec);
+        if (x > 0) {
+            TokenTransfer.transferToken(tokenX, recipient, x);
+        }
+        if (y > 0) {
+            TokenTransfer.transferToken(tokenY, recipient, y);
+        }
     }
     /// @dev mint
     /// @param minter minter address
@@ -654,7 +885,7 @@ contract IzumiswapPool is IIzumiswapPool {
         int24 highPt,
         bytes calldata data
     ) external override noDelegateCall lock returns (uint256 amountX, uint256 amountY) {
-        (bool success, bytes memory d) = poolPart.delegatecall(
+        (bool success, bytes memory d) = swapModuleY2X.delegatecall(
             abi.encodeWithSignature("swapY2X(address,uint128,int24,bytes)", 
             recipient, amount, highPt, data)
         );
@@ -671,7 +902,7 @@ contract IzumiswapPool is IIzumiswapPool {
         int24 highPt,
         bytes calldata data
     ) external override noDelegateCall lock returns (uint256 amountX, uint256 amountY) {
-        (bool success, bytes memory d) = poolPartDesire.delegatecall(
+        (bool success, bytes memory d) = swapModuleY2X.delegatecall(
             abi.encodeWithSignature("swapY2XDesireX(address,uint128,int24,bytes)", 
             recipient, desireX, highPt, data)
         );
@@ -704,7 +935,7 @@ contract IzumiswapPool is IIzumiswapPool {
         int24 lowPt,
         bytes calldata data
     ) external override noDelegateCall lock returns (uint256 amountX, uint256 amountY) {
-        (bool success, bytes memory d) = poolPart.delegatecall(
+        (bool success, bytes memory d) = swapModuleX2Y.delegatecall(
             abi.encodeWithSignature("swapX2Y(address,uint128,int24,bytes)", 
             recipient, amount, lowPt, data)
         );
@@ -721,7 +952,7 @@ contract IzumiswapPool is IIzumiswapPool {
         int24 lowPt,
         bytes calldata data
     ) external override noDelegateCall lock returns (uint256 amountX, uint256 amountY) {
-        (bool success, bytes memory d) = poolPartDesire.delegatecall(
+        (bool success, bytes memory d) = swapModuleX2Y.delegatecall(
             abi.encodeWithSignature("swapX2YDesireY(address,uint128,int24,bytes)", recipient, desireY, lowPt,data)
         );
         if (success) {
