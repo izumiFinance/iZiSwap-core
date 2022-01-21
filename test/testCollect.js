@@ -93,7 +93,10 @@ async function getPoolParts() {
     const iZiSwapPoolPartDesireFactory = await ethers.getContractFactory("SwapY2XModule");
     const iZiSwapPoolPartDesire = await iZiSwapPoolPartDesireFactory.deploy();
     await iZiSwapPoolPartDesire.deployed();
-    return [iZiSwapPoolPart.address, iZiSwapPoolPartDesire.address];
+    const MintModuleFactory = await ethers.getContractFactory('MintModule');
+    const mintModule = await MintModuleFactory.deploy();
+    await mintModule.deployed();
+    return [iZiSwapPoolPart.address, iZiSwapPoolPartDesire.address, mintModule.address];
   }
 
 async function checkBalance(token, miner, expectAmount) {
@@ -136,11 +139,11 @@ describe("miner burn and collect fee after swaps", function () {
     var rate;
     beforeEach(async function() {
         [signer, miner, trader1, trader2, recipient1, recipient2] = await ethers.getSigners();
-        [poolPart, poolPartDesire] = await getPoolParts();
+        [poolPart, poolPartDesire, mintModule] = await getPoolParts();
         // deploy a factory
         const iZiSwapFactory = await ethers.getContractFactory("iZiSwapFactory");
     
-        factory = await iZiSwapFactory.deploy(poolPart, poolPartDesire);
+        factory = await iZiSwapFactory.deploy(poolPart, poolPartDesire, mintModule);
         await factory.deployed();
     
         [tokenX, tokenY] = await getToken();

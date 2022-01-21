@@ -179,7 +179,10 @@ async function getPoolParts() {
     const iZiSwapPoolPartDesireFactory = await ethers.getContractFactory("SwapY2XModule");
     const iZiSwapPoolPartDesire = await iZiSwapPoolPartDesireFactory.deploy();
     await iZiSwapPoolPartDesire.deployed();
-    return [iZiSwapPoolPart.address, iZiSwapPoolPartDesire.address];
+    const MintModuleFactory = await ethers.getContractFactory('MintModule');
+    const mintModule = await MintModuleFactory.deploy();
+    await mintModule.deployed();
+    return [iZiSwapPoolPart.address, iZiSwapPoolPartDesire.address, mintModule.address];
   }
 
 async function getLiquidity(testMint, tokenX, tokenY, miner, pl, pr) {
@@ -198,11 +201,11 @@ async function getLiquidity(testMint, tokenX, tokenY, miner, pl, pr) {
 describe("swap", function () {
   it("swap with limorder y2x range complex", async function () {
     const [signer, miner1, miner2, miner3, seller0, seller1, trader, trader2] = await ethers.getSigners();
-    [poolPart, poolPartDesire] = await getPoolParts();
+    [poolPart, poolPartDesire, mintModule] = await getPoolParts();
     // deploy a factory
     const iZiSwapFactory = await ethers.getContractFactory("iZiSwapFactory");
 
-    const factory = await iZiSwapFactory.deploy(poolPart, poolPartDesire);
+    const factory = await iZiSwapFactory.deploy(poolPart, poolPartDesire, mintModule);
     await factory.deployed();
 
     [tokenX, tokenY] = await getToken();
