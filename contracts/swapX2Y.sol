@@ -16,6 +16,7 @@ import './libraries/SwapMathX2YDesire.sol';
 import './libraries/TokenTransfer.sol';
 import './libraries/UserEarn.sol';
 import './libraries/State.sol';
+import './libraries/Oracle.sol';
 import './interfaces/IiZiSwapCallback.sol';
 
 import 'hardhat/console.sol';
@@ -33,6 +34,7 @@ contract SwapX2YModule {
     using UserEarn for mapping(bytes32 =>UserEarn.Data);
     using SwapMathY2X for SwapMathY2X.RangeRetState;
     using SwapMathX2Y for SwapMathX2Y.RangeRetState;
+    using Oracle for Oracle.Observation[65535];
 
     // TODO following values need change
     int24 internal constant LEFT_MOST_PT = -800000;
@@ -72,15 +74,18 @@ contract SwapX2YModule {
         uint160 _sqrtRate_96;
         int24 pd;
         int24 currVal;
+        int24 startPoint;
+        uint128 startLiquidity;
+        uint32 timestamp;
     }
-    struct WithdrawRet {
-        uint256 x;
-        uint256 y;
-        uint256 xc;
-        uint256 yc;
-        uint256 currX;
-        uint256 currY;
-    }
+    // struct WithdrawRet {
+    //     uint256 x;
+    //     uint256 y;
+    //     uint256 xc;
+    //     uint256 yc;
+    //     uint256 currX;
+    //     uint256 currY;
+    // }
 
     /// TODO: following mappings may need modify
     mapping(bytes32 =>Liquidity.Data) public liquidities;
@@ -90,6 +95,8 @@ contract SwapX2YModule {
     mapping(int24 =>LimitOrder.Data) public limitOrderData;
     mapping(bytes32 => UserEarn.Data) userEarnX;
     mapping(bytes32 => UserEarn.Data) userEarnY;
+    Oracle.Observation[65535] public observations;
+    
     address private  original;
 
     address private poolPart;
@@ -155,6 +162,9 @@ contract SwapX2YModule {
         cache._sqrtRate_96 = sqrtRate_96;
         cache.pd = ptDelta;
         cache.currVal = getStatusVal(st.currPt, cache.pd);
+        cache.startPoint = st.currPt;
+        cache.startLiquidity = st.liquidity;
+        cache.timestamp = uint32(block.number);
         while (lowPt <= st.currPt && !cache.finished) {
             // clear limit order first
             if (cache.currVal & 2 > 0) {
@@ -290,6 +300,16 @@ contract SwapX2YModule {
                 break;
             }
         }
+        if (cache.startPoint != st.currPt) {
+            (st.observationCurrentIndex, st.observationQueueLen) = observations.append(
+                st.observationCurrentIndex,
+                cache.timestamp,
+                cache.startPoint,
+                cache.startLiquidity,
+                st.observationQueueLen,
+                st.observationNextQueueLen
+            );
+        }
 
         // write back fee scale, no fee of y
         feeScaleX_128 = cache.currFeeScaleX_128;
@@ -326,6 +346,9 @@ contract SwapX2YModule {
         cache._sqrtRate_96 = sqrtRate_96;
         cache.pd = ptDelta;
         cache.currVal = getStatusVal(st.currPt, cache.pd);
+        cache.startPoint = st.currPt;
+        cache.startLiquidity = st.liquidity;
+        cache.timestamp = uint32(block.number);
         while (lowPt <= st.currPt && !cache.finished) {
             // clear limit order first
             if (cache.currVal & 2 > 0) {
@@ -440,6 +463,16 @@ contract SwapX2YModule {
             if (st.currPt <= lowPt) {
                 break;
             }
+        }
+        if (cache.startPoint != st.currPt) {
+            (st.observationCurrentIndex, st.observationQueueLen) = observations.append(
+                st.observationCurrentIndex,
+                cache.timestamp,
+                cache.startPoint,
+                cache.startLiquidity,
+                st.observationQueueLen,
+                st.observationNextQueueLen
+            );
         }
 
         // write back fee scale, no fee of y

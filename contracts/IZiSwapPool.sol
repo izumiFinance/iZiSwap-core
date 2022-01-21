@@ -14,6 +14,7 @@ import './libraries/AmountMath.sol';
 import './libraries/UserEarn.sol';
 import './libraries/TokenTransfer.sol';
 import './libraries/State.sol';
+import './libraries/Oracle.sol';
 import './interfaces/IiZiSwapCallback.sol';
 import 'hardhat/console.sol';
 
@@ -31,6 +32,8 @@ contract iZiSwapPool is IiZiSwapPool {
     using LimitOrder for LimitOrder.Data;
     using UserEarn for UserEarn.Data;
     using UserEarn for mapping(bytes32 =>UserEarn.Data);
+    using Oracle for Oracle.Observation[65535];
+    
     // using SwapMathY2X for SwapMathY2X.RangeRetState;
     // using SwapMathX2Y for SwapMathX2Y.RangeRetState;
 
@@ -55,14 +58,14 @@ contract iZiSwapPool is IiZiSwapPool {
 
     State public override state;
 
-    struct Cache {
-        uint256 currFeeScaleX_128;
-        uint256 currFeeScaleY_128;
-        bool finished;
-        uint160 _sqrtRate_96;
-        int24 pd;
-        int24 currVal;
-    }
+    // struct Cache {
+    //     uint256 currFeeScaleX_128;
+    //     uint256 currFeeScaleY_128;
+    //     bool finished;
+    //     uint160 _sqrtRate_96;
+    //     int24 pd;
+    //     int24 currVal;
+    // }
     struct WithdrawRet {
         uint256 x;
         uint256 y;
@@ -80,6 +83,8 @@ contract iZiSwapPool is IiZiSwapPool {
     mapping(int24 =>LimitOrder.Data) public override limitOrderData;
     mapping(bytes32 => UserEarn.Data) public override userEarnX;
     mapping(bytes32 => UserEarn.Data) public override userEarnY;
+    Oracle.Observation[65535] public observations;
+
     address private  original;
 
     address private swapModuleX2Y;
@@ -137,6 +142,9 @@ contract iZiSwapPool is IiZiSwapPool {
         state.locked = false;
 
         sqrtRate_96 = LogPowMath.getSqrtPrice(1);
+
+        (state.observationQueueLen, state.observationNextQueueLen) = observations.init(uint32(block.number));
+        state.observationCurrentIndex = 0;
     }
 
     /// @dev Add / Dec liquidity of a minter

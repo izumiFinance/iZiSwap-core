@@ -129,6 +129,9 @@ interface IiZiSwapPool {
             uint256 currY,
             uint128 liquidity,
             bool allX,
+            uint16 observationCurrentIndex,
+            uint16 observationQueueLen,
+            uint16 observationNextQueueLen,
             bool locked
         );
     function sqrtRate_96() external view returns (uint160);

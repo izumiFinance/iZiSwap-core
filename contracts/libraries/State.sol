@@ -9,5 +9,9 @@ struct State {
         // liquidity from currPt to right
         uint128 liquidity;
         bool allX;
+
+        uint16 observationCurrentIndex;
+        uint16 observationQueueLen;
+        uint16 observationNextQueueLen;
         bool locked;
 }

@@ -35,6 +35,9 @@ contract TestQuoter is IiZiSwapCallback {
             ,
             ,
             ,
+            ,
+            ,
+            ,
         ) = IiZiSwapPool(poolAddr).state();
 
         if (dt.token0 < dt.token1) {
@@ -70,6 +73,9 @@ contract TestQuoter is IiZiSwapCallback {
         (
             ,
             int24 currPoint,
+            ,
+            ,
+            ,
             ,
             ,
             ,
