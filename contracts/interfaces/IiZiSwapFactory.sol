@@ -11,6 +11,7 @@ interface IiZiSwapFactory {
     );
     function swapX2Y() external returns (address);
     function swapY2X() external returns (address);
+    function mintModule() external returns (address);
     function enableFeeAmount(uint24 fee, uint24 ptDelta) external;
     function newPool(
         address tokenX,

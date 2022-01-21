@@ -99,8 +99,9 @@ contract SwapX2YModule {
     
     address private  original;
 
-    address private poolPart;
-    address private poolPartDesire;
+    address private swapModuleX2Y;
+    address private swapModuleY2X;
+    address private mintMudule;
     // address private immutable original;
 
     // delta cannot be int128.min and it can be proofed that

@@ -12,13 +12,15 @@ contract iZiSwapFactory is IiZiSwapFactory {
 
     address public override swapX2Y;
     address public override swapY2X;
-    constructor(address _swapX2Y, address _swapY2X) {
+    address public override mintModule;
+    constructor(address _swapX2Y, address _swapY2X, address _mintModule) {
         only_addr_ = address(this);
         owner = msg.sender;
         fee2pointDelta[500] = 10;
         fee2pointDelta[3000] = 50;
         swapX2Y = _swapX2Y;
         swapY2X = _swapY2X;
+        mintModule = _mintModule;
     }
     modifier noDelegateCall() {
         require(address(this) == only_addr_);

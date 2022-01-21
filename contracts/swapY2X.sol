@@ -98,8 +98,9 @@ contract SwapY2XModule {
     
     address private original;
 
-    address private poolPart;
-    address private poolPartDesire;
+    address private swapModuleX2Y;
+    address private swapModuleY2X;
+    address private mintMudule;
 
     // delta cannot be int128.min and it can be proofed that
     // liquidDelta of any one point will not be int128.min

@@ -66,29 +66,30 @@ contract iZiSwapPool is IiZiSwapPool {
     //     int24 pd;
     //     int24 currVal;
     // }
-    struct WithdrawRet {
-        uint256 x;
-        uint256 y;
-        uint256 xc;
-        uint256 yc;
-        uint256 currX;
-        uint256 currY;
-    }
+    // struct WithdrawRet {
+    //     uint256 x;
+    //     uint256 y;
+    //     uint256 xc;
+    //     uint256 yc;
+    //     uint256 currX;
+    //     uint256 currY;
+    // }
 
     /// TODO: following mappings may need modify
     mapping(bytes32 =>Liquidity.Data) public override liquidities;
-    mapping(int16 =>uint256) pointBitmap;
-    mapping(int24 =>Point.Data) points;
+    mapping(int16 =>uint256) public override pointBitmap;
+    mapping(int24 =>Point.Data) public override points;
     mapping(int24 =>int24) public override statusVal;
     mapping(int24 =>LimitOrder.Data) public override limitOrderData;
     mapping(bytes32 => UserEarn.Data) public override userEarnX;
     mapping(bytes32 => UserEarn.Data) public override userEarnY;
-    Oracle.Observation[65535] public observations;
+    Oracle.Observation[65535] public override observations;
 
     address private  original;
 
     address private swapModuleX2Y;
     address private swapModuleY2X;
+    address private mintModule;
 
     modifier lock() {
         require(!state.locked, 'LKD');
@@ -121,6 +122,8 @@ contract iZiSwapPool is IiZiSwapPool {
         factory = fac;
         swapModuleX2Y = IiZiSwapFactory(fac).swapX2Y();
         swapModuleY2X = IiZiSwapFactory(fac).swapY2X();
+        mintModule = IiZiSwapFactory(fac).mintModule();
+
         console.log("swapX2Y: ", swapModuleX2Y);
         console.log("swapY2X: ", swapModuleY2X);
         tokenX = tX;
@@ -147,247 +150,6 @@ contract iZiSwapPool is IiZiSwapPool {
         state.observationCurrentIndex = 0;
     }
 
-    /// @dev Add / Dec liquidity of a minter
-    /// @param minter the minter of the liquidity
-    /// @param pl left endpt of the segment
-    /// @param pr right endpt of the segment, [pl, pr)
-    /// @param delta delta liquidity, positive for adding
-    /// @param currPoint current price point on the axies
-    function _updateLiquidity(
-        address minter,
-        int24 pl,
-        int24 pr,
-        int128 delta,
-        int24 currPoint
-    ) private {
-        int24 pd = ptDelta;
-        Liquidity.Data storage lq = liquidities.get(minter, pl, pr);
-        (uint256 mFeeScaleX_128, uint256 mFeeScaleY_128) = (feeScaleX_128, feeScaleY_128);
-        bool leftFlipped;
-        bool rightFlipped;
-        // update points
-        if (delta != 0) {
-            // add / dec liquidity
-            leftFlipped = points.updateEndpt(pl, true, currPoint, delta, maxLiquidPt, mFeeScaleX_128, mFeeScaleY_128);
-            rightFlipped = points.updateEndpt(pr, false, currPoint, delta, maxLiquidPt, mFeeScaleX_128, mFeeScaleY_128);
-        }
-        // get sub fee scale of the range
-        (uint256 subFeeScaleX_128, uint256 subFeeScaleY_128) = 
-            points.getSubFeeScale(
-                pl, pr, currPoint, mFeeScaleX_128, mFeeScaleY_128
-            );
-        lq.update(delta, subFeeScaleX_128, subFeeScaleY_128);
-        // update bitmap
-        if (leftFlipped) {
-            int24 leftVal = getStatusVal(pl, pd);
-            if (delta > 0) {
-                setStatusVal(pl, pd, leftVal | 1);
-                if (leftVal == 0) {
-                    pointBitmap.setOne(pl, pd);
-                }
-            } else {
-                int24 newVal = leftVal & 2;
-                setStatusVal(pl, pd, newVal);
-                if (newVal == 0) {
-                    pointBitmap.setZero(pl, pd);
-                }
-                delete points[pl];
-            }
-        }
-        if (rightFlipped) {
-            int24 rightVal = getStatusVal(pr, pd);
-            if (delta > 0) {
-                setStatusVal(pr, pd, rightVal | 1);
-                if (rightVal == 0) {
-                    pointBitmap.setOne(pr, pd);
-                }
-            } else {
-                int24 newVal = rightVal & 2;
-                setStatusVal(pr, pd, newVal);
-                if (newVal == 0) {
-                    pointBitmap.setZero(pr, pd);
-                }
-                delete points[pr];
-            }
-        }
-    }
-
-    function _computeDepositYc(
-        uint128 liquidDelta,
-        uint160 sqrtPrice_96
-    ) private pure returns (uint128 y) {
-        // to simplify computation
-        // minter is required to deposit only
-        // token y in point of current price
-        uint256 amount = MulDivMath.mulDivCeil(
-            liquidDelta,
-            sqrtPrice_96,
-            TwoPower.Pow96
-        );
-        y = uint128(amount);
-        require (y == amount, "YC OFL");
-    }
-
-    /// @dev [pl, pr)
-    function _computeDepositXY(
-        uint128 liquidDelta,
-        int24 pl,
-        int24 pr,
-        State memory st
-    ) private view returns (uint128 x, uint128 y, uint128 yc) {
-        x = 0;
-        uint256 amountY = 0;
-        int24 pc = st.currPt;
-        uint160 sqrtPrice_96 = st.sqrtPrice_96;
-        uint160 sqrtPriceR_96 = LogPowMath.getSqrtPrice(pr);
-        uint160 _sqrtRate_96 = sqrtRate_96;
-        if (pl < pc) {
-            uint160 sqrtPriceL_96 = LogPowMath.getSqrtPrice(pl);
-            uint256 yl;
-            if (pr < pc) {
-                yl = AmountMath.getAmountY(liquidDelta, sqrtPriceL_96, sqrtPriceR_96, _sqrtRate_96, true);
-            } else {
-                yl = AmountMath.getAmountY(liquidDelta, sqrtPriceL_96, sqrtPrice_96, _sqrtRate_96, true);
-            }
-            amountY += yl;
-        }
-        if (pr > pc) {
-            // we need compute XR
-            int24 xrLeft = (pl > pc) ? pl : pc + 1;
-            uint256 xr = AmountMath.getAmountX(
-                liquidDelta,
-                xrLeft,
-                pr,
-                sqrtPriceR_96,
-                _sqrtRate_96,
-                true
-            );
-            x = uint128(xr);
-            require(x == xr, "XOFL");
-        }
-        if (pl <= pc && pr > pc) {
-            // we nned compute yc at point of current price
-            yc = _computeDepositYc(
-                liquidDelta,
-                sqrtPrice_96
-            );
-            amountY += yc;
-        } else {
-            yc = 0;
-        }
-        y = uint128(amountY);
-        require(y == amountY, "YOFL");
-    }
-    function _computeWithdrawXYAtCurrPt(
-        uint128 liquidDelta,
-        uint160 sqrtPrice_96,
-        uint256 currX,
-        uint256 currY
-    ) private pure returns (uint256 x, uint256 y) {
-        // liquidDelta <= liquidity
-        // no need to require(liquidDelta <= liquidity)
-
-        // if only pay token y to minter
-        // how many token y are needed
-        uint256 amountY = MulDivMath.mulDivFloor(
-            liquidDelta,
-            sqrtPrice_96,
-            TwoPower.Pow96
-        );
-        // token y is enough to pay
-        if (amountY <= currY) {
-            x = 0;
-            y = uint128(amountY);
-        } else {
-            y = currY;
-            // token x need to payed for rest liquidity
-            uint256 liquidY = MulDivMath.mulDivCeil(
-                y,
-                TwoPower.Pow96,
-                sqrtPrice_96
-            );
-
-            if (liquidY >= liquidDelta) {
-                // no need to pay x
-                x = 0;
-            } else {
-                uint128 liquidX = liquidDelta - uint128(liquidY);
-                x = MulDivMath.mulDivFloor(
-                    liquidX,
-                    TwoPower.Pow96,
-                    sqrtPrice_96
-                );
-                if (x > currX) {
-                    x = currX;
-                }
-            }
-        }
-    }
-
-    /// @dev [pl, pr)
-    function _computeWithdrawXY(
-        uint128 liquidDelta,
-        int24 pl,
-        int24 pr,
-        State memory st
-    ) private view returns (WithdrawRet memory withRet) {
-        uint256 amountY = 0;
-        uint256 amountX = 0;
-        int24 pc = st.currPt;
-        uint160 sqrtPrice_96 = st.sqrtPrice_96;
-        uint160 sqrtPriceR_96 = LogPowMath.getSqrtPrice(pr);
-        uint160 _sqrtRate_96 = sqrtRate_96;
-        if (pl < pc) {
-            uint160 sqrtPriceL_96 = LogPowMath.getSqrtPrice(pl);
-            uint256 yl;
-            if (pr < pc) {
-                yl = AmountMath.getAmountY(liquidDelta, sqrtPriceL_96, sqrtPriceR_96, _sqrtRate_96, false);
-            } else {
-                yl = AmountMath.getAmountY(liquidDelta, sqrtPriceL_96, sqrtPrice_96, _sqrtRate_96, false);
-            }
-            amountY += yl;
-        }
-        if (pr > pc) {
-            // we need compute XR
-            int24 xrLeft = (pl > pc) ? pl : pc + 1;
-            uint256 xr = AmountMath.getAmountX(
-                liquidDelta,
-                xrLeft,
-                pr,
-                sqrtPriceR_96,
-                _sqrtRate_96,
-                false
-            );
-            amountX += xr;
-        }
-        if (pl <= pc && pr > pc) {
-            if (st.allX) {
-                withRet.currY = 0;
-                withRet.currX = MulDivMath.mulDivFloor(st.liquidity, TwoPower.Pow96, st.sqrtPrice_96);
-            } else {
-                withRet.currX = st.currX;
-                withRet.currY = st.currY;
-            }
-            // we nned compute yc at point of current price
-            (withRet.xc, withRet.yc) = _computeWithdrawXYAtCurrPt(
-                liquidDelta,
-                sqrtPrice_96,
-                withRet.currX,
-                withRet.currY
-            );
-            withRet.currX -= withRet.xc;
-            withRet.currY -= withRet.yc;
-            amountY += withRet.yc;
-            amountX += withRet.xc;
-        } else {
-            withRet.yc = 0;
-            withRet.xc = 0;
-        }
-        withRet.y = uint128(amountY);
-        require(withRet.y == amountY, "YOFL");
-        withRet.x = uint128(amountX);
-        require(withRet.x == amountX, "XOFL");
-    }
 
     function assignLimOrderEarnY(
         int24 pt,
@@ -625,67 +387,14 @@ contract iZiSwapPool is IiZiSwapPool {
         uint128 liquidDelta,
         bytes calldata data
     ) external override noDelegateCall lock returns (uint128 amountX, uint128 amountY) {
-        require(leftPt < rightPt, "LR");
-        require(leftPt >= leftMostPt, "LO");
-        require(rightPt <= rightMostPt, "HO");
-        require(int256(rightPt) - int256(leftPt) < RIGHT_MOST_PT, "TL");
-        int24 pd = ptDelta;
-        require(leftPt % pd == 0, "LPD");
-        require(rightPt % pd == 0, "RPD");
-        int128 ld = int128(liquidDelta);
-        require(ld > 0, "LP");
-        if (minter == address(0)) {
-            minter = msg.sender;
-        }
-        State memory st = state;
-        // add a liquidity segment to the pool
-        _updateLiquidity(
-            minter,
-            leftPt,
-            rightPt,
-            ld,
-            st.currPt
+        (bool success, bytes memory d) = mintModule.delegatecall(
+            abi.encodeWithSignature("mint(address,int24,int24,uint128,bytes)", minter, leftPt, rightPt,liquidDelta,data)
         );
-        // compute amount of tokenx and tokeny should be paid from minter
-        (uint128 x, uint128 y, uint128 yc) = _computeDepositXY(
-            liquidDelta,
-            leftPt,
-            rightPt,
-            st
-        );
-        // update state
-        if (yc > 0) {
-            if (!st.allX) {
-                state.currY = st.currY + yc;
-            } else {
-                state.allX = false;
-                state.currX = MulDivMath.mulDivFloor(st.liquidity, TwoPower.Pow96, st.sqrtPrice_96);
-                state.currY = yc;
-            }
-            state.liquidity = st.liquidity + liquidDelta;
+        if (success) {
+            (amountX, amountY) = abi.decode(d, (uint128, uint128));
+        } else {
+            revertDCData(d);
         }
-        uint256 bx;
-        uint256 by;
-        if (x > 0) {
-            bx = balanceX();
-            require(bx + x > bx, "BXO"); // balance x overflow
-        }
-        if (y > 0) {
-            by = balanceY();
-            require(by + y > by, "BXO"); // balance y overflow
-        }
-        if (x > 0 || y > 0) {
-            // minter's callback to pay
-            IiZiSwapMintCallback(msg.sender).mintDepositCallback(x, y, data);
-        }
-        if (x > 0) {
-            require(bx + x <= balanceX(), "NEX"); // not enough x from minter
-        }
-        if (y > 0) {
-            require(by + y <= balanceY(), "NEY"); // not enough y from minter
-        }
-        amountX = x;
-        amountY = y;
     }
 
     function burn(
@@ -693,44 +402,14 @@ contract iZiSwapPool is IiZiSwapPool {
         int24 rightPt,
         uint128 liquidDelta
     ) external override noDelegateCall lock returns (uint256 amountX, uint256 amountY) {
-        // it is not necessary to check leftPt rightPt with [leftMostPt, rightMostPt]
-        // because we haved checked it in the mint(...)
-        require(leftPt < rightPt, "LR");
-        int24 pd = ptDelta;
-        require(leftPt % pd == 0, "LPD");
-        require(rightPt % pd == 0, "RPD");
-        State memory st = state;
-        uint128 liquidity = st.liquidity;
-        // add a liquidity segment to the pool
-        int256 nlDelta = -int256(uint256(liquidDelta));
-        require(int128(nlDelta) == nlDelta, "DO");
-        _updateLiquidity(
-            msg.sender,
-            leftPt,
-            rightPt,
-            int128(nlDelta),
-            st.currPt
+        (bool success, bytes memory d) = mintModule.delegatecall(
+            abi.encodeWithSignature("burn(int24,int24,uint128)", leftPt, rightPt, liquidDelta)
         );
-        // compute amount of tokenx and tokeny should be paid from minter
-        WithdrawRet memory withRet = _computeWithdrawXY(
-            liquidDelta,
-            leftPt,
-            rightPt,
-            st
-        );
-        // update state
-        if (withRet.yc > 0 || withRet.xc > 0) {
-            state.liquidity = liquidity - liquidDelta;
-            state.allX = (withRet.currY == 0);
-            state.currX = withRet.currX;
-            state.currY = withRet.currY;
+        if (success) {
+            (amountX, amountY) = abi.decode(d, (uint256, uint256));
+        } else {
+            revertDCData(d);
         }
-        if (withRet.x > 0 || withRet.y > 0) {
-            Liquidity.Data storage lq = liquidities.get(msg.sender, leftPt, rightPt);
-            lq.remainFeeX += withRet.x;
-            lq.remainFeeY += withRet.y;
-        }
-        return (withRet.x, withRet.y);
     }
 
     function collect(
@@ -740,23 +419,13 @@ contract iZiSwapPool is IiZiSwapPool {
         uint256 amountXLim,
         uint256 amountYLim
     ) external override noDelegateCall lock returns (uint256 actualAmountX, uint256 actualAmountY) {
-        require(amountXLim > 0 || amountYLim > 0, "X+Y>0");
-        Liquidity.Data storage lq = liquidities.get(msg.sender, leftPt, rightPt);
-        actualAmountX = amountXLim;
-        if (actualAmountX > lq.remainFeeX) {
-            actualAmountX = lq.remainFeeX;
-        }
-        actualAmountY = amountYLim;
-        if (actualAmountY > lq.remainFeeY) {
-            actualAmountY = lq.remainFeeY;
-        }
-        lq.remainFeeX -= actualAmountX;
-        lq.remainFeeY -= actualAmountY;
-        if (actualAmountX > 0) {
-            TokenTransfer.transferToken(tokenX, recipient, actualAmountX);
-        }
-        if (actualAmountY > 0) {
-            TokenTransfer.transferToken(tokenY, recipient, actualAmountY);
+        (bool success, bytes memory d) = mintModule.delegatecall(
+            abi.encodeWithSignature("collect(address,int24,int24,uint256,uint256)", recipient, leftPt, rightPt, amountXLim, amountYLim)
+        );
+        if (success) {
+            (actualAmountX, actualAmountY) = abi.decode(d, (uint256, uint256));
+        } else {
+            revertDCData(d);
         }
     }
     
@@ -879,5 +548,22 @@ contract iZiSwapPool is IiZiSwapPool {
         } else {
             revertDCData(d);
         }
+    }
+    function observe(uint32[] calldata secondsAgos)
+        external
+        view
+        override
+        noDelegateCall
+        returns (int56[] memory pointCumulatives, uint160[] memory secondsPerLiquidityCumulative_128s)
+    {
+        return
+            observations.observe(
+                uint32(block.timestamp),
+                secondsAgos,
+                state.currPt,
+                state.observationCurrentIndex,
+                state.liquidity,
+                state.observationQueueLen
+            );
     }
 }

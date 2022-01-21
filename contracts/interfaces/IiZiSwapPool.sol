@@ -146,4 +146,29 @@ interface IiZiSwapPool {
             uint256 earnY
         );
     function statusVal(int24) external returns(int24 val);
+    function observations(uint256 index)
+        external
+        view
+        returns (
+            uint32 timestamp,
+            int56 pointCumulative,
+            uint160 secondsPerLiquidityCumulative_128,
+            bool init
+        );
+    function points(int24 point)
+        external
+        view
+        returns (
+            uint128 liquidAcc,
+            int128 liquidDelta,
+            uint256 feeScaleXBeyond_128,
+            uint256 feeScaleYBeyond_128,
+            bool isEndpt
+        );
+    function pointBitmap(int16 wordPosition) external view returns (uint256);
+
+    function observe(uint32[] calldata secondsAgos)
+        external
+        view
+        returns (int56[] memory pointCumulatives, uint160[] memory secondsPerLiquidityCumulative_128s);
 }
