@@ -1,21 +1,21 @@
 const { ethers } = require("hardhat");
 
 async function getPoolParts() {
-  const IzumiswapPoolPartFactory = await ethers.getContractFactory("IzumiswapPoolPart");
-  const izumiswapPoolPart = await IzumiswapPoolPartFactory.deploy();
-  await izumiswapPoolPart.deployed();
-  const IzumiswapPoolPartDesireFactory = await ethers.getContractFactory("IzumiswapPoolPartDesire");
-  const izumiswapPoolPartDesire = await IzumiswapPoolPartDesireFactory.deploy();
-  await izumiswapPoolPartDesire.deployed();
-  return [izumiswapPoolPart.address, izumiswapPoolPartDesire.address];
+  const iZiSwapPoolPartFactory = await ethers.getContractFactory("SwapX2YModule");
+  const iZiSwapPoolPart = await iZiSwapPoolPartFactory.deploy();
+  await iZiSwapPoolPart.deployed();
+  const iZiSwapPoolPartDesireFactory = await ethers.getContractFactory("SwapY2XModule");
+  const iZiSwapPoolPartDesire = await iZiSwapPoolPartDesireFactory.deploy();
+  await iZiSwapPoolPartDesire.deployed();
+  return [iZiSwapPoolPart.address, iZiSwapPoolPartDesire.address];
 }
 async function main() {
-    const IzumiswapFactory = await ethers.getContractFactory("IzumiswapFactory");
-    [poolPart, poolPartDesire] = await getPoolParts();
+    const iZiSwapFactory = await ethers.getContractFactory("iZiSwapFactory");
+    [swapX2Y, swapY2X] = await getPoolParts();
 
-    console.log("pool part: ", poolPart);
-    console.log("pool part desire: ", poolPartDesire);
-    const factory = await IzumiswapFactory.deploy(poolPart, poolPartDesire);
+    console.log("x2y: ", swapX2Y);
+    console.log("y2x: ", swapY2X);
+    const factory = await iZiSwapFactory.deploy(swapX2Y, swapY2X);
     await factory.deployed();
 
     console.log("factory addr: " + factory.address);

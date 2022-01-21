@@ -11,7 +11,7 @@ interface IiZiSwapMintCallback {
 
 }
 
-interface IiZiSwapSwapCallback {
+interface IiZiSwapCallback {
     function swapY2XCallback(
         uint256 x,
         uint256 y,

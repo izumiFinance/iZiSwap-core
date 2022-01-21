@@ -9,7 +9,7 @@ import './libraries/PointBitmap.sol';
 import './libraries/LogPowMath.sol';
 import './libraries/MulDivMath.sol';
 import './libraries/TwoPower.sol';
-import './libraries/PointOrder.sol';
+import './libraries/LimitOrder.sol';
 import './libraries/AmountMath.sol';
 import './libraries/UserEarn.sol';
 import './libraries/TokenTransfer.sol';
@@ -20,7 +20,7 @@ import 'hardhat/console.sol';
 import './libraries/SwapMathY2X.sol';
 import './libraries/SwapMathX2Y.sol';
 
-contract IZiSwapPool is IiZiSwapPool {
+contract iZiSwapPool is IiZiSwapPool {
 
     // TODO following usings may need modify
     using Liquidity for mapping(bytes32 =>Liquidity.Data);
@@ -28,7 +28,7 @@ contract IZiSwapPool is IiZiSwapPool {
     using Point for mapping(int24 =>Point.Data);
     using Point for Point.Data;
     using PointBitmap for mapping(int16 =>uint256);
-    using PointOrder for PointOrder.Data;
+    using LimitOrder for LimitOrder.Data;
     using UserEarn for UserEarn.Data;
     using UserEarn for mapping(bytes32 =>UserEarn.Data);
     // using SwapMathY2X for SwapMathY2X.RangeRetState;
@@ -77,7 +77,7 @@ contract IZiSwapPool is IiZiSwapPool {
     mapping(int16 =>uint256) pointBitmap;
     mapping(int24 =>Point.Data) points;
     mapping(int24 =>int24) public override statusVal;
-    mapping(int24 =>PointOrder.Data) public override limitOrderData;
+    mapping(int24 =>LimitOrder.Data) public override limitOrderData;
     mapping(bytes32 => UserEarn.Data) public override userEarnX;
     mapping(bytes32 => UserEarn.Data) public override userEarnY;
     address private  original;
@@ -380,95 +380,6 @@ contract IZiSwapPool is IiZiSwapPool {
         withRet.x = uint128(amountX);
         require(withRet.x == amountX, "XOFL");
     }
-    /*
-    function decLimOrderWithX(
-        int24 pt,
-        uint128 deltaX
-    ) external override noDelegateCall lock returns (uint128 actualDeltaX) {
-        (bool success, bytes memory data) = poolPartX2YAddr.delegatecall(
-            abi.encodeWithSignature("decLimOrderWithX(int24,uint128)", 
-            pt, deltaX)
-        );
-        require(success, "dc");
-        actualDeltaX = abi.decode(data, (uint128));
-    }
-
-
-    function decLimOrderWithY(
-        int24 pt,
-        uint128 deltaY
-    ) external override noDelegateCall lock returns (uint128 actualDeltaY) {
-        (bool success, bytes memory data) = poolPartX2YAddr.delegatecall(
-            abi.encodeWithSignature("decLimOrderWithY(int24,uint128)", 
-            pt, deltaY)
-        );
-        require(success, "dc");
-        actualDeltaY = abi.decode(data, (uint128));
-    }
-
-
-    function addLimOrderWithX(
-        address recipient,
-        int24 pt,
-        uint128 amountX,
-        bytes calldata data
-    ) external override noDelegateCall lock returns (uint128 orderX, uint256 acquireY) {
-        console.log("add limorder x");
-        (bool success, bytes memory retData) = poolPartX2YAddr.delegatecall(
-            abi.encodeWithSignature("addLimOrderWithX(address,int24,uint128,bytes)", 
-            recipient, pt, amountX, data)
-        );
-        require(success, "dc");
-        (orderX, acquireY) = abi.decode(retData, (uint128, uint256));
-    }
-    
-    function addLimOrderWithY(
-        address recipient,
-        int24 pt,
-        uint128 amountY,
-        bytes calldata data
-    ) external override noDelegateCall lock returns (uint128 orderY, uint256 acquireX) {
-        console.log("add limorder y");
-        (bool success, bytes memory retData) = poolPartX2YAddr.delegatecall(
-            abi.encodeWithSignature("addLimOrderWithY(address,int24,uint128,bytes)", 
-            recipient, pt, amountY, data)
-        );
-        require(success, "dc");
-        (orderY, acquireX) = abi.decode(retData, (uint128, uint256));
-    }
-
-    function collectLimOrder(
-        address recipient, int24 pt, uint256 collectDec, uint256 collectEarn, bool isEarnY
-    ) external override returns(uint256 actualCollectDec, uint256 actualCollectEarn) {
-        (bool success, bytes memory data) = poolPartX2YAddr.delegatecall(
-            abi.encodeWithSignature("collectLimOrder(address,int24,uint256,uint256,bool)",
-            recipient, pt, collectDec, collectEarn, isEarnY)
-        );
-        require(success, "dc");
-        (actualCollectDec, actualCollectEarn) = abi.decode(data, (uint256, uint256));
-    }
-    function assignLimOrderEarnY(
-        int24 pt,
-        uint256 assignY
-    ) external override returns (uint256 actualAssignY) {
-        (bool success, bytes memory data) = poolPartX2YAddr.delegatecall(
-            abi.encodeWithSignature("assignLimOrderEarnY(int24,uint256)",
-            pt, assignY)
-        );
-        require(success, "dc");
-        actualAssignY = abi.decode(data, (uint256));
-    }
-    function assignLimOrderEarnX(
-        int24 pt,
-        uint256 assignX
-    ) external override returns (uint256 actualAssignX) {
-        (bool success, bytes memory data) = poolPartX2YAddr.delegatecall(
-            abi.encodeWithSignature("assignLimOrderEarnX(int24,uint256)",
-            pt, assignX)
-        );
-        require(success, "dc");
-        actualAssignX = abi.decode(data, (uint256));
-    }*/
 
     function assignLimOrderEarnY(
         int24 pt,
@@ -502,7 +413,7 @@ contract IZiSwapPool is IiZiSwapPool {
         require(pt % ptDelta == 0, "PD");
 
         UserEarn.Data storage ue = userEarnY.get(msg.sender, pt);
-        PointOrder.Data storage pointOrder = limitOrderData[pt];
+        LimitOrder.Data storage pointOrder = limitOrderData[pt];
         uint160 sqrtPrice_96 = LogPowMath.getSqrtPrice(pt);
         (actualDeltaX, pointOrder.earnY) = ue.dec(deltaX, pointOrder.accEarnY, sqrtPrice_96, pointOrder.earnY, true);
         pointOrder.sellingX -= actualDeltaX;
@@ -525,7 +436,7 @@ contract IZiSwapPool is IiZiSwapPool {
         require(pt % ptDelta == 0, "PD");
 
         UserEarn.Data storage ue = userEarnX.get(msg.sender, pt);
-        PointOrder.Data storage pointOrder = limitOrderData[pt];
+        LimitOrder.Data storage pointOrder = limitOrderData[pt];
         uint160 sqrtPrice_96 = LogPowMath.getSqrtPrice(pt);
         (actualDeltaY, pointOrder.earnX) = ue.dec(deltaY, pointOrder.accEarnX, sqrtPrice_96, pointOrder.earnX, false);
 
@@ -556,7 +467,7 @@ contract IZiSwapPool is IiZiSwapPool {
 
         
         // update point order
-        PointOrder.Data storage pointOrder = limitOrderData[pt];
+        LimitOrder.Data storage pointOrder = limitOrderData[pt];
 
         orderX = amountX;
         acquireY = 0;
@@ -623,7 +534,7 @@ contract IZiSwapPool is IiZiSwapPool {
         require(amountY > 0, "YP");
 
         // update point order
-        PointOrder.Data storage pointOrder = limitOrderData[pt];
+        LimitOrder.Data storage pointOrder = limitOrderData[pt];
 
         orderY = amountY;
         acquireX = 0;

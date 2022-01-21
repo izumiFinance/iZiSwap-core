@@ -2,9 +2,9 @@
 pragma solidity ^0.8.4;
 
 import './interfaces/IiZiSwapFactory.sol';
-import './IZiSwapPool.sol';
+import './iZiSwapPool.sol';
 
-contract IZiSwapFactory is IiZiSwapFactory {
+contract iZiSwapFactory is IiZiSwapFactory {
     address public override owner;
     mapping(address => mapping(address => mapping(uint24 => address))) public override pool;
     mapping(uint24 => int24) public override fee2pointDelta;
@@ -46,7 +46,7 @@ contract IZiSwapFactory is IiZiSwapFactory {
         // now creating
         bytes32 salt = keccak256(abi.encode(tokenX, tokenY, fee));
         
-        addr = address(new IZiSwapPool{salt: salt}(
+        addr = address(new iZiSwapPool{salt: salt}(
             address(this),
             tokenX,
             tokenY,

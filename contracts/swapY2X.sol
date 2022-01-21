@@ -8,7 +8,7 @@ import './libraries/PointBitmap.sol';
 import './libraries/LogPowMath.sol';
 import './libraries/MulDivMath.sol';
 import './libraries/TwoPower.sol';
-import './libraries/PointOrder.sol';
+import './libraries/LimitOrder.sol';
 import './libraries/SwapMathY2X.sol';
 import './libraries/SwapMathX2Y.sol';
 import './libraries/SwapMathY2XDesire.sol';
@@ -27,7 +27,7 @@ contract SwapY2XModule {
     using Point for mapping(int24 =>Point.Data);
     using Point for Point.Data;
     using PointBitmap for mapping(int16 =>uint256);
-    using PointOrder for PointOrder.Data;
+    using LimitOrder for LimitOrder.Data;
     using UserEarn for UserEarn.Data;
     using UserEarn for mapping(bytes32 =>UserEarn.Data);
     using SwapMathY2X for SwapMathY2X.RangeRetState;
@@ -86,7 +86,7 @@ contract SwapY2XModule {
     mapping(int16 =>uint256) pointBitmap;
     mapping(int24 =>Point.Data) points;
     mapping(int24 =>int24) public statusVal;
-    mapping(int24 =>PointOrder.Data) public limitOrderData;
+    mapping(int24 =>LimitOrder.Data) public limitOrderData;
     mapping(bytes32 => UserEarn.Data) userEarnX;
     mapping(bytes32 => UserEarn.Data) userEarnY;
     
@@ -149,7 +149,7 @@ contract SwapY2XModule {
 
             if (cache.currVal & 2 > 0) {
                 // clear limit order first
-                PointOrder.Data storage od = limitOrderData[st.currPt];
+                LimitOrder.Data storage od = limitOrderData[st.currPt];
                 uint256 currX = od.sellingX;
                 (uint128 costY, uint256 acquireX) = SwapMathY2X.y2XAtPrice(
                     amount, st.sqrtPrice_96, currX
@@ -256,7 +256,7 @@ contract SwapY2XModule {
             // trader pay y
             require(amountY > 0, "PP");
             uint256 by = balanceY();
-            IiZiSwapSwapCallback(msg.sender).swapY2XCallback(amountX, amountY, data);
+            IiZiSwapCallback(msg.sender).swapY2XCallback(amountX, amountY, data);
             require(balanceY() >= by + amountY, "YE");
         }
         
@@ -284,7 +284,7 @@ contract SwapY2XModule {
         while (st.currPt < highPt && !cache.finished) {
             if (cache.currVal & 2 > 0) {
                 // clear limit order first
-                PointOrder.Data storage od = limitOrderData[st.currPt];
+                LimitOrder.Data storage od = limitOrderData[st.currPt];
                 uint256 currX = od.sellingX;
                 (uint256 costY, uint128 acquireX) = SwapMathY2XDesire.y2XAtPrice(
                     desireX, st.sqrtPrice_96, currX
@@ -379,7 +379,7 @@ contract SwapY2XModule {
             // trader pay y
             require(amountY > 0, "PP");
             uint256 by = balanceY();
-            IiZiSwapSwapCallback(msg.sender).swapY2XCallback(amountX, amountY, data);
+            IiZiSwapCallback(msg.sender).swapY2XCallback(amountX, amountY, data);
             require(balanceY() >= by + amountY, "YE");
         }
         

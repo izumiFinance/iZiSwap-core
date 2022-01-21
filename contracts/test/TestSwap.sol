@@ -7,7 +7,7 @@ import '../interfaces/IiZiSwapFactory.sol';
 import "hardhat/console.sol";
 import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 
-contract TestSwap is IiZiSwapSwapCallback {
+contract TestSwap is IiZiSwapCallback {
     struct SwapCallbackData {
         // amount of token0 is input param
         address token0;

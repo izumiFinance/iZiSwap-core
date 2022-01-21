@@ -8,7 +8,7 @@ import './libraries/PointBitmap.sol';
 import './libraries/LogPowMath.sol';
 import './libraries/MulDivMath.sol';
 import './libraries/TwoPower.sol';
-import './libraries/PointOrder.sol';
+import './libraries/LimitOrder.sol';
 import './libraries/SwapMathY2X.sol';
 import './libraries/SwapMathX2Y.sol';
 import './libraries/SwapMathY2XDesire.sol';
@@ -28,7 +28,7 @@ contract SwapX2YModule {
     using Point for mapping(int24 =>Point.Data);
     using Point for Point.Data;
     using PointBitmap for mapping(int16 =>uint256);
-    using PointOrder for PointOrder.Data;
+    using LimitOrder for LimitOrder.Data;
     using UserEarn for UserEarn.Data;
     using UserEarn for mapping(bytes32 =>UserEarn.Data);
     using SwapMathY2X for SwapMathY2X.RangeRetState;
@@ -87,7 +87,7 @@ contract SwapX2YModule {
     mapping(int16 =>uint256) pointBitmap;
     mapping(int24 =>Point.Data) points;
     mapping(int24 =>int24) public statusVal;
-    mapping(int24 =>PointOrder.Data) public limitOrderData;
+    mapping(int24 =>LimitOrder.Data) public limitOrderData;
     mapping(bytes32 => UserEarn.Data) userEarnX;
     mapping(bytes32 => UserEarn.Data) userEarnY;
     address private  original;
@@ -105,235 +105,6 @@ contract SwapX2YModule {
             nl = l + uint128(delta);
         }
     }
-    /*
-    function assignLimOrderEarnY(
-        int24 pt,
-        uint256 assignY
-    ) external returns (uint256 actualAssignY) {
-        actualAssignY = assignY;
-        UserEarn.Data storage ue = userEarnY.get(msg.sender, pt);
-        if (actualAssignY > ue.earn) {
-            actualAssignY = ue.earn;
-        }
-        ue.earn -= actualAssignY;
-        ue.earnAssign += actualAssignY;
-    }
-    function assignLimOrderEarnX(
-        int24 pt,
-        uint256 assignX
-    ) external returns (uint256 actualAssignX) {
-        actualAssignX = assignX;
-        UserEarn.Data storage ue = userEarnX.get(msg.sender, pt);
-        if (actualAssignX > ue.earn) {
-            actualAssignX = ue.earn;
-        }
-        ue.earn -= actualAssignX;
-        ue.earnAssign += actualAssignX;
-    }
-    function decLimOrderWithX(
-        int24 pt,
-        uint128 deltaX
-    ) external returns (uint128 actualDeltaX) {
-        
-        require(pt % ptDelta == 0, "PD");
-
-        UserEarn.Data storage ue = userEarnY.get(msg.sender, pt);
-        PointOrder.Data storage pointOrder = limitOrderData[pt];
-        uint160 sqrtPrice_96 = LogPowMath.getSqrtPrice(pt);
-        (actualDeltaX, pointOrder.earnY) = ue.dec(deltaX, pointOrder.accEarnY, sqrtPrice_96, pointOrder.earnY, true);
-        pointOrder.sellingX -= actualDeltaX;
-        
-        if (actualDeltaX > 0 && pointOrder.sellingX == 0) {
-            int24 newVal = getStatusVal(pt, ptDelta) & 1;
-            setStatusVal(pt, ptDelta, newVal);
-            if (newVal == 0) {
-                pointBitmap.setZero(pt, ptDelta);
-            }
-        }
-        
-    }
-
-    function decLimOrderWithY(
-        int24 pt,
-        uint128 deltaY
-    ) external returns (uint128 actualDeltaY) {
-        
-        require(pt % ptDelta == 0, "PD");
-
-        UserEarn.Data storage ue = userEarnX.get(msg.sender, pt);
-        PointOrder.Data storage pointOrder = limitOrderData[pt];
-        uint160 sqrtPrice_96 = LogPowMath.getSqrtPrice(pt);
-        (actualDeltaY, pointOrder.earnX) = ue.dec(deltaY, pointOrder.accEarnX, sqrtPrice_96, pointOrder.earnX, false);
-
-        pointOrder.sellingY -= actualDeltaY;
-        
-        if (actualDeltaY > 0 && pointOrder.sellingY == 0) {
-            int24 newVal = getStatusVal(pt, ptDelta) & 1;
-            setStatusVal(pt, ptDelta, newVal);
-            if (newVal == 0) {
-                pointBitmap.setZero(pt, ptDelta);
-            }
-        }
-        
-    }
-
-
-    function addLimOrderWithX(
-        address recipient,
-        int24 pt,
-        uint128 amountX,
-        bytes calldata data
-    ) external returns (uint128 orderX, uint256 acquireY) {
-        
-        require(pt % ptDelta == 0, "PD");
-        require(pt >= state.currPt, "PG");
-        require(pt <= rightMostPt, "HO");
-        require(amountX > 0, "XP");
-
-        
-        // update point order
-        PointOrder.Data storage pointOrder = limitOrderData[pt];
-
-        orderX = amountX;
-        acquireY = 0;
-        uint160 sqrtPrice_96 = LogPowMath.getSqrtPrice(pt);
-        
-        uint256 currY = pointOrder.sellingY;
-        uint256 currX = pointOrder.sellingX;
-        if (currY > 0) {
-            uint128 costX;
-            (costX, acquireY) = SwapMathX2Y.x2YAtPrice(amountX, sqrtPrice_96, currY);
-            orderX -= costX;
-            currY -= acquireY;
-            pointOrder.accEarnX = pointOrder.accEarnX + costX;
-            pointOrder.earnX = pointOrder.earnX + costX;
-            pointOrder.sellingY = currY;
-        }
-        if (orderX > 0) {
-            currX += orderX;
-            pointOrder.sellingX = currX;
-        }
-
-        UserEarn.Data storage ue = userEarnY.get(recipient, pt);
-        pointOrder.earnY = ue.add(orderX, pointOrder.accEarnY, sqrtPrice_96, pointOrder.earnY, true);
-        ue.earnAssign = ue.earnAssign + acquireY;
-        
-        // update statusval and bitmap
-        if (currX == 0 && currY == 0) {
-            int24 val = getStatusVal(pt, ptDelta);
-            if (val & 2 != 0) {
-                int24 newVal = val & 1;
-                setStatusVal(pt, ptDelta, newVal);
-                if (newVal == 0) {
-                    pointBitmap.setZero(pt, ptDelta);
-                }
-            }
-        } else {
-            int24 val = getStatusVal(pt, ptDelta);
-            if (val & 2 == 0) {
-                int24 newVal = val | 2;
-                setStatusVal(pt, ptDelta, newVal);
-                if (val == 0) {
-                    pointBitmap.setOne(pt, ptDelta);
-                }
-            }
-        }
-
-        // trader pay x
-        uint256 bx = balanceX();
-        IiZiSwapAddLimOrderCallback(msg.sender).payCallback(amountX, 0, data);
-        require(balanceX() >= bx + amountX, "XE");
-        
-    }
-    
-    function addLimOrderWithY(
-        address recipient,
-        int24 pt,
-        uint128 amountY,
-        bytes calldata data
-    ) external returns (uint128 orderY, uint256 acquireX) {
-        
-        require(pt % ptDelta == 0, "PD");
-        require(pt <= state.currPt, "PL");
-        require(pt >= leftMostPt, "LO");
-        require(amountY > 0, "YP");
-
-        // update point order
-        PointOrder.Data storage pointOrder = limitOrderData[pt];
-
-        orderY = amountY;
-        acquireX = 0;
-        uint160 sqrtPrice_96 = LogPowMath.getSqrtPrice(pt);
-        uint256 currY = pointOrder.sellingY;
-        uint256 currX = pointOrder.sellingX;
-        if (currX > 0) {
-            uint128 costY;
-            (costY, acquireX) = SwapMathY2X.y2XAtPrice(amountY, sqrtPrice_96, currX);
-            orderY -= costY;
-            currX -= acquireX;
-            pointOrder.accEarnY = pointOrder.accEarnY + costY;
-            pointOrder.earnY = pointOrder.earnY + costY;
-            pointOrder.sellingX = currX;
-        }
-        if (orderY > 0) {
-            currY += orderY;
-            pointOrder.sellingY = currY;
-        }
-        UserEarn.Data storage ue = userEarnX.get(recipient, pt);
-        pointOrder.earnX = ue.add(orderY, pointOrder.accEarnX, sqrtPrice_96, pointOrder.earnX, false);
-        ue.earnAssign = ue.earnAssign + acquireX;
-
-        // update statusval and bitmap
-        if (currX == 0 && currY == 0) {
-            int24 val = getStatusVal(pt, ptDelta);
-            if (val & 2 != 0) {
-                int24 newVal = val & 1;
-                setStatusVal(pt, ptDelta, newVal);
-                if (newVal == 0) {
-                    pointBitmap.setZero(pt, ptDelta);
-                }
-            }
-        } else {
-            int24 val = getStatusVal(pt, ptDelta);
-            if (val & 2 == 0) {
-                int24 newVal = val | 2;
-                setStatusVal(pt, ptDelta, newVal);
-                if (val == 0) {
-                    pointBitmap.setOne(pt, ptDelta);
-                }
-            }
-        }
-
-        // trader pay y
-        uint256 by = balanceY();
-        IiZiSwapAddLimOrderCallback(msg.sender).payCallback(0, amountY, data);
-        require(balanceY() >= by + amountY, "YE");
-        
-    }
-
-    function collectLimOrder(
-        address recipient, int24 pt, uint256 collectDec, uint256 collectEarn, bool isEarnY
-    ) external returns(uint256 actualCollectDec, uint256 actualCollectEarn) {
-        UserEarn.Data storage ue = isEarnY? userEarnY.get(msg.sender, pt) : userEarnX.get(msg.sender, pt);
-        actualCollectDec = collectDec;
-        if (actualCollectDec > ue.sellingDec) {
-            actualCollectDec = ue.sellingDec;
-        }
-        ue.sellingDec = ue.sellingDec - actualCollectDec;
-        actualCollectEarn = collectEarn;
-        if (actualCollectEarn > ue.earnAssign) {
-            actualCollectEarn = ue.earnAssign;
-        }
-        ue.earnAssign = ue.earnAssign - actualCollectEarn;
-        (uint256 x, uint256 y) = isEarnY? (actualCollectDec, actualCollectEarn): (actualCollectEarn, actualCollectDec);
-        if (x > 0) {
-            TokenTransfer.transferToken(tokenX, recipient, x);
-        }
-        if (y > 0) {
-            TokenTransfer.transferToken(tokenY, recipient, y);
-        }
-    }
-    */
     function balanceX() private view returns (uint256) {
         (bool success, bytes memory data) =
             tokenX.staticcall(abi.encodeWithSelector(IERC20Minimal.balanceOf.selector, address(this)));
@@ -387,7 +158,7 @@ contract SwapX2YModule {
         while (lowPt <= st.currPt && !cache.finished) {
             // clear limit order first
             if (cache.currVal & 2 > 0) {
-                PointOrder.Data storage od = limitOrderData[st.currPt];
+                LimitOrder.Data storage od = limitOrderData[st.currPt];
                 uint256 currY = od.sellingY;
                 (uint128 costX, uint256 acquireY) = SwapMathX2Y.x2YAtPrice(
                     amount, st.sqrtPrice_96, currY
@@ -530,7 +301,7 @@ contract SwapX2YModule {
             // trader pay x
             require(amountX > 0, "PP");
             uint256 bx = balanceX();
-            IiZiSwapSwapCallback(msg.sender).swapX2YCallback(amountX, amountY, data);
+            IiZiSwapCallback(msg.sender).swapX2YCallback(amountX, amountY, data);
             require(balanceX() >= bx + amountX, "XE");
         }
         
@@ -558,7 +329,7 @@ contract SwapX2YModule {
         while (lowPt <= st.currPt && !cache.finished) {
             // clear limit order first
             if (cache.currVal & 2 > 0) {
-                PointOrder.Data storage od = limitOrderData[st.currPt];
+                LimitOrder.Data storage od = limitOrderData[st.currPt];
                 uint256 currY = od.sellingY;
                 (uint256 costX, uint256 acquireY) = SwapMathX2YDesire.x2YAtPrice(
                     desireY, st.sqrtPrice_96, currY
@@ -681,7 +452,7 @@ contract SwapX2YModule {
             // trader pay x
             require(amountX > 0, "PP");
             uint256 bx = balanceX();
-            IiZiSwapSwapCallback(msg.sender).swapX2YCallback(amountX, amountY, data);
+            IiZiSwapCallback(msg.sender).swapX2YCallback(amountX, amountY, data);
             require(balanceX() >= bx + amountX, "XE");
         }
     }

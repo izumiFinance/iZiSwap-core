@@ -58,13 +58,13 @@ async function addLimOrderWithX(tokenX, tokenY, seller, testAddLimOrder, amountX
     );
 }
 async function decLimOrderWithX(poolAddr, seller, pt, amountX) {
-    const IZiSwapPool = await ethers.getContractFactory("IZiSwapPool");
-    var pool = await IZiSwapPool.attach(poolAddr);
+    const iZiSwapPool = await ethers.getContractFactory("iZiSwapPool");
+    var pool = await iZiSwapPool.attach(poolAddr);
     await pool.connect(seller).decLimOrderWithX(pt, amountX);
 }
 async function decLimOrderWithY(poolAddr, seller, pt, amountY) {
-    const IZiSwapPool = await ethers.getContractFactory("IZiSwapPool");
-    var pool = await IZiSwapPool.attach(poolAddr);
+    const iZiSwapPool = await ethers.getContractFactory("iZiSwapPool");
+    var pool = await iZiSwapPool.attach(poolAddr);
     await pool.connect(seller).decLimOrderWithY(pt, amountY);
 }
 function getCostY(point, rate, amountX) {
@@ -130,17 +130,17 @@ async function checkUserEarn(
     expect(eEarnAssign.toFixed(0)).to.equal(earnAssign.toFixed(0));
 }
 async function getPoolParts() {
-    const IZiSwapPoolPartFactory = await ethers.getContractFactory("SwapX2YModule");
-    const IZiSwapPoolPart = await IZiSwapPoolPartFactory.deploy();
-    await IZiSwapPoolPart.deployed();
-    const IZiSwapPoolPartDesireFactory = await ethers.getContractFactory("SwapY2XModule");
-    const IZiSwapPoolPartDesire = await IZiSwapPoolPartDesireFactory.deploy();
-    await IZiSwapPoolPartDesire.deployed();
-    return [IZiSwapPoolPart.address, IZiSwapPoolPartDesire.address];
+    const iZiSwapPoolPartFactory = await ethers.getContractFactory("SwapX2YModule");
+    const iZiSwapPoolPart = await iZiSwapPoolPartFactory.deploy();
+    await iZiSwapPoolPart.deployed();
+    const iZiSwapPoolPartDesireFactory = await ethers.getContractFactory("SwapY2XModule");
+    const iZiSwapPoolPartDesire = await iZiSwapPoolPartDesireFactory.deploy();
+    await iZiSwapPoolPartDesire.deployed();
+    return [iZiSwapPoolPart.address, iZiSwapPoolPartDesire.address];
   }
 async function getLimOrder(poolAddr, pt) {
-    const IZiSwapPool = await ethers.getContractFactory("IZiSwapPool");
-    var pool = await IZiSwapPool.attach(poolAddr);
+    const iZiSwapPool = await ethers.getContractFactory("iZiSwapPool");
+    var pool = await iZiSwapPool.attach(poolAddr);
     [sellingX, accEarnX, sellingY, accEarnY, earnX, earnY] = await pool.limitOrderData(pt);
     return [
         BigNumber(sellingX._hex),
@@ -152,8 +152,8 @@ async function getLimOrder(poolAddr, pt) {
     ]
 }
 async function getStatusVal(poolAddr, pt) {
-    const IZiSwapPool = await ethers.getContractFactory("IZiSwapPool");
-    var pool = await IZiSwapPool.attach(poolAddr);
+    const iZiSwapPool = await ethers.getContractFactory("iZiSwapPool");
+    var pool = await iZiSwapPool.attach(poolAddr);
     return await pool.statusVal(pt / 50);
 }
 async function checkStatusVal(eVal, poolAddr, pt) {
@@ -173,8 +173,8 @@ describe("LimOrder SellX earn", function () {
         console.log("balance: " + signer.getBalance());
         [poolPart, poolPartDesire] = await getPoolParts();
         // deploy a factory
-        const IZiSwapFactory = await ethers.getContractFactory("IZiSwapFactory");
-        factory = await IZiSwapFactory.deploy(poolPart, poolPartDesire);
+        const iZiSwapFactory = await ethers.getContractFactory("iZiSwapFactory");
+        factory = await iZiSwapFactory.deploy(poolPart, poolPartDesire);
         await factory.deployed();
         console.log("factory addr: " + factory.address);
         [tokenX, tokenY] = await getToken();

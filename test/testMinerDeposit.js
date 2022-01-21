@@ -94,8 +94,8 @@ function depositXY(l, r, p, rate, liquidity) {
 }
 
 async function printState(poolAddr) {
-  const IZiSwapPool = await ethers.getContractFactory("IZiSwapPool");
-  pool = await IZiSwapPool.attach(poolAddr);
+  const iZiSwapPool = await ethers.getContractFactory("iZiSwapPool");
+  pool = await iZiSwapPool.attach(poolAddr);
   [sqrtPrice_96, currPt, currX, currY, liquidity, allX, locked] = await pool.state();
   console.log(sqrtPrice_96);
   console.log(currPt);
@@ -111,13 +111,13 @@ function ceil(b) {
 }
 
 async function getPoolParts() {
-  const IZiSwapPoolPartFactory = await ethers.getContractFactory("SwapX2YModule");
-  const IZiSwapPoolPart = await IZiSwapPoolPartFactory.deploy();
-  await IZiSwapPoolPart.deployed();
-  const IZiSwapPoolPartDesireFactory = await ethers.getContractFactory("SwapY2XModule");
-  const IZiSwapPoolPartDesire = await IZiSwapPoolPartDesireFactory.deploy();
-  await IZiSwapPoolPartDesire.deployed();
-  return [IZiSwapPoolPart.address, IZiSwapPoolPartDesire.address];
+  const iZiSwapPoolPartFactory = await ethers.getContractFactory("SwapX2YModule");
+  const iZiSwapPoolPart = await iZiSwapPoolPartFactory.deploy();
+  await iZiSwapPoolPart.deployed();
+  const iZiSwapPoolPartDesireFactory = await ethers.getContractFactory("SwapY2XModule");
+  const iZiSwapPoolPartDesire = await iZiSwapPoolPartDesireFactory.deploy();
+  await iZiSwapPoolPartDesire.deployed();
+  return [iZiSwapPoolPart.address, iZiSwapPoolPartDesire.address];
 }
 describe("Mint", function () {
   it("check miner deposit", async function () {
@@ -128,9 +128,9 @@ describe("Mint", function () {
     [poolPart, poolPartDesire] = await getPoolParts();
 
     // deploy a factory
-    const IZiSwapFactory = await ethers.getContractFactory("IZiSwapFactory");
+    const iZiSwapFactory = await ethers.getContractFactory("iZiSwapFactory");
 
-    const factory = await IZiSwapFactory.deploy(poolPart, poolPartDesire);
+    const factory = await iZiSwapFactory.deploy(poolPart, poolPartDesire);
     await factory.deployed();
 
     console.log("factory addr: " + factory.address);

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BUSL-1.1
-pragma solidity >=0.7.3;
+pragma solidity ^0.8.4;
 
-library PointOrder {
+library LimitOrder {
     struct Data {
         uint256 sellingX;
         uint256 accEarnX;
