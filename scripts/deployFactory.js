@@ -7,15 +7,19 @@ async function getPoolParts() {
   const iZiSwapPoolPartDesireFactory = await ethers.getContractFactory("SwapY2XModule");
   const iZiSwapPoolPartDesire = await iZiSwapPoolPartDesireFactory.deploy();
   await iZiSwapPoolPartDesire.deployed();
-  return [iZiSwapPoolPart.address, iZiSwapPoolPartDesire.address];
+  const MintModuleFactory = await ethers.getContractFactory('MintModule');
+  const mintModule = await MintModuleFactory.deploy();
+  await mintModule.deployed();
+  return [iZiSwapPoolPart.address, iZiSwapPoolPartDesire.address, mintModule.address];
 }
 async function main() {
     const iZiSwapFactory = await ethers.getContractFactory("iZiSwapFactory");
-    [swapX2Y, swapY2X] = await getPoolParts();
+    [swapX2Y, swapY2X, mintModule] = await getPoolParts();
 
     console.log("x2y: ", swapX2Y);
     console.log("y2x: ", swapY2X);
-    const factory = await iZiSwapFactory.deploy(swapX2Y, swapY2X);
+    console.log('mint: ', mintModule);
+    const factory = await iZiSwapFactory.deploy(swapX2Y, swapY2X, mintModule);
     await factory.deployed();
 
     console.log("factory addr: " + factory.address);
