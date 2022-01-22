@@ -10,16 +10,16 @@ contract iZiSwapFactory is IiZiSwapFactory {
     mapping(uint24 => int24) public override fee2pointDelta;
     address public only_addr_;
 
-    address public override swapX2Y;
-    address public override swapY2X;
+    address public override swapX2YModule;
+    address public override swapY2XModule;
     address public override mintModule;
-    constructor(address _swapX2Y, address _swapY2X, address _mintModule) {
+    constructor(address _swapX2YModule, address _swapY2XModule, address _mintModule) {
         only_addr_ = address(this);
         owner = msg.sender;
         fee2pointDelta[500] = 10;
         fee2pointDelta[3000] = 50;
-        swapX2Y = _swapX2Y;
-        swapY2X = _swapY2X;
+        swapX2YModule = _swapX2YModule;
+        swapY2XModule = _swapY2XModule;
         mintModule = _mintModule;
     }
     modifier noDelegateCall() {

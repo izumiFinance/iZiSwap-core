@@ -103,8 +103,8 @@ contract iZiSwapPool is IiZiSwapPool {
         require(_pointDelta > 1);
         original = address(this);
         factory = _factory;
-        swapModuleX2Y = IiZiSwapFactory(_factory).swapX2Y();
-        swapModuleY2X = IiZiSwapFactory(_factory).swapY2X();
+        swapModuleX2Y = IiZiSwapFactory(_factory).swapX2YModule();
+        swapModuleY2X = IiZiSwapFactory(_factory).swapY2XModule();
         mintModule = IiZiSwapFactory(_factory).mintModule();
 
         console.log("swapX2Y: ", swapModuleX2Y);
