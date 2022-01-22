@@ -18,9 +18,9 @@ library UserEarn {
     function get(
         mapping(bytes32 => Data) storage self,
         address user,
-        int24 pt
+        int24 point
     ) internal view returns (UserEarn.Data storage data) {
-        data = self[keccak256(abi.encodePacked(user, pt))];
+        data = self[keccak256(abi.encodePacked(user, point))];
     }
 
     function update(

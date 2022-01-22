@@ -158,7 +158,7 @@ library SwapMathY2XDesire {
         retState.finished = false;
         if (!st.allX) {
             if (st.currX == 0) {
-                st.currPt += 1;
+                st.currentPoint += 1;
                 st.sqrtPrice_96 = uint160(MulDivMath.mulDivFloor(st.sqrtPrice_96, sqrtRate_96, TwoPower.Pow96));
             } else {
                 (retState.costY, retState.acquireX) = y2XAtPriceLiquidity(desireX, st.sqrtPrice_96, st.currX, st.currY, st.liquidity);
@@ -168,20 +168,20 @@ library SwapMathY2XDesire {
                     retState.finalAllX = false;
                     retState.finalCurrX = st.currX - retState.acquireX;
                     retState.finalCurrY = st.currY + retState.costY;
-                    retState.finalPt = st.currPt;
+                    retState.finalPt = st.currentPoint;
                     retState.sqrtFinalPrice_96 = st.sqrtPrice_96;
                 } else {
                     if (retState.acquireX >= desireX) {
                         // currX not remain but desire runout
                         retState.finished = true;
-                        retState.finalPt = st.currPt + 1;
+                        retState.finalPt = st.currentPoint + 1;
                         retState.sqrtFinalPrice_96 = LogPowMath.getSqrtPrice(retState.finalPt);
                         retState.finalAllX = true;
                     } else {
                         // not finished
-                        st.currPt += 1;
+                        st.currentPoint += 1;
                         desireX -= uint128(retState.acquireX);
-                        st.sqrtPrice_96 = LogPowMath.getSqrtPrice(st.currPt);
+                        st.sqrtPrice_96 = LogPowMath.getSqrtPrice(st.currentPoint);
                     }
                 }
             }
@@ -189,13 +189,13 @@ library SwapMathY2XDesire {
         if (retState.finished) {
             return retState;
         }
-        if (st.currPt < rightPt) {
+        if (st.currentPoint < rightPt) {
             uint160 sqrtPriceR_96 = LogPowMath.getSqrtPrice(rightPt);
             RangeCompRet memory ret = y2XRangeComplete(
                 Range({
                     liquidity: st.liquidity,
                     sqrtPriceL_96: st.sqrtPrice_96,
-                    leftPt: st.currPt,
+                    leftPt: st.currentPoint,
                     sqrtPriceR_96: sqrtPriceR_96,
                     rightPt: rightPt,
                     sqrtRate_96: sqrtRate_96
@@ -230,7 +230,7 @@ library SwapMathY2XDesire {
             }
         } else {
             retState.finished = false;
-            retState.finalPt = st.currPt;
+            retState.finalPt = st.currentPoint;
             retState.finalAllX = true;
             retState.sqrtFinalPrice_96 = st.sqrtPrice_96;
         }

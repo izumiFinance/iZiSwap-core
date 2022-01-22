@@ -135,7 +135,7 @@ library SwapMathX2Y {
         retState.costX = 0;
         retState.acquireY = 0;
         retState.finished = false;
-        if (!st.allX && (st.currX > 0 || leftPt == st.currPt)) {
+        if (!st.allX && (st.currX > 0 || leftPt == st.currentPoint)) {
             (retState.costX, retState.acquireY) = x2YAtPriceLiquidity(
                 amountX, st.sqrtPrice_96, st.currY, st.currX, st.liquidity);
             if (retState.acquireY < st.currY) {
@@ -145,14 +145,14 @@ library SwapMathX2Y {
                 retState.finalAllX = false;
                 retState.finalCurrY = st.currY - retState.acquireY;
                 retState.finalCurrX = st.currX + retState.costX;
-                retState.finalPt = st.currPt;
+                retState.finalPt = st.currentPoint;
                 retState.sqrtFinalPrice_96 = st.sqrtPrice_96;
             } else {
                 // acquireY == currY
                 // currX in rightPt run out
                 if (retState.costX >= amountX) {
                     retState.finished = true;
-                    retState.finalPt = st.currPt;
+                    retState.finalPt = st.currentPoint;
                     retState.sqrtFinalPrice_96 = st.sqrtPrice_96;
                     retState.finalAllX = true;
                 } else {
@@ -160,7 +160,7 @@ library SwapMathX2Y {
                 }
             }
         } else if (!st.allX) { // all y
-            st.currPt = st.currPt + 1;
+            st.currentPoint = st.currentPoint + 1;
             st.sqrtPrice_96 = uint160(MulDivMath.mulDivFloor(st.sqrtPrice_96, sqrtRate_96, TwoPower.Pow96));
         }
 
@@ -168,7 +168,7 @@ library SwapMathX2Y {
             return retState;
         }
 
-        if (leftPt < st.currPt) {
+        if (leftPt < st.currentPoint) {
             uint160 sqrtPriceL_96 = LogPowMath.getSqrtPrice(leftPt);
             RangeCompRet memory ret = x2YRangeComplete(
                 Range({
@@ -176,7 +176,7 @@ library SwapMathX2Y {
                     sqrtPriceL_96: sqrtPriceL_96,
                     leftPt: leftPt, 
                     sqrtPriceR_96: st.sqrtPrice_96, 
-                    rightPt: st.currPt, 
+                    rightPt: st.currentPoint, 
                     sqrtRate_96: sqrtRate_96
                 }),
                 amountX
@@ -213,7 +213,7 @@ library SwapMathX2Y {
             }
         } else {
             retState.finished = false;
-            retState.finalPt = st.currPt;
+            retState.finalPt = st.currentPoint;
             // all y in leftPt are converted to x
             retState.finalAllX = true;
             retState.sqrtFinalPrice_96 = st.sqrtPrice_96;

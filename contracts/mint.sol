@@ -48,7 +48,7 @@ contract MintModule {
     address public tokenX;
     address public tokenY;
     uint24 public fee;
-    int24 public ptDelta;
+    int24 public pointDelta;
 
     uint256 public feeScaleX_128;
     uint256 public feeScaleY_128;
@@ -57,10 +57,10 @@ contract MintModule {
 
     // struct State {
     //     uint160 sqrtPrice_96;
-    //     int24 currPt;
+    //     int24 currentPoint;
     //     uint256 currX;
     //     uint256 currY;
-    //     // liquidity from currPt to right
+    //     // liquidity from currentPoint to right
     //     uint128 liquidity;
     //     bool allX;
     //     bool locked;
@@ -127,30 +127,30 @@ contract MintModule {
         return abi.decode(data, (uint256));
     }
 
-    function getStatusVal(int24 pt, int24 pd) internal view returns(int24 val) {
-        if (pt % pd != 0) {
+    function getStatusVal(int24 point, int24 pd) internal view returns(int24 val) {
+        if (point % pd != 0) {
             return 0;
         }
-        val = statusVal[pt / pd];
+        val = statusVal[point / pd];
     }
-    function setStatusVal(int24 pt, int24 pd, int24 val) internal {
-        statusVal[pt / pd] = val;
+    function setStatusVal(int24 point, int24 pd, int24 val) internal {
+        statusVal[point / pd] = val;
     }
 
     /// @dev Add / Dec liquidity of a minter
     /// @param minter the minter of the liquidity
-    /// @param pl left endpt of the segment
-    /// @param pr right endpt of the segment, [pl, pr)
+    /// @param pl left endpoint of the segment
+    /// @param pr right endpoint of the segment, [pl, pr)
     /// @param delta delta liquidity, positive for adding
-    /// @param currPoint current price point on the axies
+    /// @param currentPoint current price point on the axies
     function _updateLiquidity(
         address minter,
         int24 pl,
         int24 pr,
         int128 delta,
-        int24 currPoint
+        int24 currentPoint
     ) private {
-        int24 pd = ptDelta;
+        int24 pd = pointDelta;
         Liquidity.Data storage lq = liquidities.get(minter, pl, pr);
         (uint256 mFeeScaleX_128, uint256 mFeeScaleY_128) = (feeScaleX_128, feeScaleY_128);
         bool leftFlipped;
@@ -158,13 +158,13 @@ contract MintModule {
         // update points
         if (delta != 0) {
             // add / dec liquidity
-            leftFlipped = points.updateEndpt(pl, true, currPoint, delta, maxLiquidPt, mFeeScaleX_128, mFeeScaleY_128);
-            rightFlipped = points.updateEndpt(pr, false, currPoint, delta, maxLiquidPt, mFeeScaleX_128, mFeeScaleY_128);
+            leftFlipped = points.updateEndpoint(pl, true, currentPoint, delta, maxLiquidPt, mFeeScaleX_128, mFeeScaleY_128);
+            rightFlipped = points.updateEndpoint(pr, false, currentPoint, delta, maxLiquidPt, mFeeScaleX_128, mFeeScaleY_128);
         }
         // get sub fee scale of the range
         (uint256 subFeeScaleX_128, uint256 subFeeScaleY_128) = 
             points.getSubFeeScale(
-                pl, pr, currPoint, mFeeScaleX_128, mFeeScaleY_128
+                pl, pr, currentPoint, mFeeScaleX_128, mFeeScaleY_128
             );
         lq.update(delta, subFeeScaleX_128, subFeeScaleY_128);
         // update bitmap
@@ -227,7 +227,7 @@ contract MintModule {
     ) private view returns (uint128 x, uint128 y, uint128 yc) {
         x = 0;
         uint256 amountY = 0;
-        int24 pc = st.currPt;
+        int24 pc = st.currentPoint;
         uint160 sqrtPrice_96 = st.sqrtPrice_96;
         uint160 sqrtPriceR_96 = LogPowMath.getSqrtPrice(pr);
         uint160 _sqrtRate_96 = sqrtRate_96;
@@ -323,7 +323,7 @@ contract MintModule {
     ) private view returns (WithdrawRet memory withRet) {
         uint256 amountY = 0;
         uint256 amountX = 0;
-        int24 pc = st.currPt;
+        int24 pc = st.currentPoint;
         uint160 sqrtPrice_96 = st.sqrtPrice_96;
         uint160 sqrtPriceR_96 = LogPowMath.getSqrtPrice(pr);
         uint160 _sqrtRate_96 = sqrtRate_96;
@@ -391,7 +391,7 @@ contract MintModule {
         require(leftPt >= leftMostPt, "LO");
         require(rightPt <= rightMostPt, "HO");
         require(int256(rightPt) - int256(leftPt) < RIGHT_MOST_PT, "TL");
-        int24 pd = ptDelta;
+        int24 pd = pointDelta;
         require(leftPt % pd == 0, "LPD");
         require(rightPt % pd == 0, "RPD");
         int128 ld = int128(liquidDelta);
@@ -406,7 +406,7 @@ contract MintModule {
             leftPt,
             rightPt,
             ld,
-            st.currPt
+            st.currentPoint
         );
         // compute amount of tokenx and tokeny should be paid from minter
         (uint128 x, uint128 y, uint128 yc) = _computeDepositXY(
@@ -458,7 +458,7 @@ contract MintModule {
         // it is not necessary to check leftPt rightPt with [leftMostPt, rightMostPt]
         // because we haved checked it in the mint(...)
         require(leftPt < rightPt, "LR");
-        int24 pd = ptDelta;
+        int24 pd = pointDelta;
         require(leftPt % pd == 0, "LPD");
         require(rightPt % pd == 0, "RPD");
         State memory st = state;
@@ -471,7 +471,7 @@ contract MintModule {
             leftPt,
             rightPt,
             int128(nlDelta),
-            st.currPt
+            st.currentPoint
         );
         // compute amount of tokenx and tokeny should be paid from minter
         WithdrawRet memory withRet = _computeWithdrawXY(

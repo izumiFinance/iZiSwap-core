@@ -93,7 +93,7 @@ library Point {
     /// @param liquidLimPt liquid limit per point
     /// @param feeScaleX_128 total fee scale of token x
     /// @param feeScaleY_128 total fee scale of token y
-    function updateEndpt(
+    function updateEndpoint(
         mapping(int24 =>Point.Data) storage axies,
         int24 endpt,
         bool isLeft,
@@ -149,7 +149,7 @@ library Point {
     /// @param endpt endpoint to change
     /// @param feeScaleX_128 total fee scale of token x
     /// @param feeScaleY_128 total fee scale of token y 
-    function passEndpt(
+    function passEndpoint(
         Point.Data storage endpt,
         uint256 feeScaleX_128,
         uint256 feeScaleY_128

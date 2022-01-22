@@ -49,7 +49,7 @@ contract iZiSwapPool is IiZiSwapPool {
     address public  tokenX;
     address public  tokenY;
     uint24 public  fee;
-    int24 public  ptDelta;
+    int24 public  pointDelta;
 
     uint256 public feeScaleX_128;
     uint256 public feeScaleY_128;
@@ -57,23 +57,6 @@ contract iZiSwapPool is IiZiSwapPool {
     uint160 public override sqrtRate_96;
 
     State public override state;
-
-    // struct Cache {
-    //     uint256 currFeeScaleX_128;
-    //     uint256 currFeeScaleY_128;
-    //     bool finished;
-    //     uint160 _sqrtRate_96;
-    //     int24 pd;
-    //     int24 currVal;
-    // }
-    // struct WithdrawRet {
-    //     uint256 x;
-    //     uint256 y;
-    //     uint256 xc;
-    //     uint256 yc;
-    //     uint256 currX;
-    //     uint256 currY;
-    // }
 
     /// TODO: following mappings may need modify
     mapping(bytes32 =>Liquidity.Data) public override liquidities;
@@ -104,40 +87,40 @@ contract iZiSwapPool is IiZiSwapPool {
     function _setRange(int24 pd) private {
         rightMostPt = RIGHT_MOST_PT / pd * pd;
         leftMostPt = - rightMostPt;
-        uint24 ptNum = uint24((rightMostPt - leftMostPt) / pd) + 1;
-        maxLiquidPt = type(uint128).max / ptNum;
+        uint24 pointNum = uint24((rightMostPt - leftMostPt) / pd) + 1;
+        maxLiquidPt = type(uint128).max / pointNum;
     }
 
     constructor(
-        address fac,
-        address tX,
-        address tY,
-        uint24 swapFee,
-        int24 cp,
-        int24 pd
+        address _factory,
+        address _tokenX,
+        address _tokenY,
+        uint24 _fee,
+        int24 currentPoint,
+        int24 _pointDelta
     ) public {
-        require(tX < tY, 'x<y');
-        require(pd > 1);
+        require(_tokenX < _tokenY, 'x<y');
+        require(_pointDelta > 1);
         original = address(this);
-        factory = fac;
-        swapModuleX2Y = IiZiSwapFactory(fac).swapX2Y();
-        swapModuleY2X = IiZiSwapFactory(fac).swapY2X();
-        mintModule = IiZiSwapFactory(fac).mintModule();
+        factory = _factory;
+        swapModuleX2Y = IiZiSwapFactory(_factory).swapX2Y();
+        swapModuleY2X = IiZiSwapFactory(_factory).swapY2X();
+        mintModule = IiZiSwapFactory(_factory).mintModule();
 
         console.log("swapX2Y: ", swapModuleX2Y);
         console.log("swapY2X: ", swapModuleY2X);
-        tokenX = tX;
-        tokenY = tY;
-        fee = swapFee;
-        ptDelta = pd;
-        _setRange(pd);
+        tokenX = _tokenX;
+        tokenY = _tokenY;
+        fee = _fee;
+        pointDelta = _pointDelta;
+        _setRange(_pointDelta);
 
-        require(cp >= leftMostPt, "LO");
-        require(cp <= rightMostPt, "HO");
+        require(currentPoint >= leftMostPt, "LO");
+        require(currentPoint <= rightMostPt, "HO");
 
         // current state
-        state.currPt = cp;
-        state.sqrtPrice_96 = LogPowMath.getSqrtPrice(cp);
+        state.currentPoint = currentPoint;
+        state.sqrtPrice_96 = LogPowMath.getSqrtPrice(currentPoint);
         state.liquidity = 0;
         state.allX = true;
         state.currX = 0;
@@ -152,11 +135,11 @@ contract iZiSwapPool is IiZiSwapPool {
 
 
     function assignLimOrderEarnY(
-        int24 pt,
+        int24 point,
         uint256 assignY
     ) external override returns (uint256 actualAssignY) {
         actualAssignY = assignY;
-        UserEarn.Data storage ue = userEarnY.get(msg.sender, pt);
+        UserEarn.Data storage ue = userEarnY.get(msg.sender, point);
         if (actualAssignY > ue.earn) {
             actualAssignY = ue.earn;
         }
@@ -164,11 +147,11 @@ contract iZiSwapPool is IiZiSwapPool {
         ue.earnAssign += actualAssignY;
     }
     function assignLimOrderEarnX(
-        int24 pt,
+        int24 point,
         uint256 assignX
     ) external override returns (uint256 actualAssignX) {
         actualAssignX = assignX;
-        UserEarn.Data storage ue = userEarnX.get(msg.sender, pt);
+        UserEarn.Data storage ue = userEarnX.get(msg.sender, point);
         if (actualAssignX > ue.earn) {
             actualAssignX = ue.earn;
         }
@@ -176,47 +159,47 @@ contract iZiSwapPool is IiZiSwapPool {
         ue.earnAssign += actualAssignX;
     }
     function decLimOrderWithX(
-        int24 pt,
+        int24 point,
         uint128 deltaX
     ) external override returns (uint128 actualDeltaX) {
         
-        require(pt % ptDelta == 0, "PD");
+        require(point % pointDelta == 0, "PD");
 
-        UserEarn.Data storage ue = userEarnY.get(msg.sender, pt);
-        LimitOrder.Data storage pointOrder = limitOrderData[pt];
-        uint160 sqrtPrice_96 = LogPowMath.getSqrtPrice(pt);
+        UserEarn.Data storage ue = userEarnY.get(msg.sender, point);
+        LimitOrder.Data storage pointOrder = limitOrderData[point];
+        uint160 sqrtPrice_96 = LogPowMath.getSqrtPrice(point);
         (actualDeltaX, pointOrder.earnY) = ue.dec(deltaX, pointOrder.accEarnY, sqrtPrice_96, pointOrder.earnY, true);
         pointOrder.sellingX -= actualDeltaX;
         
         if (actualDeltaX > 0 && pointOrder.sellingX == 0) {
-            int24 newVal = getStatusVal(pt, ptDelta) & 1;
-            setStatusVal(pt, ptDelta, newVal);
+            int24 newVal = getStatusVal(point, pointDelta) & 1;
+            setStatusVal(point, pointDelta, newVal);
             if (newVal == 0) {
-                pointBitmap.setZero(pt, ptDelta);
+                pointBitmap.setZero(point, pointDelta);
             }
         }
         
     }
 
     function decLimOrderWithY(
-        int24 pt,
+        int24 point,
         uint128 deltaY
     ) external override returns (uint128 actualDeltaY) {
         
-        require(pt % ptDelta == 0, "PD");
+        require(point % pointDelta == 0, "PD");
 
-        UserEarn.Data storage ue = userEarnX.get(msg.sender, pt);
-        LimitOrder.Data storage pointOrder = limitOrderData[pt];
-        uint160 sqrtPrice_96 = LogPowMath.getSqrtPrice(pt);
+        UserEarn.Data storage ue = userEarnX.get(msg.sender, point);
+        LimitOrder.Data storage pointOrder = limitOrderData[point];
+        uint160 sqrtPrice_96 = LogPowMath.getSqrtPrice(point);
         (actualDeltaY, pointOrder.earnX) = ue.dec(deltaY, pointOrder.accEarnX, sqrtPrice_96, pointOrder.earnX, false);
 
         pointOrder.sellingY -= actualDeltaY;
         
         if (actualDeltaY > 0 && pointOrder.sellingY == 0) {
-            int24 newVal = getStatusVal(pt, ptDelta) & 1;
-            setStatusVal(pt, ptDelta, newVal);
+            int24 newVal = getStatusVal(point, pointDelta) & 1;
+            setStatusVal(point, pointDelta, newVal);
             if (newVal == 0) {
-                pointBitmap.setZero(pt, ptDelta);
+                pointBitmap.setZero(point, pointDelta);
             }
         }
         
@@ -225,23 +208,23 @@ contract iZiSwapPool is IiZiSwapPool {
 
     function addLimOrderWithX(
         address recipient,
-        int24 pt,
+        int24 point,
         uint128 amountX,
         bytes calldata data
     ) external override returns (uint128 orderX, uint256 acquireY) {
         
-        require(pt % ptDelta == 0, "PD");
-        require(pt >= state.currPt, "PG");
-        require(pt <= rightMostPt, "HO");
+        require(point % pointDelta == 0, "PD");
+        require(point >= state.currentPoint, "PG");
+        require(point <= rightMostPt, "HO");
         require(amountX > 0, "XP");
 
         
         // update point order
-        LimitOrder.Data storage pointOrder = limitOrderData[pt];
+        LimitOrder.Data storage pointOrder = limitOrderData[point];
 
         orderX = amountX;
         acquireY = 0;
-        uint160 sqrtPrice_96 = LogPowMath.getSqrtPrice(pt);
+        uint160 sqrtPrice_96 = LogPowMath.getSqrtPrice(point);
         
         uint256 currY = pointOrder.sellingY;
         uint256 currX = pointOrder.sellingX;
@@ -259,27 +242,27 @@ contract iZiSwapPool is IiZiSwapPool {
             pointOrder.sellingX = currX;
         }
 
-        UserEarn.Data storage ue = userEarnY.get(recipient, pt);
+        UserEarn.Data storage ue = userEarnY.get(recipient, point);
         pointOrder.earnY = ue.add(orderX, pointOrder.accEarnY, sqrtPrice_96, pointOrder.earnY, true);
         ue.earnAssign = ue.earnAssign + acquireY;
         
         // update statusval and bitmap
         if (currX == 0 && currY == 0) {
-            int24 val = getStatusVal(pt, ptDelta);
+            int24 val = getStatusVal(point, pointDelta);
             if (val & 2 != 0) {
                 int24 newVal = val & 1;
-                setStatusVal(pt, ptDelta, newVal);
+                setStatusVal(point, pointDelta, newVal);
                 if (newVal == 0) {
-                    pointBitmap.setZero(pt, ptDelta);
+                    pointBitmap.setZero(point, pointDelta);
                 }
             }
         } else {
-            int24 val = getStatusVal(pt, ptDelta);
+            int24 val = getStatusVal(point, pointDelta);
             if (val & 2 == 0) {
                 int24 newVal = val | 2;
-                setStatusVal(pt, ptDelta, newVal);
+                setStatusVal(point, pointDelta, newVal);
                 if (val == 0) {
-                    pointBitmap.setOne(pt, ptDelta);
+                    pointBitmap.setOne(point, pointDelta);
                 }
             }
         }
@@ -293,22 +276,22 @@ contract iZiSwapPool is IiZiSwapPool {
     
     function addLimOrderWithY(
         address recipient,
-        int24 pt,
+        int24 point,
         uint128 amountY,
         bytes calldata data
     ) external override returns (uint128 orderY, uint256 acquireX) {
         
-        require(pt % ptDelta == 0, "PD");
-        require(pt <= state.currPt, "PL");
-        require(pt >= leftMostPt, "LO");
+        require(point % pointDelta == 0, "PD");
+        require(point <= state.currentPoint, "PL");
+        require(point >= leftMostPt, "LO");
         require(amountY > 0, "YP");
 
         // update point order
-        LimitOrder.Data storage pointOrder = limitOrderData[pt];
+        LimitOrder.Data storage pointOrder = limitOrderData[point];
 
         orderY = amountY;
         acquireX = 0;
-        uint160 sqrtPrice_96 = LogPowMath.getSqrtPrice(pt);
+        uint160 sqrtPrice_96 = LogPowMath.getSqrtPrice(point);
         uint256 currY = pointOrder.sellingY;
         uint256 currX = pointOrder.sellingX;
         if (currX > 0) {
@@ -324,27 +307,27 @@ contract iZiSwapPool is IiZiSwapPool {
             currY += orderY;
             pointOrder.sellingY = currY;
         }
-        UserEarn.Data storage ue = userEarnX.get(recipient, pt);
+        UserEarn.Data storage ue = userEarnX.get(recipient, point);
         pointOrder.earnX = ue.add(orderY, pointOrder.accEarnX, sqrtPrice_96, pointOrder.earnX, false);
         ue.earnAssign = ue.earnAssign + acquireX;
 
         // update statusval and bitmap
         if (currX == 0 && currY == 0) {
-            int24 val = getStatusVal(pt, ptDelta);
+            int24 val = getStatusVal(point, pointDelta);
             if (val & 2 != 0) {
                 int24 newVal = val & 1;
-                setStatusVal(pt, ptDelta, newVal);
+                setStatusVal(point, pointDelta, newVal);
                 if (newVal == 0) {
-                    pointBitmap.setZero(pt, ptDelta);
+                    pointBitmap.setZero(point, pointDelta);
                 }
             }
         } else {
-            int24 val = getStatusVal(pt, ptDelta);
+            int24 val = getStatusVal(point, pointDelta);
             if (val & 2 == 0) {
                 int24 newVal = val | 2;
-                setStatusVal(pt, ptDelta, newVal);
+                setStatusVal(point, pointDelta, newVal);
                 if (val == 0) {
-                    pointBitmap.setOne(pt, ptDelta);
+                    pointBitmap.setOne(point, pointDelta);
                 }
             }
         }
@@ -357,9 +340,9 @@ contract iZiSwapPool is IiZiSwapPool {
     }
 
     function collectLimOrder(
-        address recipient, int24 pt, uint256 collectDec, uint256 collectEarn, bool isEarnY
+        address recipient, int24 point, uint256 collectDec, uint256 collectEarn, bool isEarnY
     ) external override returns(uint256 actualCollectDec, uint256 actualCollectEarn) {
-        UserEarn.Data storage ue = isEarnY? userEarnY.get(msg.sender, pt) : userEarnX.get(msg.sender, pt);
+        UserEarn.Data storage ue = isEarnY? userEarnY.get(msg.sender, point) : userEarnX.get(msg.sender, point);
         actualCollectDec = collectDec;
         if (actualCollectDec > ue.sellingDec) {
             actualCollectDec = ue.sellingDec;
@@ -501,14 +484,14 @@ contract iZiSwapPool is IiZiSwapPool {
         }
     }
 
-    function getStatusVal(int24 pt, int24 pd) internal view returns(int24 val) {
-        if (pt % pd != 0) {
+    function getStatusVal(int24 point, int24 pd) internal view returns(int24 val) {
+        if (point % pd != 0) {
             return 0;
         }
-        val = statusVal[pt / pd];
+        val = statusVal[point / pd];
     }
-    function setStatusVal(int24 pt, int24 pd, int24 val) internal {
-        statusVal[pt / pd] = val;
+    function setStatusVal(int24 point, int24 pd, int24 val) internal {
+        statusVal[point / pd] = val;
     }
 
     /// @dev swap sell tokenx and buy y
@@ -549,6 +532,8 @@ contract iZiSwapPool is IiZiSwapPool {
             revertDCData(d);
         }
     }
+
+    /// 
     function observe(uint32[] calldata secondsAgos)
         external
         view
@@ -560,7 +545,7 @@ contract iZiSwapPool is IiZiSwapPool {
             observations.observe(
                 uint32(block.timestamp),
                 secondsAgos,
-                state.currPt,
+                state.currentPoint,
                 state.observationCurrentIndex,
                 state.liquidity,
                 state.observationQueueLen

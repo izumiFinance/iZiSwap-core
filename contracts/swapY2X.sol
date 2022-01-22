@@ -47,7 +47,7 @@ contract SwapY2XModule {
     address public tokenX;
     address public tokenY;
     uint24 public fee;
-    int24 public ptDelta;
+    int24 public pointDelta;
 
     uint256 public feeScaleX_128;
     uint256 public feeScaleY_128;
@@ -56,10 +56,10 @@ contract SwapY2XModule {
 
     // struct State {
     //     uint160 sqrtPrice_96;
-    //     int24 currPt;
+    //     int24 currentPoint;
     //     uint256 currX;
     //     uint256 currY;
-    //     // liquidity from currPt to right
+    //     // liquidity from currentPoint to right
     //     uint128 liquidity;
     //     bool allX;
     //     bool locked;
@@ -150,16 +150,16 @@ contract SwapY2XModule {
         
         cache.finished = false;
         cache._sqrtRate_96 = sqrtRate_96;
-        cache.pd = ptDelta;
-        cache.currVal = getStatusVal(st.currPt, cache.pd);
-        cache.startPoint = st.currPt;
+        cache.pd = pointDelta;
+        cache.currVal = getStatusVal(st.currentPoint, cache.pd);
+        cache.startPoint = st.currentPoint;
         cache.startLiquidity = st.liquidity;
         cache.timestamp = uint32(block.number);
-        while (st.currPt < highPt && !cache.finished) {
+        while (st.currentPoint < highPt && !cache.finished) {
 
             if (cache.currVal & 2 > 0) {
                 // clear limit order first
-                LimitOrder.Data storage od = limitOrderData[st.currPt];
+                LimitOrder.Data storage od = limitOrderData[st.currentPoint];
                 uint256 currX = od.sellingX;
                 (uint128 costY, uint256 acquireX) = SwapMathY2X.y2XAtPrice(
                     amount, st.sqrtPrice_96, currX
@@ -176,9 +176,9 @@ contract SwapY2XModule {
                 od.accEarnY += costY;
                 if (od.sellingY == 0 && currX == 0) {
                     int24 newVal = cache.currVal & 1;
-                    setStatusVal(st.currPt, cache.pd, newVal);
+                    setStatusVal(st.currentPoint, cache.pd, newVal);
                     if (newVal == 0) {
-                        pointBitmap.setZero(st.currPt, cache.pd);
+                        pointBitmap.setZero(st.currentPoint, cache.pd);
                     }
                 }
             }
@@ -187,24 +187,24 @@ contract SwapY2XModule {
                 break;
             }
 
-            int24 nextPt = pointBitmap.nearestRightOneOrBoundary(st.currPt, cache.pd);
-            int24 nextVal = getStatusVal(nextPt, cache.pd);
-            if (nextPt > highPt) {
+            int24 nextPoint = pointBitmap.nearestRightOneOrBoundary(st.currentPoint, cache.pd);
+            int24 nextVal = getStatusVal(nextPoint, cache.pd);
+            if (nextPoint > highPt) {
                 nextVal = 0;
-                nextPt = highPt;
+                nextPoint = highPt;
             }
-            // in [st.currPt, nextPt)
+            // in [st.currentPoint, nextPoint)
             if (st.liquidity == 0) {
 
-                // no liquidity in the range [st.currPoint, nextPt)
-                st.currPt = nextPt;
-                st.sqrtPrice_96 = LogPowMath.getSqrtPrice(st.currPt);
+                // no liquidity in the range [st.currentPoint, nextPoint)
+                st.currentPoint = nextPoint;
+                st.sqrtPrice_96 = LogPowMath.getSqrtPrice(st.currentPoint);
                 st.allX = true;
                 if (nextVal & 1 > 0) {
-                    Point.Data storage endPt = points[nextPt];
+                    Point.Data storage endPt = points[nextPoint];
                     // pass next point from left to right
-                    endPt.passEndpt(cache.currFeeScaleX_128, cache.currFeeScaleY_128);
-                    // we should add delta liquid of nextPt
+                    endPt.passEndpoint(cache.currFeeScaleX_128, cache.currFeeScaleY_128);
+                    // we should add delta liquid of nextPoint
                     int128 liquidDelta = endPt.liquidDelta;
                     st.liquidity = liquidityAddDelta(st.liquidity, liquidDelta);
                 }
@@ -214,7 +214,7 @@ contract SwapY2XModule {
                 uint128 amountNoFee = uint128(uint256(amount) * 1e6 / (1e6 + fee));
                 if (amountNoFee > 0) {
                     SwapMathY2X.RangeRetState memory retState = SwapMathY2X.y2XRange(
-                        st, nextPt, cache._sqrtRate_96, amountNoFee
+                        st, nextPoint, cache._sqrtRate_96, amountNoFee
                     );
                     cache.finished = retState.finished;
                     uint128 feeAmount;
@@ -234,7 +234,7 @@ contract SwapY2XModule {
                     
                     cache.currFeeScaleY_128 = cache.currFeeScaleY_128 + MulDivMath.mulDivFloor(feeAmount, TwoPower.Pow128, st.liquidity);
 
-                    st.currPt = retState.finalPt;
+                    st.currentPoint = retState.finalPt;
                     st.sqrtPrice_96 = retState.sqrtFinalPrice_96;
                     st.allX = retState.finalAllX;
                     st.currX = retState.finalCurrX;
@@ -242,13 +242,13 @@ contract SwapY2XModule {
                 } else {
                     cache.finished = true;
                 }
-                if (st.currPt == nextPt && (nextVal & 1) > 0) {
-                    Point.Data storage endPt = points[nextPt];
+                if (st.currentPoint == nextPoint && (nextVal & 1) > 0) {
+                    Point.Data storage endPt = points[nextPoint];
                     // pass next point from left to right
-                    endPt.passEndpt(cache.currFeeScaleX_128, cache.currFeeScaleY_128);
+                    endPt.passEndpoint(cache.currFeeScaleX_128, cache.currFeeScaleY_128);
                     st.liquidity = liquidityAddDelta(st.liquidity, endPt.liquidDelta);
                 }
-                if (st.currPt == nextPt) {
+                if (st.currentPoint == nextPoint) {
                     cache.currVal = nextVal;
                 } else {
                     // not necessary, because finished must be true
@@ -256,7 +256,7 @@ contract SwapY2XModule {
                 }
             }
         }
-        if (cache.startPoint != st.currPt) {
+        if (cache.startPoint != st.currentPoint) {
             (st.observationCurrentIndex, st.observationQueueLen) = observations.append(
                 st.observationCurrentIndex,
                 cache.timestamp,
@@ -299,15 +299,15 @@ contract SwapY2XModule {
         cache.currFeeScaleY_128 = feeScaleY_128;
         cache.finished = false;
         cache._sqrtRate_96 = sqrtRate_96;
-        cache.pd = ptDelta;
-        cache.currVal = getStatusVal(st.currPt, cache.pd);
-        cache.startPoint = st.currPt;
+        cache.pd = pointDelta;
+        cache.currVal = getStatusVal(st.currentPoint, cache.pd);
+        cache.startPoint = st.currentPoint;
         cache.startLiquidity = st.liquidity;
         cache.timestamp = uint32(block.number);
-        while (st.currPt < highPt && !cache.finished) {
+        while (st.currentPoint < highPt && !cache.finished) {
             if (cache.currVal & 2 > 0) {
                 // clear limit order first
-                LimitOrder.Data storage od = limitOrderData[st.currPt];
+                LimitOrder.Data storage od = limitOrderData[st.currentPoint];
                 uint256 currX = od.sellingX;
                 (uint256 costY, uint128 acquireX) = SwapMathY2XDesire.y2XAtPrice(
                     desireX, st.sqrtPrice_96, currX
@@ -324,9 +324,9 @@ contract SwapY2XModule {
                 od.accEarnY += costY;
                 if (od.sellingY == 0 && currX == 0) {
                     int24 newVal = cache.currVal & 1;
-                    setStatusVal(st.currPt, cache.pd, newVal);
+                    setStatusVal(st.currentPoint, cache.pd, newVal);
                     if (newVal == 0) {
-                        pointBitmap.setZero(st.currPt, cache.pd);
+                        pointBitmap.setZero(st.currentPoint, cache.pd);
                     }
                 }
             }
@@ -334,23 +334,23 @@ contract SwapY2XModule {
             if (cache.finished) {
                 break;
             }
-            int24 nextPt = pointBitmap.nearestRightOneOrBoundary(st.currPt, cache.pd);
-            int24 nextVal = getStatusVal(nextPt, cache.pd);
-            if (nextPt > highPt) {
+            int24 nextPoint = pointBitmap.nearestRightOneOrBoundary(st.currentPoint, cache.pd);
+            int24 nextVal = getStatusVal(nextPoint, cache.pd);
+            if (nextPoint > highPt) {
                 nextVal = 0;
-                nextPt = highPt;
+                nextPoint = highPt;
             }
-            // in [st.currPt, nextPt)
+            // in [st.currentPoint, nextPoint)
             if (st.liquidity == 0) {
-                // no liquidity in the range [st.currPoint, nextPt)
-                st.currPt = nextPt;
-                st.sqrtPrice_96 = LogPowMath.getSqrtPrice(st.currPt);
+                // no liquidity in the range [st.currentPoint, nextPoint)
+                st.currentPoint = nextPoint;
+                st.sqrtPrice_96 = LogPowMath.getSqrtPrice(st.currentPoint);
                 st.allX = true;
                 if (nextVal & 1 > 0) {
-                    Point.Data storage endPt = points[nextPt];
+                    Point.Data storage endPt = points[nextPoint];
                     // pass next point from left to right
-                    endPt.passEndpt(cache.currFeeScaleX_128, cache.currFeeScaleY_128);
-                    // we should add delta liquid of nextPt
+                    endPt.passEndpoint(cache.currFeeScaleX_128, cache.currFeeScaleY_128);
+                    // we should add delta liquid of nextPoint
                     int128 liquidDelta = endPt.liquidDelta;
                     st.liquidity = liquidityAddDelta(st.liquidity, liquidDelta);
                 }
@@ -359,7 +359,7 @@ contract SwapY2XModule {
                 // desireX > 0
                 if (desireX > 0) {
                     SwapMathY2XDesire.RangeRetState memory retState = SwapMathY2XDesire.y2XRange(
-                        st, nextPt, cache._sqrtRate_96, desireX
+                        st, nextPoint, cache._sqrtRate_96, desireX
                     );
                     cache.finished = retState.finished;
                     uint256 feeAmount = MulDivMath.mulDivCeil(retState.costY, fee, 1e6);
@@ -370,7 +370,7 @@ contract SwapY2XModule {
                     
                     cache.currFeeScaleY_128 = cache.currFeeScaleY_128 + MulDivMath.mulDivFloor(feeAmount, TwoPower.Pow128, st.liquidity);
 
-                    st.currPt = retState.finalPt;
+                    st.currentPoint = retState.finalPt;
                     st.sqrtPrice_96 = retState.sqrtFinalPrice_96;
                     st.allX = retState.finalAllX;
                     st.currX = retState.finalCurrX;
@@ -378,13 +378,13 @@ contract SwapY2XModule {
                 } else {
                     cache.finished = true;
                 }
-                if (st.currPt == nextPt && (nextVal & 1) > 0) {
-                    Point.Data storage endPt = points[nextPt];
+                if (st.currentPoint == nextPoint && (nextVal & 1) > 0) {
+                    Point.Data storage endPt = points[nextPoint];
                     // pass next point from left to right
-                    endPt.passEndpt(cache.currFeeScaleX_128, cache.currFeeScaleY_128);
+                    endPt.passEndpoint(cache.currFeeScaleX_128, cache.currFeeScaleY_128);
                     st.liquidity = liquidityAddDelta(st.liquidity, endPt.liquidDelta);
                 }
-                if (st.currPt == nextPt) {
+                if (st.currentPoint == nextPoint) {
                     cache.currVal = nextVal;
                 } else {
                     // not necessary, because finished must be true
@@ -392,7 +392,7 @@ contract SwapY2XModule {
                 }
             }
         }
-        if (cache.startPoint != st.currPt) {
+        if (cache.startPoint != st.currentPoint) {
             (st.observationCurrentIndex, st.observationQueueLen) = observations.append(
                 st.observationCurrentIndex,
                 cache.timestamp,
@@ -418,14 +418,14 @@ contract SwapY2XModule {
         
     }
 
-    function getStatusVal(int24 pt, int24 pd) internal view returns(int24 val) {
-        if (pt % pd != 0) {
+    function getStatusVal(int24 point, int24 pd) internal view returns(int24 val) {
+        if (point % pd != 0) {
             return 0;
         }
-        val = statusVal[pt / pd];
+        val = statusVal[point / pd];
     }
-    function setStatusVal(int24 pt, int24 pd, int24 val) internal {
-        statusVal[pt / pd] = val;
+    function setStatusVal(int24 point, int24 pd, int24 val) internal {
+        statusVal[point / pd] = val;
     }
 
 }
