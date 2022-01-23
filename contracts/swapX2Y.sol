@@ -16,6 +16,7 @@ import './libraries/SwapMathX2YDesire.sol';
 import './libraries/TokenTransfer.sol';
 import './libraries/UserEarn.sol';
 import './libraries/State.sol';
+import './libraries/SwapCache.sol';
 import './libraries/Oracle.sol';
 import './interfaces/IiZiSwapCallback.sol';
 
@@ -23,7 +24,6 @@ import 'hardhat/console.sol';
 
 contract SwapX2YModule {
 
-    // TODO following usings may need modify
     using Liquidity for mapping(bytes32 =>Liquidity.Data);
     using Liquidity for Liquidity.Data;
     using Point for mapping(int24 =>Point.Data);
@@ -36,65 +36,59 @@ contract SwapX2YModule {
     using SwapMathX2Y for SwapMathX2Y.RangeRetState;
     using Oracle for Oracle.Observation[65535];
 
-    // TODO following values need change
     int24 internal constant LEFT_MOST_PT = -800000;
     int24 internal constant RIGHT_MOST_PT = 800000;
 
-    int24 private leftMostPt;
-    int24 private rightMostPt;
-    uint128 private maxLiquidPt;
+    /// @notice left most point regularized by pointDelta
+    int24 public leftMostPt;
+    /// @notice right most point regularized by pointDelta
+    int24 public rightMostPt;
+    /// @notice maximum liquidAcc for each point, see points() in IiZiSwapPool or library Point
+    uint128 public maxLiquidPt;
 
+    /// @notice address of iZiSwapFactory
     address public factory;
+
+    /// @notice address of tokenX
     address public tokenX;
+
+    /// @notice address of tokenY
     address public tokenY;
+
+    /// @notice fee amount of this swap pool, 3000 means 0.3%
     uint24 public fee;
+
+    /// @notice minimum number of distance between initialized or limitorder points 
     int24 public pointDelta;
 
+    /// @notice The fee growth as a 128-bit fixpoing fees of tokenX collected per 1 liquidity of the pool
     uint256 public feeScaleX_128;
+    /// @notice The fee growth as a 128-bit fixpoing fees of tokenY collected per 1 liquidity of the pool
     uint256 public feeScaleY_128;
 
-    uint160 public sqrtRate_96;
+    uint160 sqrtRate_96;
 
-    // struct State {
-    //     uint160 sqrtPrice_96;
-    //     int24 currentPoint;
-    //     uint256 currX;
-    //     uint256 currY;
-    //     // liquidity from currentPoint to right
-    //     uint128 liquidity;
-    //     bool allX;
-    //     bool locked;
-    // }
+    /// @notice some values of pool
+    /// see library State or IiZiSwapPool#state for more infomation
     State public state;
 
-    struct Cache {
-        uint256 currFeeScaleX_128;
-        uint256 currFeeScaleY_128;
-        bool finished;
-        uint160 _sqrtRate_96;
-        int24 pd;
-        int24 currVal;
-        int24 startPoint;
-        uint128 startLiquidity;
-        uint32 timestamp;
-    }
-    // struct WithdrawRet {
-    //     uint256 x;
-    //     uint256 y;
-    //     uint256 xc;
-    //     uint256 yc;
-    //     uint256 currX;
-    //     uint256 currY;
-    // }
-
-    /// TODO: following mappings may need modify
+    /// @notice the information about a liquidity by the liquidity's key
     mapping(bytes32 =>Liquidity.Data) public liquidities;
-    mapping(int16 =>uint256) pointBitmap;
-    mapping(int24 =>Point.Data) points;
+
+    /// @notice 256 packed point (orderOrEndpoint>0) boolean values. See PointBitmap for more information
+    mapping(int16 =>uint256) public pointBitmap;
+
+    /// @notice returns infomation of a point in the pool, see Point library of IiZiSwapPool#poitns for more information
+    mapping(int24 =>Point.Data) public points;
+    /// @notice infomation about a point whether has limit order and whether as an liquidity's endpoint
     mapping(int24 =>int24) public orderOrEndpoint;
+    /// @notice limitOrder info on a given point
     mapping(int24 =>LimitOrder.Data) public limitOrderData;
-    mapping(bytes32 => UserEarn.Data) userEarnX;
-    mapping(bytes32 => UserEarn.Data) userEarnY;
+    /// @notice information about a user's limit order (sell tokenY and earn tokenX)
+    mapping(bytes32 => UserEarn.Data) public userEarnX;
+    /// @notice information about a user's limit order (sell tokenX and earn tokenY)
+    mapping(bytes32 => UserEarn.Data) public userEarnY;
+    /// @notice observation data array
     Oracle.Observation[65535] public observations;
     
     address private  original;
@@ -102,7 +96,6 @@ contract SwapX2YModule {
     address private swapModuleX2Y;
     address private swapModuleY2X;
     address private mintMudule;
-    // address private immutable original;
 
     // delta cannot be int128.min and it can be proofed that
     // liquidDelta of any one point will not be int128.min
@@ -127,22 +120,23 @@ contract SwapX2YModule {
         return abi.decode(data, (uint256));
     }
 
-    function getStatusVal(int24 point, int24 pd) internal view returns(int24 val) {
-        if (point % pd != 0) {
+    function getOrderOrEndptValue(int24 point, int24 _pointDelta) internal view returns(int24 val) {
+        if (point % _pointDelta != 0) {
             return 0;
         }
-        val = orderOrEndpoint[point / pd];
+        val = orderOrEndpoint[point / _pointDelta];
     }
-    function setStatusVal(int24 point, int24 pd, int24 val) internal {
-        orderOrEndpoint[point / pd] = val;
+    function setOrderOrEndptValue(int24 point, int24 _pointDelta, int24 val) internal {
+        orderOrEndpoint[point / _pointDelta] = val;
     }
 
-    /// @dev swap sell tokenx and buy y
-    /// @param recipient address of actual trader
-    /// @param amount amount of x to sell from trader
-    /// @param lowPt point of lowest price of y
-    /// @param data calldata for user's callback to transfer x
-    /// @return amountX amountY token x trader actually sale and token y trader actually acquired
+    /// @notice Swap tokenX for tokenY， given max amount of tokenX user willing to pay
+    /// @param recipient The address to receive tokenY
+    /// @param amount The max amount of tokenX user willing to pay
+    /// @param lowPt the lowest point(price) of x/y during swap
+    /// @param data Any data to be passed through to the callback
+    /// @return amountX amount of tokenX acquired
+    /// @return amountY amount of tokenY payed
     function swapX2Y(
         address recipient,
         uint128 amount,
@@ -156,19 +150,19 @@ contract SwapX2YModule {
         amountX = 0;
         amountY = 0;
         State memory st = state;
-        Cache memory cache;
+        SwapCache memory cache;
         cache.currFeeScaleX_128 = feeScaleX_128;
         cache.currFeeScaleY_128 = feeScaleY_128;
         cache.finished = false;
         cache._sqrtRate_96 = sqrtRate_96;
-        cache.pd = pointDelta;
-        cache.currVal = getStatusVal(st.currentPoint, cache.pd);
+        cache.pointDelta = pointDelta;
+        cache.currentOrderOrEndpt = getOrderOrEndptValue(st.currentPoint, cache.pointDelta);
         cache.startPoint = st.currentPoint;
         cache.startLiquidity = st.liquidity;
         cache.timestamp = uint32(block.number);
         while (lowPt <= st.currentPoint && !cache.finished) {
             // clear limit order first
-            if (cache.currVal & 2 > 0) {
+            if (cache.currentOrderOrEndpt & 2 > 0) {
                 LimitOrder.Data storage od = limitOrderData[st.currentPoint];
                 uint256 currY = od.sellingY;
                 (uint128 costX, uint256 acquireY) = SwapMathX2Y.x2YAtPrice(
@@ -185,10 +179,10 @@ contract SwapX2YModule {
                 od.earnX += costX;
                 od.accEarnX += costX;
                 if (od.sellingX == 0 && currY == 0) {
-                    int24 newVal = cache.currVal & 1;
-                    setStatusVal(st.currentPoint, cache.pd, newVal);
+                    int24 newVal = cache.currentOrderOrEndpt & 1;
+                    setOrderOrEndptValue(st.currentPoint, cache.pointDelta, newVal);
                     if (newVal == 0) {
-                        pointBitmap.setZero(st.currentPoint, cache.pd);
+                        pointBitmap.setZero(st.currentPoint, cache.pointDelta);
                     }
                 }
             }
@@ -197,7 +191,7 @@ contract SwapX2YModule {
             }
             int24 searchStart = st.currentPoint - 1;
             // second, clear the liquid if the currentPoint is an endpoint
-            if (cache.currVal & 1 > 0) {
+            if (cache.currentOrderOrEndpt & 1 > 0) {
                 uint128 amountNoFee = uint128(uint256(amount) * 1e6 / (1e6 + fee));
                 if (amountNoFee > 0) {
                     if (st.liquidity > 0) {
@@ -245,11 +239,11 @@ contract SwapX2YModule {
             if (cache.finished || st.currentPoint < lowPt) {
                 break;
             }
-            int24 nextPt= pointBitmap.nearestLeftOneOrBoundary(searchStart, cache.pd);
+            int24 nextPt= pointBitmap.nearestLeftOneOrBoundary(searchStart, cache.pointDelta);
             if (nextPt < lowPt) {
                 nextPt = lowPt;
             }
-            int24 nextVal = getStatusVal(nextPt, cache.pd);
+            int24 nextVal = getOrderOrEndptValue(nextPt, cache.pointDelta);
             
             // in [st.currentPoint, nextPt)
             if (st.liquidity == 0) {
@@ -258,7 +252,7 @@ contract SwapX2YModule {
                 st.currentPoint = nextPt;
                 st.sqrtPrice_96 = LogPowMath.getSqrtPrice(st.currentPoint);
                 st.allX = true;
-                cache.currVal = nextVal;
+                cache.currentOrderOrEndpt = nextVal;
             } else {
                 // amount > 0
                 uint128 amountNoFee = uint128(uint256(amount) * 1e6 / (1e6 + fee));
@@ -291,10 +285,10 @@ contract SwapX2YModule {
                     cache.finished = true;
                 }
                 if (st.currentPoint == nextPt) {
-                    cache.currVal = nextVal;
+                    cache.currentOrderOrEndpt = nextVal;
                 } else {
                     // not necessary, because finished must be true
-                    cache.currVal = 0;
+                    cache.currentOrderOrEndpt = 0;
                 }
             }
             if (st.currentPoint <= lowPt) {
@@ -328,6 +322,13 @@ contract SwapX2YModule {
         
     }
     
+    /// @notice Swap tokenX for tokenY， given amount of tokenY user desires
+    /// @param recipient The address to receive tokenY
+    /// @param desireY The amount of tokenY user desires
+    /// @param lowPt the lowest point(price) of x/y during swap
+    /// @param data Any data to be passed through to the callback
+    /// @return amountX amount of tokenX acquired
+    /// @return amountY amount of tokenY payed
     function swapX2YDesireY(
         address recipient,
         uint128 desireY,
@@ -340,19 +341,19 @@ contract SwapX2YModule {
         amountX = 0;
         amountY = 0;
         State memory st = state;
-        Cache memory cache;
+        SwapCache memory cache;
         cache.currFeeScaleX_128 = feeScaleX_128;
         cache.currFeeScaleY_128 = feeScaleY_128;
         cache.finished = false;
         cache._sqrtRate_96 = sqrtRate_96;
-        cache.pd = pointDelta;
-        cache.currVal = getStatusVal(st.currentPoint, cache.pd);
+        cache.pointDelta = pointDelta;
+        cache.currentOrderOrEndpt = getOrderOrEndptValue(st.currentPoint, cache.pointDelta);
         cache.startPoint = st.currentPoint;
         cache.startLiquidity = st.liquidity;
         cache.timestamp = uint32(block.number);
         while (lowPt <= st.currentPoint && !cache.finished) {
             // clear limit order first
-            if (cache.currVal & 2 > 0) {
+            if (cache.currentOrderOrEndpt & 2 > 0) {
                 LimitOrder.Data storage od = limitOrderData[st.currentPoint];
                 uint256 currY = od.sellingY;
                 (uint256 costX, uint256 acquireY) = SwapMathX2YDesire.x2YAtPrice(
@@ -369,10 +370,10 @@ contract SwapX2YModule {
                 od.earnX += costX;
                 od.accEarnX += costX;
                 if (od.sellingX == 0 && currY == 0) {
-                    int24 newVal = cache.currVal & 1;
-                    setStatusVal(st.currentPoint, cache.pd, newVal);
+                    int24 newVal = cache.currentOrderOrEndpt & 1;
+                    setOrderOrEndptValue(st.currentPoint, cache.pointDelta, newVal);
                     if (newVal == 0) {
-                        pointBitmap.setZero(st.currentPoint, cache.pd);
+                        pointBitmap.setZero(st.currentPoint, cache.pointDelta);
                     }
                 }
             }
@@ -381,7 +382,7 @@ contract SwapX2YModule {
             }
             int24 searchStart = st.currentPoint - 1;
             // second, clear the liquid if the currentPoint is an endpoint
-            if (cache.currVal & 1 > 0) {
+            if (cache.currentOrderOrEndpt & 1 > 0) {
                 if (st.liquidity > 0) {
                     SwapMathX2YDesire.RangeRetState memory retState = SwapMathX2YDesire.x2YRange(
                         st,
@@ -417,11 +418,11 @@ contract SwapX2YModule {
             if (cache.finished || st.currentPoint < lowPt) {
                 break;
             }
-            int24 nextPt = pointBitmap.nearestLeftOneOrBoundary(searchStart, cache.pd);
+            int24 nextPt = pointBitmap.nearestLeftOneOrBoundary(searchStart, cache.pointDelta);
             if (nextPt < lowPt) {
                 nextPt = lowPt;
             }
-            int24 nextVal = getStatusVal(nextPt, cache.pd);
+            int24 nextVal = getOrderOrEndptValue(nextPt, cache.pointDelta);
             // in [st.currentPoint, nextPt)
             if (st.liquidity == 0) {
 
@@ -429,7 +430,7 @@ contract SwapX2YModule {
                 st.currentPoint = nextPt;
                 st.sqrtPrice_96 = LogPowMath.getSqrtPrice(st.currentPoint);
                 st.allX = true;
-                cache.currVal = nextVal;
+                cache.currentOrderOrEndpt = nextVal;
             } else {
                 // amount > 0
                 // if (desireY > 0) {
@@ -455,10 +456,10 @@ contract SwapX2YModule {
                 //     cache.finished = true;
                 // }
                 if (st.currentPoint == nextPt) {
-                    cache.currVal = nextVal;
+                    cache.currentOrderOrEndpt = nextVal;
                 } else {
                     // not necessary, because finished must be true
-                    cache.currVal = 0;
+                    cache.currentOrderOrEndpt = 0;
                 }
             }
             if (st.currentPoint <= lowPt) {
