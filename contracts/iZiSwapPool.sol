@@ -23,7 +23,6 @@ import './libraries/SwapMathX2Y.sol';
 
 contract iZiSwapPool is IiZiSwapPool {
 
-    // TODO following usings may need modify
     using Liquidity for mapping(bytes32 =>Liquidity.Data);
     using Liquidity for Liquidity.Data;
     using Point for mapping(int24 =>Point.Data);
@@ -33,36 +32,52 @@ contract iZiSwapPool is IiZiSwapPool {
     using UserEarn for UserEarn.Data;
     using UserEarn for mapping(bytes32 =>UserEarn.Data);
     using Oracle for Oracle.Observation[65535];
-    
-    // using SwapMathY2X for SwapMathY2X.RangeRetState;
-    // using SwapMathX2Y for SwapMathX2Y.RangeRetState;
 
-    // TODO following values need change
     int24 internal constant LEFT_MOST_PT = -800000;
     int24 internal constant RIGHT_MOST_PT = 800000;
 
-    int24 private leftMostPt;
-    int24 private rightMostPt;
-    uint128 private maxLiquidPt;
+    /// @notice left most point regularized by pointDelta
+    int24 public leftMostPt;
+    /// @notice right most point regularized by pointDelta
+    int24 public rightMostPt;
+    /// @notice maximum liquidAcc for each point, see points() in IiZiSwapPool or library Point
+    uint128 public maxLiquidPt;
 
-    address public  factory;
-    address public  tokenX;
-    address public  tokenY;
-    uint24 public  fee;
-    int24 public  pointDelta;
+    /// @notice address of iZiSwapFactory
+    address public factory;
 
+    /// @notice address of tokenX
+    address public tokenX;
+
+    /// @notice address of tokenY
+    address public tokenY;
+
+    /// @notice fee amount of this swap pool, 3000 means 0.3%
+    uint24 public fee;
+
+    /// @notice minimum number of distance between initialized or limitorder points 
+    int24 public pointDelta;
+
+    /// @notice The fee growth as a 128-bit fixpoing fees of tokenX collected per 1 liquidity of the pool
     uint256 public feeScaleX_128;
+    /// @notice The fee growth as a 128-bit fixpoing fees of tokenY collected per 1 liquidity of the pool
     uint256 public feeScaleY_128;
 
-    uint160 public override sqrtRate_96;
+    uint160 sqrtRate_96;
 
+    /// @notice some values of pool
+    /// see library State or IiZiSwapPool#state for more infomation
     State public override state;
 
-    /// TODO: following mappings may need modify
+    /// @notice the information about a liquidity by the liquidity's key
     mapping(bytes32 =>Liquidity.Data) public override liquidities;
+
+    /// @notice 256 packed point (orderOrEndpoint>0) boolean values. See PointBitmap for more information
     mapping(int16 =>uint256) public override pointBitmap;
+
+    /// @notice returns infomation of a point in the pool
     mapping(int24 =>Point.Data) public override points;
-    mapping(int24 =>int24) public override statusVal;
+    mapping(int24 =>int24) public override orderOrEndpoint;
     mapping(int24 =>LimitOrder.Data) public override limitOrderData;
     mapping(bytes32 => UserEarn.Data) public override userEarnX;
     mapping(bytes32 => UserEarn.Data) public override userEarnY;
@@ -133,7 +148,6 @@ contract iZiSwapPool is IiZiSwapPool {
         state.observationCurrentIndex = 0;
     }
 
-
     function assignLimOrderEarnY(
         int24 point,
         uint256 assignY
@@ -146,6 +160,7 @@ contract iZiSwapPool is IiZiSwapPool {
         ue.earn -= actualAssignY;
         ue.earnAssign += actualAssignY;
     }
+
     function assignLimOrderEarnX(
         int24 point,
         uint256 assignX
@@ -158,6 +173,7 @@ contract iZiSwapPool is IiZiSwapPool {
         ue.earn -= actualAssignX;
         ue.earnAssign += actualAssignX;
     }
+
     function decLimOrderWithX(
         int24 point,
         uint128 deltaX
@@ -178,7 +194,6 @@ contract iZiSwapPool is IiZiSwapPool {
                 pointBitmap.setZero(point, pointDelta);
             }
         }
-        
     }
 
     function decLimOrderWithY(
@@ -204,7 +219,6 @@ contract iZiSwapPool is IiZiSwapPool {
         }
         
     }
-
 
     function addLimOrderWithX(
         address recipient,
@@ -361,8 +375,7 @@ contract iZiSwapPool is IiZiSwapPool {
             TokenTransfer.transferToken(tokenY, recipient, y);
         }
     }
-    /// @dev mint
-    /// @param minter minter address
+    
     function mint(
         address minter,
         int24 leftPt,
@@ -425,6 +438,7 @@ contract iZiSwapPool is IiZiSwapPool {
         require(success && data.length >= 32);
         return abi.decode(data, (uint256));
     }
+
     function revertDCData(bytes memory data) private pure {
         if (data.length != 64) {
             if (data.length < 68) revert('dc');
@@ -444,12 +458,6 @@ contract iZiSwapPool is IiZiSwapPool {
         }
     }
 
-    /// @dev swap pay tokeny and buy token x
-    /// @param recipient address of actual trader
-    /// @param amount amount of y to pay from trader
-    /// @param highPt point of highest price of x
-    /// @param data calldata for user's callback to transfer y
-    /// @return amountX amountY token x trader actually acquired and token y trader actually paid
     function swapY2X(
         address recipient,
         uint128 amount,
@@ -488,18 +496,12 @@ contract iZiSwapPool is IiZiSwapPool {
         if (point % pd != 0) {
             return 0;
         }
-        val = statusVal[point / pd];
+        val = orderOrEndpoint[point / pd];
     }
     function setStatusVal(int24 point, int24 pd, int24 val) internal {
-        statusVal[point / pd] = val;
+        orderOrEndpoint[point / pd] = val;
     }
 
-    /// @dev swap sell tokenx and buy y
-    /// @param recipient address of actual trader
-    /// @param amount amount of x to sell from trader
-    /// @param lowPt point of lowest price of y
-    /// @param data calldata for user's callback to transfer x
-    /// @return amountX amountY token x trader actually sale and token y trader actually acquired
     function swapX2Y(
         address recipient,
         uint128 amount,
@@ -533,7 +535,6 @@ contract iZiSwapPool is IiZiSwapPool {
         }
     }
 
-    /// 
     function observe(uint32[] calldata secondsAgos)
         external
         view

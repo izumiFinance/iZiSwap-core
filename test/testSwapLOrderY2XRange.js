@@ -59,7 +59,7 @@ async function getLimOrder(poolAddr, pt) {
 async function getStatusVal(poolAddr, pt) {
     const iZiSwapPool = await ethers.getContractFactory("iZiSwapPool");
     pool = await iZiSwapPool.attach(poolAddr);
-    return await pool.statusVal(pt / 50);
+    return await pool.orderOrEndpoint(pt / 50);
 }
 async function burn(poolAddr, miner, pl, pr, liquidDelta) {
     const iZiSwapPool = await ethers.getContractFactory("iZiSwapPool");

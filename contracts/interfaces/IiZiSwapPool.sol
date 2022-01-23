@@ -176,9 +176,9 @@ interface IiZiSwapPool {
         uint256 amountYLim
     ) external returns (uint256 actualAmountX, uint256 actualAmountY);
 
-    /// @notice Swap tokenY for tokenX
-    /// @param recipient The address to receive tokenY
-    /// @param amount The max amount of tokenX user willing to pay
+    /// @notice Swap tokenY for tokenX， given max amount of tokenY user willing to pay
+    /// @param recipient The address to receive tokenX
+    /// @param amount The max amount of tokenY user willing to pay
     /// @param highPt the highest point(price) of x/y during swap
     /// @param data Any data to be passed through to the callback
     /// @return amountX amount of tokenX payed
@@ -190,6 +190,13 @@ interface IiZiSwapPool {
         bytes calldata data
     ) external returns (uint256 amountX, uint256 amountY);
     
+    /// @notice Swap tokenY for tokenX， given amount of tokenX user desires
+    /// @param recipient The address to receive tokenX
+    /// @param desireX The amount of tokenX user desires
+    /// @param highPt the highest point(price) of x/y during swap
+    /// @param data Any data to be passed through to the callback
+    /// @return amountX amount of tokenX payed
+    /// @return amountY amount of tokenY acquired
     function swapY2XDesireX(
         address recipient,
         uint128 desireX,
@@ -197,7 +204,13 @@ interface IiZiSwapPool {
         bytes calldata data
     ) external returns (uint256 amountX, uint256 amountY);
     
-    
+    /// @notice Swap tokenX for tokenY， given max amount of tokenX user willing to pay
+    /// @param recipient The address to receive tokenY
+    /// @param amount The max amount of tokenX user willing to pay
+    /// @param lowPt the lowest point(price) of x/y during swap
+    /// @param data Any data to be passed through to the callback
+    /// @return amountX amount of tokenX acquired
+    /// @return amountY amount of tokenY payed
     function swapX2Y(
         address recipient,
         uint128 amount,
@@ -205,14 +218,31 @@ interface IiZiSwapPool {
         bytes calldata data
     ) external returns (uint256 amountX, uint256 amountY);
     
-    
+    /// @notice Swap tokenX for tokenY， given amount of tokenY user desires
+    /// @param recipient The address to receive tokenY
+    /// @param desireY The amount of tokenY user desires
+    /// @param lowPt the lowest point(price) of x/y during swap
+    /// @param data Any data to be passed through to the callback
+    /// @return amountX amount of tokenX acquired
+    /// @return amountY amount of tokenY payed
     function swapX2YDesireY(
         address recipient,
         uint128 desireY,
-        int24 highPt,
+        int24 lowPt,
         bytes calldata data
     ) external returns (uint256 amountX, uint256 amountY);
     
+    /// @notice some values of pool
+    /// @return sqrtPrice_96 The current price(tokenX/tokenY) of the pool as a sqrt Q64.96 value
+    /// @return currentPoint The current point of the pool, 1.0001 ^ currentPoint = price
+    /// @return currX amount of tokenX on the currentPoint, this value is meaningless if allX is true
+    /// @return currY amount of tokenY on the currentPoint, this value is meaningless if allX is true
+    /// @return liquidity liquidity on the currentPoint (currX * sqrtPrice + currY / sqrtPrice)
+    /// @return allX whether there is no tokenY on the currentPoint
+    /// @return observationCurrentIndex The index of the last oracle observation that was written,
+    /// @return observationQueueLen The current maximum number of observations stored in the pool,
+    /// @return observationNextQueueLen The next maximum number of observations, to be updated when the observation.
+    /// @return locked whether the pool is locked (only used for checking reentrance)
     function state()
         external view
         returns(
@@ -227,7 +257,15 @@ interface IiZiSwapPool {
             uint16 observationNextQueueLen,
             bool locked
         );
-    function sqrtRate_96() external view returns (uint160);
+    
+    /// @notice limitOrder info on a given point
+    /// @param point the given point 
+    /// @return sellingX total amount of tokenX selling on the point
+    /// @return accEarnX total amount of earned tokenX(via selling tokenY) by all users at this point as of the last swap
+    /// @return sellingY total amount of tokenYselling on the point
+    /// @return accEarnY total amount of earned tokenY(via selling tokenX) by all users at this point as of the last swap
+    /// @return earnX total amount of unclaimed earned tokenX
+    /// @return earnY total amount of unclaimed earned tokenY
     function limitOrderData(int24 point)
         external view
         returns(
@@ -238,7 +276,18 @@ interface IiZiSwapPool {
             uint256 earnX,
             uint256 earnY
         );
-    function statusVal(int24) external returns(int24 val);
+    
+    /// @notice query infomation about a point whether has limit order and whether as an liquidity's endpoint
+    /// @param point point to query
+    /// @return val endpoint for val&1>0 and has limit order for val&2 > 0
+    function orderOrEndpoint(int24 point) external returns(int24 val);
+
+    /// @notice Returns observation data about a specific index
+    /// @param index the index of observation array
+    /// @return timestamp The timestamp of the observation,
+    /// @return pointCumulative the point multiplied by seconds elapsed for the life of the pool as of the observation timestamp,
+    /// @return secondsPerLiquidityCumulative_128 the seconds per in range liquidity for the life of the pool as of the observation timestamp,
+    /// @return init whether the observation has been initialized and the above values are safe to use
     function observations(uint256 index)
         external
         view
@@ -248,6 +297,14 @@ interface IiZiSwapPool {
             uint160 secondsPerLiquidityCumulative_128,
             bool init
         );
+
+    /// @notice returns infomation of a point in the pool
+    /// @param point the point
+    /// @return liquidAcc the total amount of liquidity that uses the point either as left endpoint or right endpoint
+    /// @return liquidDelta how much liquidity changes when the pool price crosses the point from left to right
+    /// @return feeScaleXBeyond_128 the fee growth on the other side of the point from the current point in tokenX
+    /// @return feeScaleYBeyond_128 the fee growth on the other side of the point from the current point in tokenY
+    /// @return isEndpt whether the point is an endpoint of a some miner's liquidity, true if liquidAcc > 0
     function points(int24 point)
         external
         view
@@ -258,8 +315,16 @@ interface IiZiSwapPool {
             uint256 feeScaleYBeyond_128,
             bool isEndpt
         );
+
+    /// @notice Returns 256 packed point (statusVal>0) boolean values. See PointBitmap for more information
     function pointBitmap(int16 wordPosition) external view returns (uint256);
 
+    /// @notice Returns the interpolation value of  cumulative point and liquidity at some target timestamps (block.timestamp - secondsAgo[i])
+    /// @dev if you call this method with secondsAgos = [3600, 0]. the average point of this pool during recent hour is 
+    /// (pointCumulatives[1] - pointCumulatives[0]) / 3600
+    /// @param secondsAgos describe the target timestamp , targetTimestimp[i] = block.timestamp - secondsAgo[i]
+    /// @return pointCumulatives Cumulative point values at each target timestamp
+    /// @return secondsPerLiquidityCumulative_128s Cumulative seconds per liquidity-in-range value at each target timestamp
     function observe(uint32[] calldata secondsAgos)
         external
         view

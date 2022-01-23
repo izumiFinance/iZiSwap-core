@@ -90,7 +90,7 @@ contract SwapY2XModule {
     mapping(bytes32 =>Liquidity.Data) public liquidities;
     mapping(int16 =>uint256) pointBitmap;
     mapping(int24 =>Point.Data) points;
-    mapping(int24 =>int24) public statusVal;
+    mapping(int24 =>int24) public orderOrEndpoint;
     mapping(int24 =>LimitOrder.Data) public limitOrderData;
     mapping(bytes32 => UserEarn.Data) userEarnX;
     mapping(bytes32 => UserEarn.Data) userEarnY;
@@ -422,10 +422,10 @@ contract SwapY2XModule {
         if (point % pd != 0) {
             return 0;
         }
-        val = statusVal[point / pd];
+        val = orderOrEndpoint[point / pd];
     }
     function setStatusVal(int24 point, int24 pd, int24 val) internal {
-        statusVal[point / pd] = val;
+        orderOrEndpoint[point / pd] = val;
     }
 
 }

@@ -173,7 +173,7 @@ async function addLimOrderWithX(tokenX, tokenY, seller, testAddLimOrder, amountX
 async function getStatusVal(poolAddr, pt) {
     const iZiSwapPool = await ethers.getContractFactory("iZiSwapPool");
     pool = await iZiSwapPool.attach(poolAddr);
-    return await pool.statusVal(pt / 50);
+    return await pool.orderOrEndpoint(pt / 50);
 }
 async function checkStatusVal(eVal, poolAddr, pt) {
     val = await getStatusVal(poolAddr, pt);
