@@ -131,12 +131,13 @@ contract SwapY2XModule {
         return abi.decode(data, (uint256));
     }
 
-    /// @dev swap pay tokeny and buy token x
-    /// @param recipient address of actual trader
-    /// @param amount amount of y to pay from trader
-    /// @param highPt point of highest price of x
-    /// @param data calldata for user's callback to transfer y
-    /// @return amountX amountY token x trader actually acquired and token y trader actually paid
+    /// @notice Swap tokenY for tokenX， given max amount of tokenY user willing to pay
+    /// @param recipient The address to receive tokenX
+    /// @param amount The max amount of tokenY user willing to pay
+    /// @param highPt the highest point(price) of x/y during swap
+    /// @param data Any data to be passed through to the callback
+    /// @return amountX amount of tokenX payed
+    /// @return amountY amount of tokenY acquired
     function swapY2X(
         address recipient,
         uint128 amount,
@@ -287,6 +288,13 @@ contract SwapY2XModule {
         
     }
 
+    /// @notice Swap tokenY for tokenX， given amount of tokenX user desires
+    /// @param recipient The address to receive tokenX
+    /// @param desireX The amount of tokenX user desires
+    /// @param highPt the highest point(price) of x/y during swap
+    /// @param data Any data to be passed through to the callback
+    /// @return amountX amount of tokenX payed
+    /// @return amountY amount of tokenY acquired
     function swapY2XDesireX(
         address recipient,
         uint128 desireX,
