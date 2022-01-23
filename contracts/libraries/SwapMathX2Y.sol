@@ -125,8 +125,9 @@ library SwapMathX2Y {
         }
     }
     
-    /// @notice compute amount of tokens during swap and some amount values (currX, currY, allX) on final point
-    ///    during this x2y swapping
+    /// @notice compute amount of tokens exchanged during swapX2Y
+    ///    and some amount values (currX, currY, allX) on final point
+    ///    after this swapping
     /// @param currentState state values containing (currX, currY, allX) of start point
     /// @param leftPt left most point during this swap
     /// @param sqrtRate_96 sqrt(1.0001)

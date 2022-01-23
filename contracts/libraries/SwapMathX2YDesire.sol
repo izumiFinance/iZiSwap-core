@@ -11,7 +11,7 @@ library SwapMathX2YDesire {
     
     // group returned values of x2YRange to avoid stake too deep
     struct RangeRetState {
-        // whether user has collect enough tokenY
+        // whether user has acquire enough tokenY
         bool finished;
         // actual cost of tokenX to buy tokenY
         uint256 costX;
@@ -118,8 +118,9 @@ library SwapMathX2YDesire {
         ret.acquireY = AmountMath.getAmountY(rg.liquidity, ret.sqrtLoc_96, rg.sqrtPriceR_96, rg.sqrtRate_96, false);
         ret.costX = AmountMath.getAmountX(rg.liquidity, ret.locPt, rg.rightPt, rg.sqrtPriceR_96, rg.sqrtRate_96, true);
     }
-    /// @notice compute amount of tokens during swap and some amount values (currX, currY, allX) on final point
-    ///    during this x2y swapping
+
+    /// @notice compute amount of tokens exchanged during swapX2YDesireY and some amount values (currX, currY, allX) on final point
+    ///    after this swapping
     /// @param currentState state values containing (currX, currY, allX) of start point
     /// @param leftPt left most point during this swap
     /// @param sqrtRate_96 sqrt(1.0001)
