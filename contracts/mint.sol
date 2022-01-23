@@ -128,13 +128,13 @@ contract MintModule {
         return abi.decode(data, (uint256));
     }
 
-    function getStatusVal(int24 point, int24 pd) internal view returns(int24 val) {
+    function getOrderOrEndptVal(int24 point, int24 pd) internal view returns(int24 val) {
         if (point % pd != 0) {
             return 0;
         }
         val = orderOrEndpoint[point / pd];
     }
-    function setStatusVal(int24 point, int24 pd, int24 val) internal {
+    function setOrderOrEndptVal(int24 point, int24 pd, int24 val) internal {
         orderOrEndpoint[point / pd] = val;
     }
 
@@ -170,15 +170,15 @@ contract MintModule {
         lq.update(delta, subFeeScaleX_128, subFeeScaleY_128);
         // update bitmap
         if (leftFlipped) {
-            int24 leftVal = getStatusVal(leftPoint, pd);
+            int24 leftVal = getOrderOrEndptVal(leftPoint, pd);
             if (delta > 0) {
-                setStatusVal(leftPoint, pd, leftVal | 1);
+                setOrderOrEndptVal(leftPoint, pd, leftVal | 1);
                 if (leftVal == 0) {
                     pointBitmap.setOne(leftPoint, pd);
                 }
             } else {
                 int24 newVal = leftVal & 2;
-                setStatusVal(leftPoint, pd, newVal);
+                setOrderOrEndptVal(leftPoint, pd, newVal);
                 if (newVal == 0) {
                     pointBitmap.setZero(leftPoint, pd);
                 }
@@ -186,15 +186,15 @@ contract MintModule {
             }
         }
         if (rightFlipped) {
-            int24 rightVal = getStatusVal(rightPoint, pd);
+            int24 rightVal = getOrderOrEndptVal(rightPoint, pd);
             if (delta > 0) {
-                setStatusVal(rightPoint, pd, rightVal | 1);
+                setOrderOrEndptVal(rightPoint, pd, rightVal | 1);
                 if (rightVal == 0) {
                     pointBitmap.setOne(rightPoint, pd);
                 }
             } else {
                 int24 newVal = rightVal & 2;
-                setStatusVal(rightPoint, pd, newVal);
+                setOrderOrEndptVal(rightPoint, pd, newVal);
                 if (newVal == 0) {
                     pointBitmap.setZero(rightPoint, pd);
                 }

@@ -116,67 +116,66 @@ library SwapMathX2Y {
         }
     }
     
+    /// @notice compute amount of tokenY acquired and some amount values (currX, currY, allX, liquidity) on final point
+    ///    during this x2y swapping
+    /// @param currentState state values containing (currX, currY, allX, liquidity) of start point
+    /// @param leftPt left most point during this swap
+    /// @param sqrtRate_96 sqrt(1.0001)
+    /// @param amountX max amount of tokenX user willing to pay
+    /// @return retState amount of token acquired and some values on final point
     function x2YRange(
-        State memory st,
+        State memory currentState,
         int24 leftPt,
         uint160 sqrtRate_96,
         uint128 amountX
     ) internal pure returns (
-        // bool finished,
-        // uint128 costX,
-        // uint256 acquireY,
-        // int24 finalPt,
-        // uint160 sqrtFinalPrice_96,
-        // bool finalAllX,
-        // uint256 finalCurrX,
-        // uint256 finalCurrY
         RangeRetState memory retState
     ) {
         retState.costX = 0;
         retState.acquireY = 0;
         retState.finished = false;
-        if (!st.allX && (st.currX > 0 || leftPt == st.currentPoint)) {
+        if (!currentState.allX && (currentState.currX > 0 || leftPt == currentState.currentPoint)) {
             (retState.costX, retState.acquireY) = x2YAtPriceLiquidity(
-                amountX, st.sqrtPrice_96, st.currY, st.currX, st.liquidity);
-            if (retState.acquireY < st.currY) {
+                amountX, currentState.sqrtPrice_96, currentState.currY, currentState.currX, currentState.liquidity);
+            if (retState.acquireY < currentState.currY) {
                 // remaining x is not enough to down current price to price / 1.0001
                 // but x may remain, so we cannot simply use (costX == amountX)
                 retState.finished = true;
                 retState.finalAllX = false;
-                retState.finalCurrY = st.currY - retState.acquireY;
-                retState.finalCurrX = st.currX + retState.costX;
-                retState.finalPt = st.currentPoint;
-                retState.sqrtFinalPrice_96 = st.sqrtPrice_96;
+                retState.finalCurrY = currentState.currY - retState.acquireY;
+                retState.finalCurrX = currentState.currX + retState.costX;
+                retState.finalPt = currentState.currentPoint;
+                retState.sqrtFinalPrice_96 = currentState.sqrtPrice_96;
             } else {
                 // acquireY == currY
                 // currX in rightPt run out
                 if (retState.costX >= amountX) {
                     retState.finished = true;
-                    retState.finalPt = st.currentPoint;
-                    retState.sqrtFinalPrice_96 = st.sqrtPrice_96;
+                    retState.finalPt = currentState.currentPoint;
+                    retState.sqrtFinalPrice_96 = currentState.sqrtPrice_96;
                     retState.finalAllX = true;
                 } else {
                     amountX -= retState.costX;
                 }
             }
-        } else if (!st.allX) { // all y
-            st.currentPoint = st.currentPoint + 1;
-            st.sqrtPrice_96 = uint160(MulDivMath.mulDivFloor(st.sqrtPrice_96, sqrtRate_96, TwoPower.Pow96));
+        } else if (!currentState.allX) { // all y
+            currentState.currentPoint = currentState.currentPoint + 1;
+            currentState.sqrtPrice_96 = uint160(MulDivMath.mulDivFloor(currentState.sqrtPrice_96, sqrtRate_96, TwoPower.Pow96));
         }
 
         if (retState.finished) {
             return retState;
         }
 
-        if (leftPt < st.currentPoint) {
+        if (leftPt < currentState.currentPoint) {
             uint160 sqrtPriceL_96 = LogPowMath.getSqrtPrice(leftPt);
             RangeCompRet memory ret = x2YRangeComplete(
                 Range({
-                    liquidity: st.liquidity,
+                    liquidity: currentState.liquidity,
                     sqrtPriceL_96: sqrtPriceL_96,
                     leftPt: leftPt, 
-                    sqrtPriceR_96: st.sqrtPrice_96, 
-                    rightPt: st.currentPoint, 
+                    sqrtPriceR_96: currentState.sqrtPrice_96, 
+                    rightPt: currentState.currentPoint, 
                     sqrtRate_96: sqrtRate_96
                 }),
                 amountX
@@ -193,9 +192,9 @@ library SwapMathX2Y {
                 ret.locPt = ret.locPt - 1;
                 ret.sqrtLoc_96 = uint160(MulDivMath.mulDivFloor(ret.sqrtLoc_96, TwoPower.Pow96, sqrtRate_96));
                 // trade at locPt
-                uint256 locCurrY = MulDivMath.mulDivFloor(st.liquidity, ret.sqrtLoc_96, TwoPower.Pow96);
+                uint256 locCurrY = MulDivMath.mulDivFloor(currentState.liquidity, ret.sqrtLoc_96, TwoPower.Pow96);
                 (uint128 locCostX, uint256 locAcquireY) = x2YAtPriceLiquidity(
-                    amountX, ret.sqrtLoc_96, locCurrY, 0, st.liquidity);
+                    amountX, ret.sqrtLoc_96, locCurrY, 0, currentState.liquidity);
                 retState.costX += locCostX;
                 retState.acquireY += locAcquireY;
                 retState.finished = true;
@@ -213,10 +212,10 @@ library SwapMathX2Y {
             }
         } else {
             retState.finished = false;
-            retState.finalPt = st.currentPoint;
+            retState.finalPt = currentState.currentPoint;
             // all y in leftPt are converted to x
             retState.finalAllX = true;
-            retState.sqrtFinalPrice_96 = st.sqrtPrice_96;
+            retState.sqrtFinalPrice_96 = currentState.sqrtPrice_96;
         }
     }
     
