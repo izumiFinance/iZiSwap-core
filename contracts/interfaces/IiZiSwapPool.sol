@@ -331,4 +331,8 @@ interface IiZiSwapPool {
         external
         view
         returns (int56[] memory pointCumulatives, uint160[] memory secondsPerLiquidityCumulative_128s);
+    
+    /// @notice expand max-length of observation queue
+    /// @param newNextQueueLen new value of observationNextQueueLen, which should be greater than current observationNextQueueLen
+    function expandObservationQueue(uint16 newNextQueueLen) external;
 }

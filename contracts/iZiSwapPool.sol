@@ -658,4 +658,14 @@ contract iZiSwapPool is IiZiSwapPool {
                 state.observationQueueLen
             );
     }
+
+    /// @notice increase value of observationNextQueueLen of observation circular queue
+    /// @param newNextQueueLen new value of observationNextQueueLen, which should be greater than current observationNextQueueLen
+    function expandObservationQueue(uint16 newNextQueueLen) external override noDelegateCall {
+        uint16 oldNextQueueLen = state.observationNextQueueLen;
+        if (newNextQueueLen > oldNextQueueLen) {
+            observations.expand(oldNextQueueLen, newNextQueueLen);
+            state.observationNextQueueLen = newNextQueueLen;
+        }
+    }
 }
