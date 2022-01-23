@@ -9,14 +9,23 @@ import "hardhat/console.sol";
 
 library SwapMathX2Y {
 
+    // group returned values of x2YRange to avoid stake too deep
     struct RangeRetState {
+        // whether user run out of amountX
         bool finished;
+        // actual cost of tokenX to buy tokenY
         uint128 costX;
+        // amount of acquired tokenY
         uint256 acquireY;
+        // final point after this swap
         int24 finalPt;
+        // sqrt price on final point
         uint160 sqrtFinalPrice_96;
+        // whether there is no tokenY on the currentPoint
         bool finalAllX;
+        // amount of tokenX(from liquidity) on final point, this value is meaningless if finalAllX is true
         uint256 finalCurrX;
+        // amount of tokenY(from liquidity) on final point, this value is meaningless if finalAllX is true
         uint256 finalCurrY;
     }
 
@@ -116,9 +125,9 @@ library SwapMathX2Y {
         }
     }
     
-    /// @notice compute amount of tokenY acquired and some amount values (currX, currY, allX, liquidity) on final point
+    /// @notice compute amount of tokens during swap and some amount values (currX, currY, allX) on final point
     ///    during this x2y swapping
-    /// @param currentState state values containing (currX, currY, allX, liquidity) of start point
+    /// @param currentState state values containing (currX, currY, allX) of start point
     /// @param leftPt left most point during this swap
     /// @param sqrtRate_96 sqrt(1.0001)
     /// @param amountX max amount of tokenX user willing to pay

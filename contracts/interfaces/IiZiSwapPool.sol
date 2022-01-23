@@ -233,10 +233,10 @@ interface IiZiSwapPool {
     ) external returns (uint256 amountX, uint256 amountY);
     
     /// @notice some values of pool
-    /// @return sqrtPrice_96 The current price(tokenX/tokenY) of the pool as a sqrt Q64.96 value
+    /// @return sqrtPrice_96 a 96 fixpoing number describe the sqrt value of current price(tokenX/tokenY)
     /// @return currentPoint The current point of the pool, 1.0001 ^ currentPoint = price
-    /// @return currX amount of tokenX on the currentPoint, this value is meaningless if allX is true
-    /// @return currY amount of tokenY on the currentPoint, this value is meaningless if allX is true
+    /// @return currX amount of tokenX (from liquidity) on the currentPoint, this value is meaningless if allX is true
+    /// @return currY amount of tokenY (from liquidity) on the currentPoint, this value is meaningless if allX is true
     /// @return liquidity liquidity on the currentPoint (currX * sqrtPrice + currY / sqrtPrice)
     /// @return allX whether there is no tokenY on the currentPoint
     /// @return observationCurrentIndex The index of the last oracle observation that was written,

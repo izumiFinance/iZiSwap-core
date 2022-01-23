@@ -6,9 +6,9 @@ struct State {
         uint160 sqrtPrice_96;
         // The current point of the pool, 1.0001 ^ currentPoint = price
         int24 currentPoint;
-        // amount of tokenX on the currentPoint, this value is meaningless if allX is true
+        // amount of tokenX (from liquidity) on the currentPoint, this value is meaningless if allX is true
         uint256 currX;
-        // amount of tokenY on the currentPoint, this value is meaningless if allX is true
+        // amount of tokenY (from liquidity) on the currentPoint, this value is meaningless if allX is true
         uint256 currY;
         // liquidity on the currentPoint (currX * sqrtPrice + currY / sqrtPrice)
         uint128 liquidity;
