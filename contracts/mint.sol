@@ -23,7 +23,6 @@ import 'hardhat/console.sol';
 
 contract MintModule {
 
-    // TODO following usings may need modify
     using Liquidity for mapping(bytes32 =>Liquidity.Data);
     using Liquidity for Liquidity.Data;
     using Point for mapping(int24 =>Point.Data);
@@ -36,7 +35,6 @@ contract MintModule {
     using SwapMathX2Y for SwapMathX2Y.RangeRetState;
     using Oracle for Oracle.Observation[65535];
 
-    // TODO following values need change
     int24 internal constant LEFT_MOST_PT = -800000;
     int24 internal constant RIGHT_MOST_PT = 800000;
 
@@ -55,39 +53,8 @@ contract MintModule {
 
     uint160 public sqrtRate_96;
 
-    // struct State {
-    //     uint160 sqrtPrice_96;
-    //     int24 currentPoint;
-    //     uint256 currX;
-    //     uint256 currY;
-    //     // liquidity from currentPoint to right
-    //     uint128 liquidity;
-    //     bool allX;
-    //     bool locked;
-    // }
     State public state;
 
-    struct Cache {
-        uint256 currFeeScaleX_128;
-        uint256 currFeeScaleY_128;
-        bool finished;
-        uint160 _sqrtRate_96;
-        int24 pd;
-        int24 currVal;
-        int24 startPoint;
-        uint128 startLiquidity;
-        uint32 timestamp;
-    }
-    // struct WithdrawRet {
-    //     uint256 x;
-    //     uint256 y;
-    //     uint256 xc;
-    //     uint256 yc;
-    //     uint256 currX;
-    //     uint256 currY;
-    // }
-
-    /// TODO: following mappings may need modify
     mapping(bytes32 =>Liquidity.Data) public liquidities;
     mapping(int16 =>uint256) pointBitmap;
     mapping(int24 =>Point.Data) points;
@@ -102,14 +69,22 @@ contract MintModule {
     address private swapModuleX2Y;
     address private swapModuleY2X;
     address private mintMudule;
-    // address private immutable original;
 
+    // some data computed if user want to withdraw
+    // like refunding tokens after withdraw
+    //  or amount of currX or currY at current point after withdraw
     struct WithdrawRet {
+        // total amount of tokenX refund after withdraw
         uint256 x;
+        // total amount of tokenY refund after withdraw
         uint256 y;
+        // amount of refund tokenX at current point after withdraw
         uint256 xc;
+        // amount of refund tokenY at current point after withdraw
         uint256 yc;
+        // value of currX at current point after withdraw
         uint256 currX;
+        // value of currY at current point after withdraw
         uint256 currY;
     }
 
@@ -139,65 +114,65 @@ contract MintModule {
 
     /// @dev Add / Dec liquidity of a minter
     /// @param minter the minter of the liquidity
-    /// @param pl left endpoint of the segment
-    /// @param pr right endpoint of the segment, [pl, pr)
+    /// @param leftPoint left endpoint of the segment
+    /// @param rightPoint right endpoint of the segment, [leftPoint, rightPoint)
     /// @param delta delta liquidity, positive for adding
     /// @param currentPoint current price point on the axies
     function _updateLiquidity(
         address minter,
-        int24 pl,
-        int24 pr,
+        int24 leftPoint,
+        int24 rightPoint,
         int128 delta,
         int24 currentPoint
     ) private {
         int24 pd = pointDelta;
-        Liquidity.Data storage lq = liquidities.get(minter, pl, pr);
+        Liquidity.Data storage lq = liquidities.get(minter, leftPoint, rightPoint);
         (uint256 mFeeScaleX_128, uint256 mFeeScaleY_128) = (feeScaleX_128, feeScaleY_128);
         bool leftFlipped;
         bool rightFlipped;
         // update points
         if (delta != 0) {
             // add / dec liquidity
-            leftFlipped = points.updateEndpoint(pl, true, currentPoint, delta, maxLiquidPt, mFeeScaleX_128, mFeeScaleY_128);
-            rightFlipped = points.updateEndpoint(pr, false, currentPoint, delta, maxLiquidPt, mFeeScaleX_128, mFeeScaleY_128);
+            leftFlipped = points.updateEndpoint(leftPoint, true, currentPoint, delta, maxLiquidPt, mFeeScaleX_128, mFeeScaleY_128);
+            rightFlipped = points.updateEndpoint(rightPoint, false, currentPoint, delta, maxLiquidPt, mFeeScaleX_128, mFeeScaleY_128);
         }
         // get sub fee scale of the range
         (uint256 subFeeScaleX_128, uint256 subFeeScaleY_128) = 
             points.getSubFeeScale(
-                pl, pr, currentPoint, mFeeScaleX_128, mFeeScaleY_128
+                leftPoint, rightPoint, currentPoint, mFeeScaleX_128, mFeeScaleY_128
             );
         lq.update(delta, subFeeScaleX_128, subFeeScaleY_128);
         // update bitmap
         if (leftFlipped) {
-            int24 leftVal = getStatusVal(pl, pd);
+            int24 leftVal = getStatusVal(leftPoint, pd);
             if (delta > 0) {
-                setStatusVal(pl, pd, leftVal | 1);
+                setStatusVal(leftPoint, pd, leftVal | 1);
                 if (leftVal == 0) {
-                    pointBitmap.setOne(pl, pd);
+                    pointBitmap.setOne(leftPoint, pd);
                 }
             } else {
                 int24 newVal = leftVal & 2;
-                setStatusVal(pl, pd, newVal);
+                setStatusVal(leftPoint, pd, newVal);
                 if (newVal == 0) {
-                    pointBitmap.setZero(pl, pd);
+                    pointBitmap.setZero(leftPoint, pd);
                 }
-                delete points[pl];
+                delete points[leftPoint];
             }
         }
         if (rightFlipped) {
-            int24 rightVal = getStatusVal(pr, pd);
+            int24 rightVal = getStatusVal(rightPoint, pd);
             if (delta > 0) {
-                setStatusVal(pr, pd, rightVal | 1);
+                setStatusVal(rightPoint, pd, rightVal | 1);
                 if (rightVal == 0) {
-                    pointBitmap.setOne(pr, pd);
+                    pointBitmap.setOne(rightPoint, pd);
                 }
             } else {
                 int24 newVal = rightVal & 2;
-                setStatusVal(pr, pd, newVal);
+                setStatusVal(rightPoint, pd, newVal);
                 if (newVal == 0) {
-                    pointBitmap.setZero(pr, pd);
+                    pointBitmap.setZero(rightPoint, pd);
                 }
-                delete points[pr];
+                delete points[rightPoint];
             }
         }
     }
@@ -218,36 +193,36 @@ contract MintModule {
         require (y == amount, "YC OFL");
     }
 
-    /// @dev [pl, pr)
+    /// @dev [leftPoint, rightPoint)
     function _computeDepositXY(
         uint128 liquidDelta,
-        int24 pl,
-        int24 pr,
-        State memory st
+        int24 leftPoint,
+        int24 rightPoint,
+        State memory currentState
     ) private view returns (uint128 x, uint128 y, uint128 yc) {
         x = 0;
         uint256 amountY = 0;
-        int24 pc = st.currentPoint;
-        uint160 sqrtPrice_96 = st.sqrtPrice_96;
-        uint160 sqrtPriceR_96 = LogPowMath.getSqrtPrice(pr);
+        int24 pc = currentState.currentPoint;
+        uint160 sqrtPrice_96 = currentState.sqrtPrice_96;
+        uint160 sqrtPriceR_96 = LogPowMath.getSqrtPrice(rightPoint);
         uint160 _sqrtRate_96 = sqrtRate_96;
-        if (pl < pc) {
-            uint160 sqrtPriceL_96 = LogPowMath.getSqrtPrice(pl);
+        if (leftPoint < pc) {
+            uint160 sqrtPriceL_96 = LogPowMath.getSqrtPrice(leftPoint);
             uint256 yl;
-            if (pr < pc) {
+            if (rightPoint < pc) {
                 yl = AmountMath.getAmountY(liquidDelta, sqrtPriceL_96, sqrtPriceR_96, _sqrtRate_96, true);
             } else {
                 yl = AmountMath.getAmountY(liquidDelta, sqrtPriceL_96, sqrtPrice_96, _sqrtRate_96, true);
             }
             amountY += yl;
         }
-        if (pr > pc) {
+        if (rightPoint > pc) {
             // we need compute XR
-            int24 xrLeft = (pl > pc) ? pl : pc + 1;
+            int24 xrLeft = (leftPoint > pc) ? leftPoint : pc + 1;
             uint256 xr = AmountMath.getAmountX(
                 liquidDelta,
                 xrLeft,
-                pr,
+                rightPoint,
                 sqrtPriceR_96,
                 _sqrtRate_96,
                 true
@@ -255,7 +230,7 @@ contract MintModule {
             x = uint128(xr);
             require(x == xr, "XOFL");
         }
-        if (pl <= pc && pr > pc) {
+        if (leftPoint <= pc && rightPoint > pc) {
             // we nned compute yc at point of current price
             yc = _computeDepositYc(
                 liquidDelta,
@@ -314,49 +289,54 @@ contract MintModule {
         }
     }
 
-    /// @dev [pl, pr)
+    /// @notice compute some values (refunding tokens, currX or currY values of state) if user wants to withdraw
+    /// @param liquidDelta amount of liquidity user wants to withdraw
+    /// @param leftPoint left endpoint of liquidity
+    /// @param rightPoint right endpoint of liquidity
+    /// @param currentState current state values of pool
+    /// @return withRet a WithdrawRet struct object containing values computed, see WithdrawRet for more information
     function _computeWithdrawXY(
         uint128 liquidDelta,
-        int24 pl,
-        int24 pr,
-        State memory st
+        int24 leftPoint,
+        int24 rightPoint,
+        State memory currentState
     ) private view returns (WithdrawRet memory withRet) {
         uint256 amountY = 0;
         uint256 amountX = 0;
-        int24 pc = st.currentPoint;
-        uint160 sqrtPrice_96 = st.sqrtPrice_96;
-        uint160 sqrtPriceR_96 = LogPowMath.getSqrtPrice(pr);
+        int24 pc = currentState.currentPoint;
+        uint160 sqrtPrice_96 = currentState.sqrtPrice_96;
+        uint160 sqrtPriceR_96 = LogPowMath.getSqrtPrice(rightPoint);
         uint160 _sqrtRate_96 = sqrtRate_96;
-        if (pl < pc) {
-            uint160 sqrtPriceL_96 = LogPowMath.getSqrtPrice(pl);
+        if (leftPoint < pc) {
+            uint160 sqrtPriceL_96 = LogPowMath.getSqrtPrice(leftPoint);
             uint256 yl;
-            if (pr < pc) {
+            if (rightPoint < pc) {
                 yl = AmountMath.getAmountY(liquidDelta, sqrtPriceL_96, sqrtPriceR_96, _sqrtRate_96, false);
             } else {
                 yl = AmountMath.getAmountY(liquidDelta, sqrtPriceL_96, sqrtPrice_96, _sqrtRate_96, false);
             }
             amountY += yl;
         }
-        if (pr > pc) {
+        if (rightPoint > pc) {
             // we need compute XR
-            int24 xrLeft = (pl > pc) ? pl : pc + 1;
+            int24 xrLeft = (leftPoint > pc) ? leftPoint : pc + 1;
             uint256 xr = AmountMath.getAmountX(
                 liquidDelta,
                 xrLeft,
-                pr,
+                rightPoint,
                 sqrtPriceR_96,
                 _sqrtRate_96,
                 false
             );
             amountX += xr;
         }
-        if (pl <= pc && pr > pc) {
-            if (st.allX) {
+        if (leftPoint <= pc && rightPoint > pc) {
+            if (currentState.allX) {
                 withRet.currY = 0;
-                withRet.currX = MulDivMath.mulDivFloor(st.liquidity, TwoPower.Pow96, st.sqrtPrice_96);
+                withRet.currX = MulDivMath.mulDivFloor(currentState.liquidity, TwoPower.Pow96, currentState.sqrtPrice_96);
             } else {
-                withRet.currX = st.currX;
-                withRet.currY = st.currY;
+                withRet.currX = currentState.currX;
+                withRet.currY = currentState.currY;
             }
             // we nned compute yc at point of current price
             (withRet.xc, withRet.yc) = _computeWithdrawXYAtCurrPt(
@@ -399,32 +379,32 @@ contract MintModule {
         if (minter == address(0)) {
             minter = msg.sender;
         }
-        State memory st = state;
+        State memory currentState = state;
         // add a liquidity segment to the pool
         _updateLiquidity(
             minter,
             leftPt,
             rightPt,
             ld,
-            st.currentPoint
+            currentState.currentPoint
         );
         // compute amount of tokenx and tokeny should be paid from minter
         (uint128 x, uint128 y, uint128 yc) = _computeDepositXY(
             liquidDelta,
             leftPt,
             rightPt,
-            st
+            currentState
         );
         // update state
         if (yc > 0) {
-            if (!st.allX) {
-                state.currY = st.currY + yc;
+            if (!currentState.allX) {
+                state.currY = currentState.currY + yc;
             } else {
                 state.allX = false;
-                state.currX = MulDivMath.mulDivFloor(st.liquidity, TwoPower.Pow96, st.sqrtPrice_96);
+                state.currX = MulDivMath.mulDivFloor(currentState.liquidity, TwoPower.Pow96, currentState.sqrtPrice_96);
                 state.currY = yc;
             }
-            state.liquidity = st.liquidity + liquidDelta;
+            state.liquidity = currentState.liquidity + liquidDelta;
         }
         uint256 bx;
         uint256 by;
@@ -461,8 +441,8 @@ contract MintModule {
         int24 pd = pointDelta;
         require(leftPt % pd == 0, "LPD");
         require(rightPt % pd == 0, "RPD");
-        State memory st = state;
-        uint128 liquidity = st.liquidity;
+        State memory currentState = state;
+        uint128 liquidity = currentState.liquidity;
         // add a liquidity segment to the pool
         int256 nlDelta = -int256(uint256(liquidDelta));
         require(int128(nlDelta) == nlDelta, "DO");
@@ -471,14 +451,14 @@ contract MintModule {
             leftPt,
             rightPt,
             int128(nlDelta),
-            st.currentPoint
+            currentState.currentPoint
         );
         // compute amount of tokenx and tokeny should be paid from minter
         WithdrawRet memory withRet = _computeWithdrawXY(
             liquidDelta,
             leftPt,
             rightPt,
-            st
+            currentState
         );
         // update state
         if (withRet.yc > 0 || withRet.xc > 0) {

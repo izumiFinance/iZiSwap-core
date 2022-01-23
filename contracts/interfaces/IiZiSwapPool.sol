@@ -20,7 +20,7 @@ interface IiZiSwapPool {
             uint256 remainFeeY
         );
     
-    /// @notice return the information about a limit order (sell tokenY and earn tokenX)
+    /// @notice return the information about a user's limit order (sell tokenY and earn tokenX)
     /// @param key the limit order's key is a hash of a preimage composed by the seller, point
     /// @return lastAccEarn total amount of tokenX earned by all users at this point as of the last add/dec/collect
     /// Returns sellingRemain amount of tokenY not selled in this limit order
@@ -38,7 +38,7 @@ interface IiZiSwapPool {
             uint256 earnAssign
         );
     
-    /// @notice return the information about a limit order (sell tokenX and earn tokenY)
+    /// @notice return the information about a user's limit order (sell tokenX and earn tokenY)
     /// @param key the limit order's key is a hash of a preimage composed by the seller, point
     /// @return lastAccEarn total amount of tokenY earned by all users at this point as of the last add/dec/collect
     /// Returns sellingRemain amount of tokenX not selled in this limit order
