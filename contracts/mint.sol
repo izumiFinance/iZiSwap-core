@@ -38,37 +38,63 @@ contract MintModule {
     int24 internal constant LEFT_MOST_PT = -800000;
     int24 internal constant RIGHT_MOST_PT = 800000;
 
-    int24 private leftMostPt;
-    int24 private rightMostPt;
-    uint128 private maxLiquidPt;
+    /// @notice left most point regularized by pointDelta
+    int24 public leftMostPt;
+    /// @notice right most point regularized by pointDelta
+    int24 public rightMostPt;
+    /// @notice maximum liquidAcc for each point, see points() in IiZiSwapPool or library Point
+    uint128 public maxLiquidPt;
 
+    /// @notice address of iZiSwapFactory
     address public factory;
+
+    /// @notice address of tokenX
     address public tokenX;
+
+    /// @notice address of tokenY
     address public tokenY;
+
+    /// @notice fee amount of this swap pool, 3000 means 0.3%
     uint24 public fee;
+
+    /// @notice minimum number of distance between initialized or limitorder points 
     int24 public pointDelta;
 
+    /// @notice The fee growth as a 128-bit fixpoing fees of tokenX collected per 1 liquidity of the pool
     uint256 public feeScaleX_128;
+    /// @notice The fee growth as a 128-bit fixpoing fees of tokenY collected per 1 liquidity of the pool
     uint256 public feeScaleY_128;
 
-    uint160 public sqrtRate_96;
+    uint160 sqrtRate_96;
 
+    /// @notice some values of pool
+    /// see library State or IiZiSwapPool#state for more infomation
     State public state;
 
+    /// @notice the information about a liquidity by the liquidity's key
     mapping(bytes32 =>Liquidity.Data) public liquidities;
-    mapping(int16 =>uint256) pointBitmap;
-    mapping(int24 =>Point.Data) points;
+
+    /// @notice 256 packed point (orderOrEndpoint>0) boolean values. See PointBitmap for more information
+    mapping(int16 =>uint256) public pointBitmap;
+
+    /// @notice returns infomation of a point in the pool, see Point library of IiZiSwapPool#poitns for more information
+    mapping(int24 =>Point.Data) public points;
+    /// @notice infomation about a point whether has limit order and whether as an liquidity's endpoint
     mapping(int24 =>int24) public orderOrEndpoint;
+    /// @notice limitOrder info on a given point
     mapping(int24 =>LimitOrder.Data) public limitOrderData;
-    mapping(bytes32 => UserEarn.Data) userEarnX;
-    mapping(bytes32 => UserEarn.Data) userEarnY;
+    /// @notice information about a user's limit order (sell tokenY and earn tokenX)
+    mapping(bytes32 => UserEarn.Data) public userEarnX;
+    /// @notice information about a user's limit order (sell tokenX and earn tokenY)
+    mapping(bytes32 => UserEarn.Data) public userEarnY;
+    /// @notice observation data array
     Oracle.Observation[65535] public observations;
-    
+
     address private  original;
 
     address private swapModuleX2Y;
     address private swapModuleY2X;
-    address private mintMudule;
+    address private mintModule;
 
     // some data computed if user want to withdraw
     // like refunding tokens after withdraw
@@ -358,10 +384,17 @@ contract MintModule {
         withRet.x = uint128(amountX);
         require(withRet.x == amountX, "XOFL");
     }
-    /// @dev mint
-    /// @param minter minter address
+
+    /// @notice add liquidity to the pool
+    /// @param recipient Newly created liquidity will belong to this address
+    /// @param leftPt left endpoint of the liquidity, be sure to be times of pointDelta
+    /// @param rightPt right endpoint of the liquidity, be sure to be times of pointDelta
+    /// @param liquidDelta amount of liquidity to add
+    /// @param data Any data that should be passed through to the callback
+    /// @return amountX The amount of tokenX that was paid for the liquidity. Matches the value in the callback
+    /// @return amountY The amount of tokenY that was paid for the liquidity. Matches the value in the callback
     function mint(
-        address minter,
+        address recipient,
         int24 leftPt,
         int24 rightPt,
         uint128 liquidDelta,
@@ -376,13 +409,13 @@ contract MintModule {
         require(rightPt % pd == 0, "RPD");
         int128 ld = int128(liquidDelta);
         require(ld > 0, "LP");
-        if (minter == address(0)) {
-            minter = msg.sender;
+        if (recipient == address(0)) {
+            recipient = msg.sender;
         }
         State memory currentState = state;
         // add a liquidity segment to the pool
         _updateLiquidity(
-            minter,
+            recipient,
             leftPt,
             rightPt,
             ld,
@@ -430,6 +463,12 @@ contract MintModule {
         amountY = y;
     }
 
+    /// @notice decrease a given amount of liquidity from msg.sender's liquidities
+    /// @param leftPt left endpoint of the liquidity
+    /// @param rightPt right endpoint of the liquidity
+    /// @param liquidDelta amount of liquidity to burn
+    /// @return amountX The amount of tokenX should be refund after burn
+    /// @return amountY The amount of tokenY should be refund after burn
     function burn(
         int24 leftPt,
         int24 rightPt,
@@ -475,6 +514,14 @@ contract MintModule {
         return (withRet.x, withRet.y);
     }
 
+    /// @notice Collects tokens (fee or refunded after burn) from a liquidity
+    /// @param recipient The address which should receive the collected tokens
+    /// @param leftPt left endpoint of the liquidity
+    /// @param rightPt right endpoint of the liquidity
+    /// @param amountXLim max amount of tokenX the owner wants to collect
+    /// @param amountYLim max amount of tokenY the owner wants to collect
+    /// @return actualAmountX The amount tokenX collected
+    /// @return actualAmountY The amount tokenY collected
     function collect(
         address recipient,
         int24 leftPt,
