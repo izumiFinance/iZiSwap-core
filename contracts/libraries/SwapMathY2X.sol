@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BUSL-1.1
-pragma solidity >=0.7.3;
+pragma solidity ^0.8.4;
 
 import './MulDivMath.sol';
 import './TwoPower.sol';
@@ -84,11 +84,6 @@ library SwapMathY2X {
         Range memory rg,
         uint128 amountY
     ) internal pure returns (
-        // uint128 costY, 
-        // uint256 acquireX, 
-        // bool completeLiquidity, 
-        // int24 locPt,
-        // uint160 sqrtLoc_96
         RangeCompRet memory ret
     ) {
         uint256 maxY = AmountMath.getAmountY(rg.liquidity, rg.sqrtPriceL_96, rg.sqrtPriceR_96, rg.sqrtRate_96, true);

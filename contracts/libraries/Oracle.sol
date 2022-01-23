@@ -47,6 +47,16 @@ library Oracle {
         return (1, 1);
     }
 
+    /// @notice call this function to append an price oracle observation data in the pool
+    /// @param self circular-queue of observation data in array form
+    /// @param currentIndex The index of the last observation in the array
+    /// @param timestamp timestamp of new observation
+    /// @param currentPoint current point of new observation (usually we append the point value just-before exchange)
+    /// @param liquidity amount of liquidity of new observation
+    /// @param queueLen max-length of circular queue
+    /// @param nextQueueLen next max-length of circular queue, if length of queue increase over queueLen, queueLen will become nextQueueLen
+    /// @return newIndex index of new observation
+    /// @return newQueueLen queueLen value after appending
     function append(
         Observation[65535] storage self,
         uint16 currentIndex,
@@ -71,6 +81,10 @@ library Oracle {
         self[newIndex] = newObservation(last, timestamp, currentPoint, liquidity);
     }
 
+    /// @notice expand the max-length of observation queue
+    /// @param queueLen current max-length of queue
+    /// @param nextQueueLen next max-length
+    /// @return next max-length
     function expand(
         Observation[65535] storage self,
         uint16 queueLen,
@@ -83,6 +97,7 @@ library Oracle {
         for (uint16 i = queueLen; i < nextQueueLen; i++) self[i].timestamp = 1;
         return nextQueueLen;
     }
+
     function lte(
         uint32 time,
         uint32 a,
@@ -96,38 +111,59 @@ library Oracle {
 
         return aAdjusted <= bAdjusted;
     }
-    function find(
+    
+    /// @notice do binary search to find two neighbor observations for a target timestamp
+    /// @param self observation queue in array form
+    /// @param timestamp timestamp of current block
+    /// @param targetTimestamp target time stamp
+    /// @param currentIdx The index of the last observation in the array
+    /// @param queueLen current max-length of queue
+    /// @return beforeNeighbor before-or-at observation neighbor to target timestamp
+    /// @return afterNeighbor after-or-at observation neighbor to target timestamp
+    function findNeighbor(
         Observation[65535] storage self,
         uint32 timestamp,
         uint32 targetTimestamp,
         uint16 currentIdx,
         uint16 queueLen
-    ) private view returns (Observation memory lessOrEq, Observation memory greaterOrEq) {
+    ) private view returns (Observation memory beforeNeighbor, Observation memory afterNeighbor) {
         uint256 l = (currentIdx + 1) % queueLen; // oldest observation
         uint256 r = l + queueLen - 1; // newest observation
         uint256 i;
         while (true) {
             i = (l + r) / 2;
 
-            lessOrEq = self[i % queueLen];
+            beforeNeighbor = self[i % queueLen];
 
-            if (!lessOrEq.init) {
+            if (!beforeNeighbor.init) {
                 l = i + 1;
                 continue;
             }
 
-            greaterOrEq = self[(i + 1) % queueLen];
+            afterNeighbor = self[(i + 1) % queueLen];
 
-            bool leftLessOrEq = lte(timestamp, lessOrEq.timestamp, targetTimestamp);
+            bool leftLessOrEq = lte(timestamp, beforeNeighbor.timestamp, targetTimestamp);
 
-            if (leftLessOrEq && lte(timestamp, targetTimestamp, greaterOrEq.timestamp)) break;
+            if (leftLessOrEq && lte(timestamp, targetTimestamp, afterNeighbor.timestamp)) break;
 
             if (!leftLessOrEq) r = i - 1;
             else l = i + 1;
         }
     }
 
-    function getLeftRightObservation(
+    /// @notice find two neighbor observations for a target timestamp
+    /// @param self observation queue in array form
+    /// @param timestamp timestamp of current block
+    /// @param targetTimestamp target time stamp
+    /// @param currentPoint current point of swap
+    /// @param currentIndex The index of the last observation in the array
+    /// @param liquidity liquidity of current point
+    /// @param queueLen current max-length of queue
+    /// @return beforeNeighbor before-or-at observation neighbor to target timestamp
+    /// @return afterNeighbor after-or-at observation neighbor to target timestamp, 
+    ///    if the targetTimestamp is later than last observation in queue, the afterNeighbor
+    ///    observation does not exist in the queue
+    function getTwoNeighborObservation(
         Observation[65535] storage self,
         uint32 timestamp,
         uint32 targetTimestamp,
@@ -135,32 +171,40 @@ library Oracle {
         uint16 currentIndex,
         uint128 liquidity,
         uint16 queueLen
-    ) private view returns (Observation memory leftOrAt, Observation memory rightOrAt) {
-        // optimistically set before to the newest observation
-        leftOrAt = self[currentIndex];
+    ) private view returns (Observation memory beforeNeighbor, Observation memory afterNeighbor) {
+        beforeNeighbor = self[currentIndex];
 
-        // if the target is chronologically at or after the newest observation, we can early return
-        if (lte(timestamp, leftOrAt.timestamp, targetTimestamp)) {
-            if (leftOrAt.timestamp == targetTimestamp) {
-                // if newest observation equals target, we're in the same block, so we can ignore atOrAfter
-                return (leftOrAt, leftOrAt);
+        if (lte(timestamp, beforeNeighbor.timestamp, targetTimestamp)) {
+            if (beforeNeighbor.timestamp == targetTimestamp) {
+                return (beforeNeighbor, beforeNeighbor);
             } else {
-                // otherwise, we need to transform
-                return (leftOrAt, newObservation(leftOrAt, targetTimestamp, currentPoint, liquidity));
+                return (beforeNeighbor, newObservation(beforeNeighbor, targetTimestamp, currentPoint, liquidity));
             }
         }
 
-        // now, set before to the oldest observation
-        leftOrAt = self[(currentIndex + 1) % queueLen];
-        if (!leftOrAt.init) leftOrAt = self[0];
+        beforeNeighbor = self[(currentIndex + 1) % queueLen];
+        if (!beforeNeighbor.init) beforeNeighbor = self[0];
 
-        // ensure that the target is chronologically at or after the oldest observation
-        require(lte(timestamp, leftOrAt.timestamp, targetTimestamp), 'OLD');
+        require(lte(timestamp, beforeNeighbor.timestamp, targetTimestamp), 'OLD');
 
-        // if we've reached this point, we have to binary search
-        return find(self, timestamp, targetTimestamp, currentIndex, queueLen);
+        return findNeighbor(self, timestamp, targetTimestamp, currentIndex, queueLen);
     }
 
+    /// @notice Returns the interpolation value of cumulative point and liquidity at some target timestamps (block.timestamp - secondsAgo[i])
+    /// @dev Reverts if target timestamp is early than oldest observation in the queue
+    /// @dev if you call this method twice with secondsAgos as 0 and 3600. and corresponding pointCumulatives value
+    /// are pointCumulatives_3600 and pointCumulatives_0
+    /// then, the average point of this pool during recent hour is 
+    /// (pointCumulatives_3600 - pointCumulatives_0) / 3600
+    /// @param self The observation circular queue in array form
+    /// @param timestamp The current block timestamp
+    /// @param secondsAgo target timestamp is timestamp-secondsAgo
+    /// @param currentPoint The current point of pool
+    /// @param currentIndex The index of the last observation in the array
+    /// @param liquidity The liquidity of current point
+    /// @param queueLen max-length of circular queue
+    /// @return pointCumulative integral value of point(time) from 0 to each timestamp
+    /// @return secondsPerLiquidityCumulative_128 integral value of 1/liquidity(time) from 0 to target timestamp
     function observeSingle(
         Observation[65535] storage self,
         uint32 timestamp,
@@ -178,33 +222,46 @@ library Oracle {
 
         uint32 targetTimestamp = timestamp - secondsAgo;
 
-        (Observation memory leftOrAt, Observation memory rightOrAt) =
-            getLeftRightObservation(self, timestamp, targetTimestamp, currentPoint, currentIndex, liquidity, queueLen);
+        (Observation memory beforeNeighbor, Observation memory afterNeighbor) =
+            getTwoNeighborObservation(self, timestamp, targetTimestamp, currentPoint, currentIndex, liquidity, queueLen);
 
-        if (targetTimestamp == leftOrAt.timestamp) {
+        if (targetTimestamp == beforeNeighbor.timestamp) {
             // we're at the left boundary
-            return (leftOrAt.pointCumulative, leftOrAt.secondsPerLiquidityCumulative_128);
-        } else if (targetTimestamp == rightOrAt.timestamp) {
+            return (beforeNeighbor.pointCumulative, beforeNeighbor.secondsPerLiquidityCumulative_128);
+        } else if (targetTimestamp == afterNeighbor.timestamp) {
             // we're at the right boundary
-            return (rightOrAt.pointCumulative, rightOrAt.secondsPerLiquidityCumulative_128);
+            return (afterNeighbor.pointCumulative, afterNeighbor.secondsPerLiquidityCumulative_128);
         } else {
             // we're in the middle
-            uint56 leftRightTimeDelta = rightOrAt.timestamp - leftOrAt.timestamp;
-            uint56 targetTimeDelta = targetTimestamp - leftOrAt.timestamp;
+            uint56 leftRightTimeDelta = afterNeighbor.timestamp - beforeNeighbor.timestamp;
+            uint56 targetTimeDelta = targetTimestamp - beforeNeighbor.timestamp;
             return (
-                leftOrAt.pointCumulative +
-                    ((rightOrAt.pointCumulative - leftOrAt.pointCumulative) / int56(leftRightTimeDelta)) *
+                beforeNeighbor.pointCumulative +
+                    ((afterNeighbor.pointCumulative - beforeNeighbor.pointCumulative) / int56(leftRightTimeDelta)) *
                     int56(targetTimeDelta),
-                leftOrAt.secondsPerLiquidityCumulative_128 +
+                beforeNeighbor.secondsPerLiquidityCumulative_128 +
                     uint160(
                         (uint256(
-                            rightOrAt.secondsPerLiquidityCumulative_128 - leftOrAt.secondsPerLiquidityCumulative_128
+                            afterNeighbor.secondsPerLiquidityCumulative_128 - beforeNeighbor.secondsPerLiquidityCumulative_128
                         ) * targetTimeDelta) / leftRightTimeDelta
                     )
             );
         }
     }
 
+    /// @notice Returns the integral value of point(time) and integral value of 1/liquidity(time)
+    /// @dev Reverts if target timestamp is early than oldest observation in the queue
+    /// @dev if you call this method with secondsAgos = [3600, 0]. the average point of this pool during recent hour is 
+    /// (pointCumulatives[1] - pointCumulatives[0]) / 3600
+    /// @param self The observation circular queue in array form
+    /// @param timestamp The current block timestamp
+    /// @param secondsAgos describe the target timestamp , targetTimestimp[i] = block.timestamp - secondsAgo[i]
+    /// @param currentPoint The current point of pool
+    /// @param currentIndex The index of the last observation in the array
+    /// @param liquidity The liquidity of current point
+    /// @param queueLen max-length of circular queue
+    /// @return pointCumulatives integral value of point(time) from 0 to each timestamp
+    /// @return secondsPerLiquidityCumulative_128s integral value of 1/liquidity(time) from 0 to target timestamp
     function observe(
         Observation[65535] storage self,
         uint32 timestamp,

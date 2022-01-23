@@ -319,12 +319,14 @@ interface IiZiSwapPool {
     /// @notice Returns 256 packed point (statusVal>0) boolean values. See PointBitmap for more information
     function pointBitmap(int16 wordPosition) external view returns (uint256);
 
-    /// @notice Returns the interpolation value of  cumulative point and liquidity at some target timestamps (block.timestamp - secondsAgo[i])
+    /// @notice Returns the integral value of point(time) and integral value of 1/liquidity(time)
+    ///     at some target timestamps (block.timestamp - secondsAgo[i])
+    /// @dev Reverts if target timestamp is early than oldest observation in the queue
     /// @dev if you call this method with secondsAgos = [3600, 0]. the average point of this pool during recent hour is 
     /// (pointCumulatives[1] - pointCumulatives[0]) / 3600
     /// @param secondsAgos describe the target timestamp , targetTimestimp[i] = block.timestamp - secondsAgo[i]
-    /// @return pointCumulatives Cumulative point values at each target timestamp
-    /// @return secondsPerLiquidityCumulative_128s Cumulative seconds per liquidity-in-range value at each target timestamp
+    /// @return pointCumulatives integral value of point(time) from 0 to each target timestamp
+    /// @return secondsPerLiquidityCumulative_128s integral value of 1/liquidity(time) from 0 to each target timestamp
     function observe(uint32[] calldata secondsAgos)
         external
         view

@@ -57,6 +57,7 @@ library SwapMathX2YDesire {
             costX = MulDivMath.mulDivCeil(acquireY, deltaX, currY);
         }
     }
+
     struct Range {
         uint128 liquidity;
         uint160 sqrtPriceL_96;
@@ -65,6 +66,7 @@ library SwapMathX2YDesire {
         int24 rightPt;
         uint160 sqrtRate_96;
     }
+
     struct RangeCompRet {
         uint256 costX;
         uint256 acquireY;
@@ -72,6 +74,7 @@ library SwapMathX2YDesire {
         int24 locPt;
         uint160 sqrtLoc_96;
     }
+    
     function x2YRangeComplete(
         Range memory rg,
         uint128 desireY

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BUSL-1.1
-pragma solidity >=0.7.3;
+pragma solidity ^0.8.4;
 
 import './MulDivMath.sol';
 import './TwoPower.sol';
@@ -72,6 +72,7 @@ library SwapMathX2Y {
         int24 rightPt;
         uint160 sqrtRate_96;
     }
+    
     struct RangeCompRet {
         uint128 costX;
         uint256 acquireY;
@@ -79,6 +80,7 @@ library SwapMathX2Y {
         int24 locPt;
         uint160 sqrtLoc_96;
     }
+
     /// @dev move from rightPt to leftPt, the range is [leftPt, rightPt)
     function x2YRangeComplete(
         Range memory rg,
