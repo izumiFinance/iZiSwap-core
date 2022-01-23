@@ -60,10 +60,11 @@ contract iZiSwapPool is IiZiSwapPool {
 
     /// @notice The fee growth as a 128-bit fixpoing fees of tokenX collected per 1 liquidity of the pool
     uint256 public feeScaleX_128;
-    /// @notice The fee growth as a 128-bit fixpoing fees of tokenY collected per 1 liquidity of the pool
+    /// @notice The fee growth as a 128-bit fixpoint fees of tokenY collected per 1 liquidity of the pool
     uint256 public feeScaleY_128;
 
-    uint160 sqrtRate_96;
+    /// @notice sqrt(1.0001), 96 bit fixpoint number
+    uint160 public override sqrtRate_96;
 
     /// @notice some values of pool
     /// see library State or IiZiSwapPool#state for more infomation

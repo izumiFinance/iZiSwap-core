@@ -231,6 +231,9 @@ interface IiZiSwapPool {
         int24 lowPt,
         bytes calldata data
     ) external returns (uint256 amountX, uint256 amountY);
+
+    /// @notice returns sqrt(1.0001), in 96 bit fixpoint number
+    function sqrtRate_96() external view returns(uint160);
     
     /// @notice some values of pool
     /// @return sqrtPrice_96 a 96 fixpoing number describe the sqrt value of current price(tokenX/tokenY)
