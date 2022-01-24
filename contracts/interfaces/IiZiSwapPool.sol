@@ -195,7 +195,7 @@ interface IiZiSwapPool {
     /// @param collectEarn max amount of earned token to collect
     /// @param isEarnY direction of this limit order, true for sell y, false for sell x
     /// @return actualCollectDec actual amount of decresed selling token collected
-    /// Returns actualCollectEarn actual amount of earned token collected
+    /// @return actualCollectEarn actual amount of earned token collected
     function collectLimOrder(
         address recipient, int24 point, uint256 collectDec, uint256 collectEarn, bool isEarnY
     ) external returns(uint256 actualCollectDec, uint256 actualCollectEarn);

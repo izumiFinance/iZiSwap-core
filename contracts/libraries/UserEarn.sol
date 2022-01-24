@@ -6,12 +6,19 @@ import './TwoPower.sol';
 
 library UserEarn {
 
+    // describe user's earning info for a limit order
     struct Data {
-        // uint256 lastSold;
+        // total amount of earned token by all users at this point 
+        // with same direction (sell x or sell y) as of the last update(add/dec)
         uint256 lastAccEarn;
+        // remaing amount of token on sale in this limit order
         uint256 sellingRemain;
+        // uncollected decreased token
         uint256 sellingDec;
+        // unassigned earned token
+        // earned token before collected need to be assigned
         uint256 earn;
+        // assigned but uncollected earned token
         uint256 earnAssign;
     }
     
