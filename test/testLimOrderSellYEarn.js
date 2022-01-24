@@ -173,7 +173,6 @@ describe("LimOrder SellX earn", function () {
     var testSwap;
     beforeEach(async function() {
         [signer, seller1, seller2, seller3, trader] = await ethers.getSigners();
-        console.log("balance: " + signer.getBalance());
         [poolPart, poolPartDesire, mintModule] = await getPoolParts();
         // deploy a factory
         const iZiSwapFactory = await ethers.getContractFactory("iZiSwapFactory");

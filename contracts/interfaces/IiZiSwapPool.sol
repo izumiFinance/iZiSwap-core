@@ -406,4 +406,13 @@ interface IiZiSwapPool {
     /// @notice expand max-length of observation queue
     /// @param newNextQueueLen new value of observationNextQueueLen, which should be greater than current observationNextQueueLen
     function expandObservationQueue(uint16 newNextQueueLen) external;
+
+    /// @notice return a snapshot infomation of Liquidity in [leftPoint, rightPoint)
+    /// @param leftPoint left endpoint of range, should be times of pointDelta
+    /// @param rightPoint right endpoint of range, should be times of pointDelta
+    /// @return deltaLiquidities an array of delta liquidity for points in the range
+    ///    note 1. delta liquidity here is amount of liquidity changed when cross a point from left to right
+    ///    note 2. deltaLiquidities only contains points which are times of pointDelta
+    ///    note 3. this function may cost a ENORMOUS amount of gas, be careful to call
+    function liquiditySnapshot(int24 leftPoint, int24 rightPoint) external view returns(int128[] memory deltaLiquidities);
 }
