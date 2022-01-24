@@ -5,13 +5,26 @@ import './interfaces/IiZiSwapFactory.sol';
 import './iZiSwapPool.sol';
 
 contract iZiSwapFactory is IiZiSwapFactory {
+
+    /// @notice owner of factory
     address public override owner;
+
+    /// @notice tokenX/tokenY/fee => pool address
     mapping(address => mapping(address => mapping(uint24 => address))) public override pool;
+
+    /// @notice mapping from fee amount to pointDelta
     mapping(uint24 => int24) public override fee2pointDelta;
+
+    /// @notice mark contract address in constructor to avoid delegate call
     address public only_addr_;
 
+    /// @notice address of module to support swapX2Y(DesireY)
     address public override swapX2YModule;
+
+    /// @notice address of module to support swapY2X(DesireX)
     address public override swapY2XModule;
+
+    /// @notice address of module to support mint
     address public override mintModule;
 
     /// @notice construct the factory
@@ -76,6 +89,6 @@ contract iZiSwapFactory is IiZiSwapFactory {
         ));
         pool[tokenX][tokenY][fee] = addr;
         pool[tokenY][tokenX][fee] = addr;
-        emit NewPool(tokenX, tokenY, fee, pointDelta, addr);
+        emit NewPool(tokenX, tokenY, fee, uint24(pointDelta), addr);
     }
 }

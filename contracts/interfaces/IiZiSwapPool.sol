@@ -2,6 +2,74 @@ pragma solidity ^0.8.4;
 
 interface IiZiSwapPool {
 
+    /// @notice Emitted when miner successfully add liquidity (mint)
+    /// @param sender The address that minted the liquidity
+    /// @param owner The owner who will benefit from this liquidity
+    /// @param leftPoint left endpoint of the liquidity
+    /// @param rightPoint right endpoint of the liquidity
+    /// @param liquidity The amount of liquidity minted to the range [leftPoint, rightPoint)
+    /// @param amountX amount of tokenX deposit
+    /// @param amountY amount of tokenY deposit
+    event Mint(
+        address sender, 
+        address indexed owner, 
+        int24 indexed leftPoint, 
+        int24 indexed rightPoint, 
+        uint128 liquidity, 
+        uint256 amountX, 
+        uint256 amountY
+    );
+
+    /// @notice Emitted when miner successfully decrease liquidity (withdraw)
+    /// @param owner owner address of liquidity
+    /// @param leftPoint left endpoint of liquidity
+    /// @param rightPoint right endpoint of liquidity
+    /// @param liquidity amount of liquidity decreased
+    /// @param amountX amount of tokenX withdrawed
+    /// @param amountY amount of tokenY withdrawed
+    event Burn(
+        address indexed owner, 
+        int24 indexed leftPoint,
+        int24 indexed rightPoint,
+        uint128 liquidity,
+        uint256 amountX,
+        uint256 amountY
+    );
+
+    /// @notice Emitted when a trader successfully exchange
+    /// @param tokenA the token paid from trader
+    /// @param tokenB the token sent to trader
+    /// @param fee fee amount of pool
+    /// @param amountA amount of tokenA
+    /// @param amountB amount of tokenB
+    event Swap(
+        address indexed tokenA,
+        address indexed tokenB,
+        uint24 indexed fee,
+        uint256 amountA,
+        uint256 amountB
+    );
+
+    /// @notice Emitted when a seller successfully add a limit order
+    /// @param amount amount of token to sell the seller added
+    /// @param point point of limit order
+    /// @param sellXEarnY direction of limit order, etc. sell tokenX or sell tokenY
+    event AddLimitOrder(
+        uint256 amount,
+        int24 point,
+        bool sellXEarnY
+    );
+
+    /// @notice Emitted when a seller successfully decrease a limit order
+    /// @param amount amount of token to sell the seller decreased
+    /// @param point point of limit order
+    /// @param sellXEarnY direction of limit order, etc. sell tokenX or sell tokenY
+    event DecLimitOrder(
+        uint256 amount,
+        int24 point,
+        bool sellXEarnY
+    );
+
     /// @notice Returns the information about a liquidity by the liquidity's key
     /// @param key The liquidity's key is a hash of a preimage composed by the miner(owner), pointLeft and pointRight
     /// @return liquidity The amount of liquidity,

@@ -219,6 +219,8 @@ contract iZiSwapPool is IiZiSwapPool {
                 pointBitmap.setZero(point, pointDelta);
             }
         }
+
+        emit DecLimitOrder(actualDeltaX, point, true);
     }
 
     /// @notice decrease limitorder of selling Y
@@ -247,6 +249,7 @@ contract iZiSwapPool is IiZiSwapPool {
             }
         }
         
+        emit DecLimitOrder(actualDeltaY, point, false);
     }
 
     /// @notice add a limit order (selling x) in the pool
@@ -322,6 +325,7 @@ contract iZiSwapPool is IiZiSwapPool {
         IiZiSwapAddLimOrderCallback(msg.sender).payCallback(amountX, 0, data);
         require(balanceX() >= bx + amountX, "XE");
         
+        emit AddLimitOrder(orderX, point, true);
     }
     
     /// @notice add a limit order (selling y) in the pool
@@ -394,6 +398,7 @@ contract iZiSwapPool is IiZiSwapPool {
         IiZiSwapAddLimOrderCallback(msg.sender).payCallback(0, amountY, data);
         require(balanceY() >= by + amountY, "YE");
         
+        emit AddLimitOrder(orderY, point, false);
     }
 
     /// @notice collect earned or decreased token from limit order
@@ -447,6 +452,7 @@ contract iZiSwapPool is IiZiSwapPool {
         );
         if (success) {
             (amountX, amountY) = abi.decode(d, (uint128, uint128));
+            emit Mint(msg.sender, recipient, leftPt, rightPt, liquidDelta, amountX, amountY);
         } else {
             revertDCData(d);
         }
@@ -468,6 +474,7 @@ contract iZiSwapPool is IiZiSwapPool {
         );
         if (success) {
             (amountX, amountY) = abi.decode(d, (uint256, uint256));
+            emit Burn(msg.sender, leftPt, rightPt, liquidDelta, amountX, amountY);
         } else {
             revertDCData(d);
         }
@@ -550,6 +557,7 @@ contract iZiSwapPool is IiZiSwapPool {
         );
         if (success) {
             (amountX, amountY) = abi.decode(d, (uint256, uint256));
+            emit Swap(tokenY, tokenX, fee, amountY, amountX);
         } else {
             revertDCData(d);
         }
@@ -574,6 +582,7 @@ contract iZiSwapPool is IiZiSwapPool {
         );
         if (success) {
             (amountX, amountY) = abi.decode(d, (uint256, uint256));
+            emit Swap(tokenY, tokenX, fee, amountY, amountX);
         } else {
             revertDCData(d);
         }
@@ -608,6 +617,7 @@ contract iZiSwapPool is IiZiSwapPool {
         );
         if (success) {
             (amountX, amountY) = abi.decode(d, (uint256, uint256));
+            emit Swap(tokenX, tokenY, fee, amountX, amountY);
         } else {
             revertDCData(d);
         }
@@ -631,6 +641,7 @@ contract iZiSwapPool is IiZiSwapPool {
         );
         if (success) {
             (amountX, amountY) = abi.decode(d, (uint256, uint256));
+            emit Swap(tokenX, tokenY, fee, amountX, amountY);
         } else {
             revertDCData(d);
         }

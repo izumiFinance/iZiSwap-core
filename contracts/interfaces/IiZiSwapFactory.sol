@@ -12,7 +12,7 @@ interface IiZiSwapFactory {
         address indexed tokenX,
         address indexed tokenY,
         uint24 indexed fee,
-        int24 pointDelta,
+        uint24 pointDelta,
         address pool
     );
 

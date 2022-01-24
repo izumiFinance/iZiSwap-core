@@ -399,7 +399,7 @@ contract MintModule {
         int24 rightPt,
         uint128 liquidDelta,
         bytes calldata data
-    ) external returns (uint128 amountX, uint128 amountY) {
+    ) external returns (uint256 amountX, uint256 amountY) {
         require(leftPt < rightPt, "LR");
         require(leftPt >= leftMostPt, "LO");
         require(rightPt <= rightMostPt, "HO");
@@ -422,7 +422,7 @@ contract MintModule {
             currentState.currentPoint
         );
         // compute amount of tokenx and tokeny should be paid from minter
-        (uint128 x, uint128 y, uint128 yc) = _computeDepositXY(
+        (uint256 x, uint256 y, uint256 yc) = _computeDepositXY(
             liquidDelta,
             leftPt,
             rightPt,
@@ -461,6 +461,7 @@ contract MintModule {
         }
         amountX = x;
         amountY = y;
+
     }
 
     /// @notice decrease a given amount of liquidity from msg.sender's liquidities
