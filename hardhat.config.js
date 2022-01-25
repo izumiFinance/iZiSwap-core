@@ -33,7 +33,7 @@ module.exports = {
     hardhat: {
       allowUnlimitedContractSize: true,
     },
-    izumi_test: {
+    izumiTest: {
       url: izumiRpcUrl,
       accounts: [sk],
       // gas: 90000000,
