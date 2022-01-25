@@ -69,14 +69,7 @@ function floor(a) {
 function ceil(b) {
     return BigNumber(b.toFixed(0, 2));
 }
-function y2xAt(point, rate, amountY) {
-    sp = rate.pow(point).sqrt();
-    liquidity = floor(amountY.div(sp));
-    acquireX = floor(liquidity.div(sp));
-    liquidity = ceil(acquireX.times(sp));
-    costY = ceil(liquidity.times(sp));
-    return [acquireX, costY];
-}
+
 function floor(a) {
     return BigNumber(a.toFixed(0, 3));
 }
@@ -98,12 +91,6 @@ function y2xAtLiquidity(point, rate, amountY, currX, currY, liquidity) {
         return [BigNumber('0'), BigNumber('0')];
     }
     return [acquireX, amountY];
-}
-function x2yAt(point, rate, amountX) {
-    sp = rate.pow(point).sqrt();
-    liquidity = ceil(amountX.times(sp));
-    costY = ceil(liquidity.times(sp));
-    return costY;
 }
 
 function yInRange(liquidity, pl, pr, rate, up) {
@@ -150,13 +137,13 @@ async function getPoolParts() {
   }
 describe("swap", function () {
   it("swap no limorder y2x range simple", async function () {
-    const [signer, miner1, miner2, miner3, trader, trader2] = await ethers.getSigners();
+    const [signer, miner1, miner2, miner3, trader, trader2, receiver] = await ethers.getSigners();
 
     [poolPart, poolPartDesire, mintModule] = await getPoolParts();
     // deploy a factory
     const iZiSwapFactory = await ethers.getContractFactory("iZiSwapFactory");
 
-    const factory = await iZiSwapFactory.deploy(poolPart, poolPartDesire, mintModule);
+    const factory = await iZiSwapFactory.deploy(receiver.address, poolPart, poolPartDesire, mintModule);
     await factory.deployed();
 
     [tokenX, tokenY] = await getToken();

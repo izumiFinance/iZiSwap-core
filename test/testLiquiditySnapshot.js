@@ -51,12 +51,12 @@ async function getPoolParts() {
 
 describe("snapshot", function () {
   it("get snapshot covering uninited points", async function () {
-    const [signer, miner1, miner2, miner3, seller0, seller1, trader, trader2] = await ethers.getSigners();
+    const [signer, miner1, miner2, miner3, seller0, seller1, trader, trader2, receiver] = await ethers.getSigners();
     [poolPart, poolPartDesire, mintModule] = await getPoolParts();
     // deploy a factory
     const iZiSwapFactory = await ethers.getContractFactory("iZiSwapFactory");
 
-    const factory = await iZiSwapFactory.deploy(poolPart, poolPartDesire, mintModule);
+    const factory = await iZiSwapFactory.deploy(receiver.address, poolPart, poolPartDesire, mintModule);
     await factory.deployed();
 
     [tokenX, tokenY] = await getToken();

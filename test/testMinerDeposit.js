@@ -124,7 +124,7 @@ async function getPoolParts() {
 }
 describe("Mint", function () {
   it("check miner deposit", async function () {
-    const [signer, miner1, miner2, miner3] = await ethers.getSigners();
+    const [signer, miner1, miner2, miner3, receiver] = await ethers.getSigners();
 
     console.log("balance: " + signer.getBalance());
 
@@ -133,7 +133,7 @@ describe("Mint", function () {
     // deploy a factory
     const iZiSwapFactory = await ethers.getContractFactory("iZiSwapFactory");
 
-    const factory = await iZiSwapFactory.deploy(poolPart, poolPartDesire, mintModule);
+    const factory = await iZiSwapFactory.deploy(receiver.address, poolPart, poolPartDesire, mintModule);
     await factory.deployed();
 
     console.log("factory addr: " + factory.address);

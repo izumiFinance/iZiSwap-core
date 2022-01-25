@@ -138,12 +138,12 @@ describe("quoter", function () {
     var testSwap;
     var rate;
     beforeEach(async function() {
-        [signer, miner, trader1, trader2, recipient1, recipient2] = await ethers.getSigners();
+        [signer, miner, trader1, trader2, recipient1, recipient2, receiver] = await ethers.getSigners();
         [poolPart, poolPartDesire, mintModule] = await getPoolParts();
         // deploy a factory
         const iZiSwapFactory = await ethers.getContractFactory("iZiSwapFactory");
     
-        factory = await iZiSwapFactory.deploy(poolPart, poolPartDesire, mintModule);
+        factory = await iZiSwapFactory.deploy(receiver.address, poolPart, poolPartDesire, mintModule);
         await factory.deployed();
     
         [tokenX, tokenY] = await getToken();

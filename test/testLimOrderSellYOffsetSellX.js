@@ -147,11 +147,11 @@ describe("LimOrder SellY Offset SellX", function () {
     var rate;
     var testAddLimOrder;
     beforeEach(async function() {
-        [signer, seller1, seller2, seller3, trader] = await ethers.getSigners();
+        [signer, seller1, seller2, seller3, trader, receiver] = await ethers.getSigners();
         [poolPart, poolPartDesire, mintModule] = await getPoolParts();
         // deploy a factory
         const iZiSwapFactory = await ethers.getContractFactory("iZiSwapFactory");
-        factory = await iZiSwapFactory.deploy(poolPart, poolPartDesire, mintModule);
+        factory = await iZiSwapFactory.deploy(receiver.address, poolPart, poolPartDesire, mintModule);
         await factory.deployed();
         console.log("factory addr: " + factory.address);
         [tokenX, tokenY] = await getToken();

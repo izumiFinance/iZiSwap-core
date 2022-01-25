@@ -43,13 +43,6 @@ function floor(b) {
     return BigNumber(b.toFixed(0, 3));
 }
 
-async function addLimOrderWithY(tokenX, tokenY, seller, testAddLimOrder, amountY, point) {
-    await tokenY.transfer(seller.address, amountY);
-    await tokenY.connect(seller).approve(testAddLimOrder.address, amountY);
-    await testAddLimOrder.connect(seller).addLimOrderWithY(
-        tokenX.address, tokenY.address, 3000, point, amountY
-    );
-}
 async function addLimOrderWithX(tokenX, tokenY, seller, testAddLimOrder, amountX, point) {
     await tokenX.transfer(seller.address, amountX);
     await tokenX.connect(seller).approve(testAddLimOrder.address, amountX);
@@ -92,15 +85,6 @@ function blockNum2BigNumber(blc) {
 async function checkBalance(token, address, value) {
     expect(blockNum2BigNumber(await token.balanceOf(address)).toFixed(0)).to.equal(value.toFixed(0));
 }
-async function checkLimOrder(eSellingX, eAccEarnX, eSellingY, eAccEarnY, eEarnX, eEarnY, poolAddr, pt) {
-    [sellingX, accEarnX, sellingY, accEarnY, earnX, earnY] = await getLimOrder(poolAddr, pt);
-    expect(sellingX.toFixed(0)).to.equal(eSellingX.toFixed(0));
-    expect(accEarnX.toFixed(0)).to.equal(eAccEarnX.toFixed(0));
-    expect(sellingY.toFixed(0)).to.equal(eSellingY.toFixed(0));
-    expect(accEarnY.toFixed(0)).to.equal(eAccEarnY.toFixed(0));
-    expect(earnX.toFixed(0)).to.equal(eEarnX.toFixed(0));
-    expect(earnY.toFixed(0)).to.equal(eEarnY.toFixed(0));
-}
 function list2BigNumber(valueList) {
     var bigList = [];
     for (var i = 0; i < valueList.length; i ++) {
@@ -136,28 +120,6 @@ async function getPoolParts() {
   await mintModule.deployed();
   return [iZiSwapPoolPart.address, iZiSwapPoolPartDesire.address, mintModule.address];
 }
-async function getLimOrder(poolAddr, pt) {
-    const iZiSwapPool = await ethers.getContractFactory("iZiSwapPool");
-    var pool = await iZiSwapPool.attach(poolAddr);
-    [sellingX, accEarnX, sellingY, accEarnY, earnX, earnY] = await pool.limitOrderData(pt);
-    return [
-        BigNumber(sellingX._hex),
-        BigNumber(accEarnX._hex),
-        BigNumber(sellingY._hex),
-        BigNumber(accEarnY._hex),
-        BigNumber(earnX._hex),
-        BigNumber(earnY._hex)
-    ]
-}
-async function getStatusVal(poolAddr, pt) {
-    const iZiSwapPool = await ethers.getContractFactory("iZiSwapPool");
-    var pool = await iZiSwapPool.attach(poolAddr);
-    return await pool.orderOrEndpoint(pt / 50);
-}
-async function checkStatusVal(eVal, poolAddr, pt) {
-    var val = await getStatusVal(poolAddr, pt);
-    expect(eVal).to.equal(val);
-}
 describe("LimOrder SellX earn", function () {
     var signer, seller1, seller2, seller3, trader;
     var factory;
@@ -167,11 +129,11 @@ describe("LimOrder SellX earn", function () {
     var testAddLimOrder;
     var testSwap;
     beforeEach(async function() {
-        [signer, seller1, seller2, seller3, trader] = await ethers.getSigners();
+        [signer, seller1, seller2, seller3, trader, receiver] = await ethers.getSigners();
         [poolPart, poolPartDesire, mintModule] = await getPoolParts();
         // deploy a factory
         const iZiSwapFactory = await ethers.getContractFactory("iZiSwapFactory");
-        factory = await iZiSwapFactory.deploy(poolPart, poolPartDesire, mintModule);
+        factory = await iZiSwapFactory.deploy(receiver.address, poolPart, poolPartDesire, mintModule);
         await factory.deployed();
         console.log("factory addr: " + factory.address);
         [tokenX, tokenY] = await getToken();

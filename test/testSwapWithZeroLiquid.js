@@ -117,12 +117,12 @@ describe("swap with liquidity and negative pt", function () {
     var testSwap;
     var rate;
     beforeEach(async function() {
-        [signer, miner1, miner2, miner3, trader1, trader2] = await ethers.getSigners();
+        [signer, miner1, miner2, miner3, trader1, trader2, receiver] = await ethers.getSigners();
         [poolPart, poolPartDesire, mintModule] = await getPoolParts();
         // deploy a factory
         const iZiSwapFactory = await ethers.getContractFactory("iZiSwapFactory");
     
-        factory = await iZiSwapFactory.deploy(poolPart, poolPartDesire, mintModule);
+        factory = await iZiSwapFactory.deploy(receiver.address, poolPart, poolPartDesire, mintModule);
         await factory.deployed();
     
         [tokenX, tokenY] = await getToken();

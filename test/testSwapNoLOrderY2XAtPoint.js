@@ -85,14 +85,7 @@ function y2xAtLiquidity(point, rate, amountY, currX, currY, liquidity) {
     }
     return [acquireX, amountY];
 }
-function y2xAt(tick, rate, amountY) {
-    sp = rate.pow(tick).sqrt();
-    liquidity = floor(amountY.div(sp));
-    acquireX = floor(liquidity.div(sp));
-    liquidity = ceil(acquireX.times(sp));
-    costY = ceil(liquidity.times(sp));
-    return [acquireX, costY];
-}
+
 function blockNum2BigNumber(blc) {
     return BigNumber(blc._hex);
 }
@@ -111,13 +104,13 @@ async function getPoolParts() {
   }
 describe("Mint", function () {
   it("check miner deposit", async function () {
-    const [signer, miner1, miner2, miner3, trader] = await ethers.getSigners();
+    const [signer, miner1, miner2, miner3, trader, receiver] = await ethers.getSigners();
 
     [poolPart, poolPartDesire, mintModule] = await getPoolParts();
     // deploy a factory
     const iZiSwapFactory = await ethers.getContractFactory("iZiSwapFactory");
 
-    const factory = await iZiSwapFactory.deploy(poolPart, poolPartDesire, mintModule);
+    const factory = await iZiSwapFactory.deploy(receiver.address, poolPart, poolPartDesire, mintModule);
     await factory.deployed();
 
     [tokenX, tokenY] = await getToken();

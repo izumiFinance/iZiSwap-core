@@ -43,16 +43,6 @@ async function printState(poolAddr) {
   return [currPt, BigNumber(currX._hex), BigNumber(currY._hex), BigNumber(liquidity._hex), allX, locked]
 }
 
-function l2y(liquidity, tick, rate, up) {
-    price = rate.pow(tick);
-    y = liquidity.times(price.sqrt());
-    if (up) {
-        return BigNumber(y.toFixed(0, 2));
-    } else {
-        return BigNumber(y.toFixed(0, 3));
-    }
-}
-
 function l2x(liquidity, tick, rate, up) {
     price = rate.pow(tick);
     x = liquidity.div(price.sqrt());
@@ -68,14 +58,6 @@ function floor(a) {
 }
 function ceil(b) {
     return BigNumber(b.toFixed(0, 2));
-}
-function y2xAt(tick, rate, amountY) {
-    sp = rate.pow(tick).sqrt();
-    liquidity = floor(amountY.div(sp));
-    acquireX = floor(liquidity.div(sp));
-    liquidity = ceil(acquireX.times(sp));
-    costY = ceil(liquidity.times(sp));
-    return [acquireX, costY];
 }
 function y2xAtLiquidity(point, rate, desireX, currX, currY, liquidity) {
     sp = rate.pow(point).sqrt();
@@ -109,13 +91,13 @@ async function getPoolParts() {
 }
 describe("swap y2x desireX", function () {
   it("swap y2x desireX at single price", async function () {
-    const [signer, miner1, miner2, miner3, trader] = await ethers.getSigners();
+    const [signer, miner1, miner2, miner3, trader, receiver] = await ethers.getSigners();
 
     [poolPart, poolPartDesire, mintModule] = await getPoolParts();
     // deploy a factory
     const iZiSwapFactory = await ethers.getContractFactory("iZiSwapFactory");
 
-    const factory = await iZiSwapFactory.deploy(poolPart, poolPartDesire, mintModule);
+    const factory = await iZiSwapFactory.deploy(receiver.address, poolPart, poolPartDesire, mintModule);
     await factory.deployed();
 
     [tokenX, tokenY] = await getToken();
