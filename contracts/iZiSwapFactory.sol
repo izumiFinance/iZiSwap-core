@@ -9,6 +9,9 @@ contract iZiSwapFactory is IiZiSwapFactory {
     /// @notice owner of factory
     address public override owner;
 
+    /// @notice charge receiver of all pools in this factory
+    address public override chargeReceiver;
+
     /// @notice tokenX/tokenY/fee => pool address
     mapping(address => mapping(address => mapping(uint24 => address))) public override pool;
 
@@ -31,7 +34,7 @@ contract iZiSwapFactory is IiZiSwapFactory {
     /// @param _swapX2YModule swap module to support swapX2Y(DesireY)
     /// @param _swapY2XModule swap module to support swapY2X(DesireX)
     /// @param _mintModule mint module to support mint/burn/collect
-    constructor(address _swapX2YModule, address _swapY2XModule, address _mintModule) {
+    constructor(address _chargeReceiver, address _swapX2YModule, address _swapY2XModule, address _mintModule) {
         only_addr_ = address(this);
         owner = msg.sender;
         fee2pointDelta[500] = 10;
@@ -39,6 +42,7 @@ contract iZiSwapFactory is IiZiSwapFactory {
         swapX2YModule = _swapX2YModule;
         swapY2XModule = _swapY2XModule;
         mintModule = _mintModule;
+        chargeReceiver = _chargeReceiver;
     }
 
     modifier noDelegateCall() {
@@ -90,5 +94,12 @@ contract iZiSwapFactory is IiZiSwapFactory {
         pool[tokenX][tokenY][fee] = addr;
         pool[tokenY][tokenX][fee] = addr;
         emit NewPool(tokenX, tokenY, fee, uint24(pointDelta), addr);
+    }
+
+    /// @notice change charge receiver, only owner of factory can call
+    /// @param _chargeReceiver address of new receiver
+    function modifyChargeReceiver(address _chargeReceiver) external override {
+        require(msg.sender == owner, "Not Owner!");
+        chargeReceiver = _chargeReceiver;
     }
 }

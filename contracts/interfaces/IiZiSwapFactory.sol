@@ -51,6 +51,10 @@ interface IiZiSwapFactory {
     /// @return address owner
     function owner() external view returns(address);
 
+    /// @notice charge receiver of all pools
+    /// @return address of charge receiver
+    function chargeReceiver() external view returns(address);
+
     /// @notice get pool of (tokenX, tokenY, fee), address(0) for not exists
     /// @param tokenX address of tokenX
     /// @param tokenY address of tokenY
@@ -66,4 +70,8 @@ interface IiZiSwapFactory {
     /// @param fee fee amount
     /// @return pointDelta the point delta
     function fee2pointDelta(uint24 fee) external view returns (int24 pointDelta);
+
+    /// @notice change charge receiver, only owner of factory can call
+    /// @param _chargeReceiver address of new receiver
+    function modifyChargeReceiver(address _chargeReceiver) external;
 }

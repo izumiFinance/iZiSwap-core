@@ -73,7 +73,7 @@ contract TestMint is IiZiSwapMintCallback {
         require(tokenX < tokenY, "x<y");
         address poolAddr = pool(tokenX, tokenY, fee);
         address miner = msg.sender;
-        return IiZiSwapPool(poolAddr).liquidities(keccak256(abi.encodePacked(miner, pl, pr)));
+        return IiZiSwapPool(poolAddr).liquidity(keccak256(abi.encodePacked(miner, pl, pr)));
     }
 
     function liquiditySnapshot(address tokenX, address tokenY, uint24 fee, int24 leftPoint, int24 rightPoint) external view returns(int128[] memory deltaLiquidities) {

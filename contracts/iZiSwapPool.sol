@@ -71,7 +71,7 @@ contract iZiSwapPool is IiZiSwapPool {
     State public override state;
 
     /// @notice the information about a liquidity by the liquidity's key
-    mapping(bytes32 =>Liquidity.Data) public override liquidities;
+    mapping(bytes32 =>Liquidity.Data) public override liquidity;
 
     /// @notice 256 packed point (orderOrEndpoint>0) boolean values. See PointBitmap for more information
     mapping(int16 =>uint256) public override pointBitmap;
@@ -89,11 +89,17 @@ contract iZiSwapPool is IiZiSwapPool {
     /// @notice observation data array
     Oracle.Observation[65535] public override observations;
 
+    uint256 public override totalFeeXCharged;
+    uint256 public override totalFeeYCharged;
+
     address private  original;
 
     address private swapModuleX2Y;
     address private swapModuleY2X;
     address private mintModule;
+
+    /// @notice percent to charge from miner's fee
+    uint24 public immutable override feeChargePercent = 20;
 
     modifier lock() {
         require(!state.locked, 'LKD');
@@ -557,7 +563,7 @@ contract iZiSwapPool is IiZiSwapPool {
         );
         if (success) {
             (amountX, amountY) = abi.decode(d, (uint256, uint256));
-            emit Swap(tokenY, tokenX, fee, amountY, amountX);
+            emit Swap(tokenX, tokenY, fee, false, amountX, amountY);
         } else {
             revertDCData(d);
         }
@@ -582,7 +588,7 @@ contract iZiSwapPool is IiZiSwapPool {
         );
         if (success) {
             (amountX, amountY) = abi.decode(d, (uint256, uint256));
-            emit Swap(tokenY, tokenX, fee, amountY, amountX);
+            emit Swap(tokenX, tokenY, fee, false, amountX, amountY);
         } else {
             revertDCData(d);
         }
@@ -617,7 +623,7 @@ contract iZiSwapPool is IiZiSwapPool {
         );
         if (success) {
             (amountX, amountY) = abi.decode(d, (uint256, uint256));
-            emit Swap(tokenX, tokenY, fee, amountX, amountY);
+            emit Swap(tokenX, tokenY, fee, true, amountX, amountY);
         } else {
             revertDCData(d);
         }
@@ -641,7 +647,7 @@ contract iZiSwapPool is IiZiSwapPool {
         );
         if (success) {
             (amountX, amountY) = abi.decode(d, (uint256, uint256));
-            emit Swap(tokenX, tokenY, fee, amountX, amountY);
+            emit Swap(tokenX, tokenY, fee, true, amountX, amountY);
         } else {
             revertDCData(d);
         }
@@ -701,5 +707,14 @@ contract iZiSwapPool is IiZiSwapPool {
             deltaLiquidities[idx] = points[i].liquidDelta;
             idx ++;
         }
+    }
+
+    /// @notice collect charged fee, only factory's chargeReceiver can call
+    function collectFeeCharged() external override noDelegateCall lock {
+        require(msg.sender == IiZiSwapFactory(factory).chargeReceiver(), "NR");
+        TokenTransfer.transferToken(tokenX, msg.sender, totalFeeXCharged);
+        TokenTransfer.transferToken(tokenY, msg.sender, totalFeeYCharged);
+        totalFeeXCharged = 0;
+        totalFeeYCharged = 0;
     }
 }

@@ -89,11 +89,17 @@ contract SwapY2XModule {
     /// @notice observation data array
     Oracle.Observation[65535] public observations;
     
-    address private original;
+    uint256 public totalFeeXCharged;
+    uint256 public totalFeeYCharged;
+
+    address private  original;
 
     address private swapModuleX2Y;
     address private swapModuleY2X;
-    address private mintMudule;
+    address private mintModule;
+
+    /// @notice percent to charge from miner's fee
+    uint24 public immutable feeChargePercent = 20;
 
     struct SwapCache {
         uint256 currFeeScaleX_128;
@@ -237,8 +243,11 @@ contract SwapY2XModule {
                     amountX += retState.acquireX;
                     amountY = amountY + retState.costY + feeAmount;
                     amount -= (retState.costY + feeAmount);
+
+                    uint256 chargedFeeAmount = uint256(feeAmount) * feeChargePercent / 100;
+                    totalFeeYCharged += chargedFeeAmount;
                     
-                    cache.currFeeScaleY_128 = cache.currFeeScaleY_128 + MulDivMath.mulDivFloor(feeAmount, TwoPower.Pow128, st.liquidity);
+                    cache.currFeeScaleY_128 = cache.currFeeScaleY_128 + MulDivMath.mulDivFloor(feeAmount - chargedFeeAmount, TwoPower.Pow128, st.liquidity);
 
                     st.currentPoint = retState.finalPt;
                     st.sqrtPrice_96 = retState.sqrtFinalPrice_96;
@@ -376,12 +385,14 @@ contract SwapY2XModule {
                     );
                     cache.finished = retState.finished;
                     uint256 feeAmount = MulDivMath.mulDivCeil(retState.costY, fee, 1e6);
+                    uint256 chargedFeeAmount = feeAmount * feeChargePercent / 100;
+                    totalFeeYCharged += chargedFeeAmount;
 
                     amountX += retState.acquireX;
                     amountY += (retState.costY + feeAmount);
                     desireX = (desireX <= retState.acquireX) ? 0 : desireX - uint128(retState.acquireX);
                     
-                    cache.currFeeScaleY_128 = cache.currFeeScaleY_128 + MulDivMath.mulDivFloor(feeAmount, TwoPower.Pow128, st.liquidity);
+                    cache.currFeeScaleY_128 = cache.currFeeScaleY_128 + MulDivMath.mulDivFloor(feeAmount - chargedFeeAmount, TwoPower.Pow128, st.liquidity);
 
                     st.currentPoint = retState.finalPt;
                     st.sqrtPrice_96 = retState.sqrtFinalPrice_96;

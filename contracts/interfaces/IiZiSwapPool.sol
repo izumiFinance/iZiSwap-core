@@ -37,17 +37,19 @@ interface IiZiSwapPool {
     );
 
     /// @notice Emitted when a trader successfully exchange
-    /// @param tokenA the token paid from trader
-    /// @param tokenB the token sent to trader
+    /// @param tokenX tokenX of pool
+    /// @param tokenY tokenY of pool
     /// @param fee fee amount of pool
-    /// @param amountA amount of tokenA
-    /// @param amountB amount of tokenB
+    /// @param sellXEarnY true for selling tokenX, false for buying tokenX
+    /// @param amountX amount of tokenX in this exchange
+    /// @param amountY amount of tokenY in this exchange
     event Swap(
-        address indexed tokenA,
-        address indexed tokenB,
+        address indexed tokenX,
+        address indexed tokenY,
         uint24 indexed fee,
-        uint256 amountA,
-        uint256 amountB
+        bool sellXEarnY,
+        uint256 amountX,
+        uint256 amountY
     );
 
     /// @notice Emitted when a seller successfully add a limit order
@@ -77,7 +79,7 @@ interface IiZiSwapPool {
     /// Returns lastFeeScaleY_128 fee growth of tokenY inside the range as of the last mint/burn/collect,
     /// Returns remainFeeX the computed amount of tokenX miner can collect as of the last mint/burn/collect,
     /// Returns remainFeeY the computed amount of tokenY miner can collect as of the last mint/burn/collect
-    function liquidities(bytes32 key)
+    function liquidity(bytes32 key)
         external
         view
         returns (
@@ -415,4 +417,16 @@ interface IiZiSwapPool {
     ///    note 2. deltaLiquidities only contains points which are times of pointDelta
     ///    note 3. this function may cost a ENORMOUS amount of gas, be careful to call
     function liquiditySnapshot(int24 leftPoint, int24 rightPoint) external view returns(int128[] memory deltaLiquidities);
+
+    /// @notice amount of charged fee on tokenX
+    function totalFeeXCharged() external view returns(uint256);
+
+    /// @notice amount of charged fee on tokenY
+    function totalFeeYCharged() external view returns(uint256);
+
+    /// @notice percent to charge from miner's fee
+    function feeChargePercent() external view returns(uint24);
+
+    /// @notice collect charged fee, only factory's chargeReceiver can call
+    function collectFeeCharged() external;
 }

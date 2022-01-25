@@ -90,11 +90,17 @@ contract MintModule {
     /// @notice observation data array
     Oracle.Observation[65535] public observations;
 
+    uint256 public totalFeeXCharged;
+    uint256 public totalFeeYCharged;
+
     address private  original;
 
     address private swapModuleX2Y;
     address private swapModuleY2X;
     address private mintModule;
+
+    /// @notice percent to charge from miner's fee
+    uint24 public immutable feeChargePercent = 20;
 
     // some data computed if user want to withdraw
     // like refunding tokens after withdraw
