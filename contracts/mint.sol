@@ -263,7 +263,7 @@ contract MintModule {
             require(x == xr, "XOFL");
         }
         if (leftPoint <= pc && rightPoint > pc) {
-            // we nned compute yc at point of current price
+            // we need compute yc at point of current price
             yc = _computeDepositYc(
                 liquidDelta,
                 sqrtPrice_96
