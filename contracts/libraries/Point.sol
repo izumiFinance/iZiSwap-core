@@ -18,16 +18,7 @@ library Point {
         // whether the point is endpoint of a liquid segment
         bool isEndpt;
     }
-    function castInt128(int256 v) internal pure returns (int128 r) {
-        require((r = int128(v)) == v);
-    }
-
-    function addDelta(int256 w, int256 delta) internal pure returns (int256 r) {
-        require((r = w + delta) >= w == (delta >= 0));
-    }
-    function subDelta(int256 w, int256 delta) internal pure returns (int256 r) {
-        require((r = w - delta) <= w == (delta >= 0));
-    }
+    
     function _getFeeScaleL(
         int24 endpt,
         int24 currpt,
@@ -120,9 +111,9 @@ library Point {
         data.liquidAcc = liquidAccAfter;
 
         if (isLeft) {
-            data.liquidDelta = castInt128(addDelta(int256(data.liquidDelta), delta));
+            data.liquidDelta = data.liquidDelta + delta;
         } else {
-            data.liquidDelta = castInt128(subDelta(int256(data.liquidDelta), delta));
+            data.liquidDelta = data.liquidDelta - delta;
         }
         bool new_or_erase = false;
         if (liquidAccBefore == 0) {

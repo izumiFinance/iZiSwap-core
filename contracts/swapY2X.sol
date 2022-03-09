@@ -228,6 +228,7 @@ contract SwapY2XModule {
                     SwapMathY2X.RangeRetState memory retState = SwapMathY2X.y2XRange(
                         st, nextPoint, cache._sqrtRate_96, amountNoFee
                     );
+
                     cache.finished = retState.finished;
                     uint128 feeAmount;
                     if (retState.costY >= amountNoFee) {
@@ -257,6 +258,7 @@ contract SwapY2XModule {
                 } else {
                     cache.finished = true;
                 }
+
                 if (st.currentPoint == nextPoint && (nextVal & 1) > 0) {
                     Point.Data storage endPt = points[nextPoint];
                     // pass next point from left to right

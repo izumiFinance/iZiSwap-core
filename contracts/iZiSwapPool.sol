@@ -174,7 +174,7 @@ contract iZiSwapPool is IiZiSwapPool {
     function assignLimOrderEarnY(
         int24 point,
         uint256 assignY
-    ) external override returns (uint256 actualAssignY) {
+    ) external override noDelegateCall lock returns (uint256 actualAssignY) {
         actualAssignY = assignY;
         UserEarn.Data storage ue = userEarnY.get(msg.sender, point);
         if (actualAssignY > ue.earn) {
@@ -191,7 +191,7 @@ contract iZiSwapPool is IiZiSwapPool {
     function assignLimOrderEarnX(
         int24 point,
         uint256 assignX
-    ) external override returns (uint256 actualAssignX) {
+    ) external override noDelegateCall lock returns (uint256 actualAssignX) {
         actualAssignX = assignX;
         UserEarn.Data storage ue = userEarnX.get(msg.sender, point);
         if (actualAssignX > ue.earn) {
@@ -208,7 +208,7 @@ contract iZiSwapPool is IiZiSwapPool {
     function decLimOrderWithX(
         int24 point,
         uint128 deltaX
-    ) external override returns (uint128 actualDeltaX) {
+    ) external override noDelegateCall lock returns (uint128 actualDeltaX) {
         
         require(point % pointDelta == 0, "PD");
 
@@ -236,7 +236,7 @@ contract iZiSwapPool is IiZiSwapPool {
     function decLimOrderWithY(
         int24 point,
         uint128 deltaY
-    ) external override returns (uint128 actualDeltaY) {
+    ) external override noDelegateCall lock returns (uint128 actualDeltaY) {
         
         require(point % pointDelta == 0, "PD");
 
@@ -270,7 +270,7 @@ contract iZiSwapPool is IiZiSwapPool {
         int24 point,
         uint128 amountX,
         bytes calldata data
-    ) external override returns (uint128 orderX, uint256 acquireY) {
+    ) external override noDelegateCall lock returns (uint128 orderX, uint256 acquireY) {
         
         require(point % pointDelta == 0, "PD");
         require(point >= state.currentPoint, "PG");
@@ -346,7 +346,7 @@ contract iZiSwapPool is IiZiSwapPool {
         int24 point,
         uint128 amountY,
         bytes calldata data
-    ) external override returns (uint128 orderY, uint256 acquireX) {
+    ) external override noDelegateCall lock returns (uint128 orderY, uint256 acquireX) {
         
         require(point % pointDelta == 0, "PD");
         require(point <= state.currentPoint, "PL");
@@ -417,7 +417,7 @@ contract iZiSwapPool is IiZiSwapPool {
     /// Returns actualCollectEarn actual amount of earned token collected
     function collectLimOrder(
         address recipient, int24 point, uint256 collectDec, uint256 collectEarn, bool isEarnY
-    ) external override returns(uint256 actualCollectDec, uint256 actualCollectEarn) {
+    ) external override noDelegateCall lock returns(uint256 actualCollectDec, uint256 actualCollectEarn) {
         UserEarn.Data storage ue = isEarnY? userEarnY.get(msg.sender, point) : userEarnX.get(msg.sender, point);
         actualCollectDec = collectDec;
         if (actualCollectDec > ue.sellingDec) {
