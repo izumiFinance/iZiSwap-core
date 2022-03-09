@@ -449,11 +449,9 @@ contract MintModule {
         uint256 by;
         if (x > 0) {
             bx = balanceX();
-            require(bx + x > bx, "BXO"); // balance x overflow
         }
         if (y > 0) {
             by = balanceY();
-            require(by + y > by, "BXO"); // balance y overflow
         }
         if (x > 0 || y > 0) {
             // minter's callback to pay
