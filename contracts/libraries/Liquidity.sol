@@ -9,8 +9,8 @@ library Liquidity {
         uint128 liquidity;
         uint256 lastFeeScaleX_128;
         uint256 lastFeeScaleY_128;
-        uint256 remainFeeX;
-        uint256 remainFeeY;
+        uint256 tokenOwedX;
+        uint256 tokenOwedY;
     }
     
     // delta cannot be int128.min and it can be proofed that
@@ -63,8 +63,8 @@ library Liquidity {
         self.lastFeeScaleY_128 = feeScaleY_128;
         if (feeX > 0 || feeY > 0) {
             // need to withdraw before overflow
-            self.remainFeeX += feeX;
-            self.remainFeeY += feeY;
+            self.tokenOwedX += feeX;
+            self.tokenOwedY += feeY;
         }
     }
 }

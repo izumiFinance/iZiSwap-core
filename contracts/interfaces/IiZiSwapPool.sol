@@ -77,8 +77,8 @@ interface IiZiSwapPool {
     /// @return liquidity The amount of liquidity,
     /// Returns lastFeeScaleX_128 fee growth of tokenX inside the range as of the last mint/burn/collect,
     /// Returns lastFeeScaleY_128 fee growth of tokenY inside the range as of the last mint/burn/collect,
-    /// Returns remainFeeX the computed amount of tokenX miner can collect as of the last mint/burn/collect,
-    /// Returns remainFeeY the computed amount of tokenY miner can collect as of the last mint/burn/collect
+    /// Returns tokenOwedX the computed amount of tokenX miner can collect as of the last mint/burn/collect,
+    /// Returns tokenOwedY the computed amount of tokenY miner can collect as of the last mint/burn/collect
     function liquidity(bytes32 key)
         external
         view
@@ -86,8 +86,8 @@ interface IiZiSwapPool {
             uint128 liquidity,
             uint256 lastFeeScaleX_128,
             uint256 lastFeeScaleY_128,
-            uint256 remainFeeX,
-            uint256 remainFeeY
+            uint256 tokenOwedX,
+            uint256 tokenOwedY
         );
     
     /// @notice return the information about a user's limit order (sell tokenY and earn tokenX)

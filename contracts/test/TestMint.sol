@@ -67,8 +67,8 @@ contract TestMint is IiZiSwapMintCallback {
         uint128 liquidity,
         uint256 lastFeeScaleX_128,
         uint256 lastFeeScaleY_128,
-        uint256 remainFeeX,
-        uint256 remainFeeY
+        uint256 tokenOwedX,
+        uint256 tokenOwedY
     ) {
         require(tokenX < tokenY, "x<y");
         address poolAddr = pool(tokenX, tokenY, fee);

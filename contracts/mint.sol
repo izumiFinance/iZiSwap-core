@@ -513,8 +513,8 @@ contract MintModule {
         }
         if (withRet.x > 0 || withRet.y > 0) {
             Liquidity.Data storage lq = liquidities.get(msg.sender, leftPt, rightPt);
-            lq.remainFeeX += withRet.x;
-            lq.remainFeeY += withRet.y;
+            lq.tokenOwedX += withRet.x;
+            lq.tokenOwedY += withRet.y;
         }
         return (withRet.x, withRet.y);
     }
@@ -537,15 +537,15 @@ contract MintModule {
         require(amountXLim > 0 || amountYLim > 0, "X+Y>0");
         Liquidity.Data storage lq = liquidities.get(msg.sender, leftPt, rightPt);
         actualAmountX = amountXLim;
-        if (actualAmountX > lq.remainFeeX) {
-            actualAmountX = lq.remainFeeX;
+        if (actualAmountX > lq.tokenOwedX) {
+            actualAmountX = lq.tokenOwedX;
         }
         actualAmountY = amountYLim;
-        if (actualAmountY > lq.remainFeeY) {
-            actualAmountY = lq.remainFeeY;
+        if (actualAmountY > lq.tokenOwedY) {
+            actualAmountY = lq.tokenOwedY;
         }
-        lq.remainFeeX -= actualAmountX;
-        lq.remainFeeY -= actualAmountY;
+        lq.tokenOwedX -= actualAmountX;
+        lq.tokenOwedY -= actualAmountY;
         if (actualAmountX > 0) {
             TokenTransfer.transferToken(tokenX, recipient, actualAmountX);
         }
