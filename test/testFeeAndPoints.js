@@ -3,6 +3,9 @@ const { ethers } = require("hardhat");
 
 const BigNumber = require('bignumber.js');
 
+var tokenX;
+var tokenY;
+
 async function getToken() {
 
     // deploy token
@@ -60,6 +63,11 @@ function getFeeCharge(fee) {
 function getFeeAcquire(fee) {
     const feeCharged = getFeeCharge(fee);
     return stringMinus(fee, feeCharged);
+}
+
+function getFeeAcquireFromCost(cost) {
+    const fee = getFee(cost, '3000');
+    return getFeeAcquire(fee);
 }
 
 function stringMinus(a, b) {
@@ -121,6 +129,15 @@ function l2x(liquidity, tick, rate, up) {
         return x.toFixed(0, 3);
     }
 }
+function l2y(liquidity, tick, rate, up) {
+    const price = BigNumber(rate).pow(tick);
+    const x = BigNumber(liquidity).times(price.sqrt());
+    if (up) {
+        return x.toFixed(0, 2);
+    } else {
+        return x.toFixed(0, 3);
+    }
+}
 function blockNum2BigNumber(blc) {
     return BigNumber(blc._hex);
 }
@@ -153,7 +170,7 @@ function getFeeOfList(costList, fee) {
 
 function getSum(amountList) {
     let res = '0';
-    for (const a of amountList) {
+    for (let a of amountList) {
         res = stringAdd(res, a);
     }
     return res;
@@ -166,11 +183,47 @@ async function getLiquidity(testMint, miner, tokenX, tokenY, fee, leftPt, rightP
         lastFeeScaleY_128: lastFeeScaleY_128.toString(),
     }
 }
+
+async function getDeltaFeeScale(testMint, pool, miner, leftPt, rightPt) {
+
+    const {lastFeeScaleX_128, lastFeeScaleY_128} = await getLiquidity(testMint, miner, tokenX, tokenY, 3000, leftPt, rightPt);
+    await pool.connect(miner).burn(leftPt, rightPt, 0);
+
+    const {lastFeeScaleX_128: newScaleX, lastFeeScaleY_128: newScaleY} = await getLiquidity(testMint, miner, tokenX, tokenY, 3000, leftPt, rightPt);
+
+    const q256 = BigNumber(2).pow(256).toFixed(0);
+
+    const deltaScaleX = stringLess(newScaleX, lastFeeScaleX_128) ? stringMinus(stringAdd(newScaleX, q256), lastFeeScaleX_128) : stringMinus(newScaleX, lastFeeScaleX_128);
+    const deltaScaleY = stringLess(newScaleY, lastFeeScaleY_128) ? stringMinus(stringAdd(newScaleY, q256), lastFeeScaleY_128) : stringMinus(newScaleY, lastFeeScaleY_128);
+
+    return {deltaScaleX, deltaScaleY};
+}
+
+async function getAbsFeeScale(testMint, miner, leftPt, rightPt) {
+    const {lastFeeScaleX_128, lastFeeScaleY_128} = await getLiquidity(testMint, miner, tokenX, tokenY, 3000, leftPt, rightPt);
+    return {lastFeeScaleX_128, lastFeeScaleY_128}
+}
+
+async function getPoint(pool, point) {
+    const {liquidSum, liquidDelta, accFeeXOut_128, accFeeYOut_128, isEndpt} = await pool.points(point);
+    return {
+        liquidSum: liquidSum.toString(),
+        liquidDelta: liquidDelta.toString(),
+        accFeeXOut_128: accFeeXOut_128.toString(),
+        accFeeYOut_128: accFeeYOut_128.toString(),
+        isEndpt
+    };
+}
+
+function feeScaleFromCost(cost, liquidity) {
+    const fee = getFeeAcquireFromCost(cost);
+    const q128 = BigNumber(2).pow(128).toFixed(0);
+    return stringDiv(stringMul(fee, q128), liquidity);
+}
 describe("swap", function () {
     var signer, miner1, miner2, trader, receiver;
     var poolAddr;
     var pool;
-    var tokenX, tokenY;
     var testMint;
     var testSwap;
     var q128;
@@ -415,5 +468,284 @@ describe("swap", function () {
 
         expect(deltaScaleX).to.equal(expectFeeScaleX);
         expect(deltaScaleY).to.equal(expectFeeScaleY);
+    });
+
+    it("add liquidity with exisiting end point (1)", async function () {
+        await addLiquidity(testMint, miner1, tokenX, tokenY, 3000, -1000, 2000, '20000');
+        await addLiquidity(testMint, miner1, tokenX, tokenY, 3000, 2500, 5000, '30000');
+
+        await testSwap.connect(trader).swapX2Y(tokenX.address, tokenY.address, 3000, '10000000000000000000', -1500);
+        let state = await getState(pool);
+        expect(state.currentPoint).to.equal('-1500');
+
+        await addLiquidity(testMint, miner1, tokenX, tokenY, 3000, 1000, 4000, '40000');
+
+        await testSwap.connect(trader).swapY2X(tokenX.address, tokenY.address, 3000, '10000000000000000000', 4210);
+        state = await getState(pool);
+        expect(state.currentPoint).to.equal('4210');
+
+        await testSwap.connect(trader).swapX2Y(tokenX.address, tokenY.address, 3000, '10000000000000000000', 2460);
+        state = await getState(pool);
+        expect(state.currentPoint).to.equal('2460');
+
+        await addLiquidity(testMint, miner1, tokenX, tokenY, 3000, -500, 1000, '50000');
+
+        const costX_200_1000 = xInRange('80000', 200, 1000, '1.0001', true);
+        await testSwap.connect(trader).swapX2Y(tokenX.address, tokenY.address, 3000, '10000000000000000000', 200);
+        state = await getState(pool);
+        expect(state.currentPoint).to.equal('200');
+        const costXAcquireFee_200_1000 = getFeeAcquire(getFee(costX_200_1000, '3000'));
+
+        const deltaScale1 = await getDeltaFeeScale(testMint, pool, miner1, -500, 1000);
+        expect(deltaScale1.deltaScaleX).to.equal(stringDiv(stringMul(costXAcquireFee_200_1000, q128), '80000'));
+        expect(deltaScale1.deltaScaleY).to.equal('0');
+
+        const costX_0_200 = xInRange('80000', 0, 200, '1.0001', true);
+        const costX_M500_0 = xInRange('80000', -500, 0, '1.0001', true);
+       
+        const costXFeeScale_M500_200 = getSum([
+            feeScaleFromCost(costX_M500_0, '80000'),
+            feeScaleFromCost(costX_0_200, '80000')
+        ]);
+        await testSwap.connect(trader).swapX2Y(tokenX.address, tokenY.address, 3000, '10000000000000000000', -800);
+        state = await getState(pool);
+        expect(state.currentPoint).to.equal('-800');
+        const deltaScale2 = await getDeltaFeeScale(testMint, pool, miner1, -500, 1000);
+        expect(deltaScale2.deltaScaleX).to.equal(costXFeeScale_M500_200);
+        expect(deltaScale2.deltaScaleY).to.equal('0');
+
+        const costY_M500_M50 = yInRange('80000', -500, -50, '1.0001', true);
+        const costY_M50_1000 = yInRange('80000', -50, 1000, '1.0001', true);
+
+        const costYFeeScale_M500_1000 = getSum([
+            feeScaleFromCost(costY_M500_M50, '80000'),
+            feeScaleFromCost(costY_M50_1000, '80000')
+        ]);
+        await testSwap.connect(trader).swapY2X(tokenX.address, tokenY.address, 3000, '10000000000000000000', 2460);
+        state = await getState(pool);
+        expect(state.currentPoint).to.equal('2460');
+        const deltaScale3 = await getDeltaFeeScale(testMint, pool, miner1, -500, 1000);
+        expect(deltaScale3.deltaScaleX).to.equal('0');
+        expect(deltaScale3.deltaScaleY).to.equal(costYFeeScale_M500_1000);
+
+    });
+
+
+    it("add liquidity with exisiting endpoint (1)", async function () {
+        await addLiquidity(testMint, miner1, tokenX, tokenY, 3000, -1000, 2000, '20000');
+        await addLiquidity(testMint, miner1, tokenX, tokenY, 3000, 2500, 5000, '30000');
+
+        await testSwap.connect(trader).swapX2Y(tokenX.address, tokenY.address, 3000, '10000000000000000000', -1500);
+        let state = await getState(pool);
+        expect(state.currentPoint).to.equal('-1500');
+
+        await addLiquidity(testMint, miner1, tokenX, tokenY, 3000, 1000, 4000, '40000');
+
+        await testSwap.connect(trader).swapY2X(tokenX.address, tokenY.address, 3000, '10000000000000000000', 4210);
+        state = await getState(pool);
+        expect(state.currentPoint).to.equal('4210');
+
+        await testSwap.connect(trader).swapX2Y(tokenX.address, tokenY.address, 3000, '10000000000000000000', -1500);
+        state = await getState(pool);
+        expect(state.currentPoint).to.equal('-1500');
+
+        await testSwap.connect(trader).swapY2X(tokenX.address, tokenY.address, 3000, '10000000000000000000', 2460);
+        state = await getState(pool);
+        expect(state.currentPoint).to.equal('2460');
+
+        await addLiquidity(testMint, miner1, tokenX, tokenY, 3000, -500, 1000, '50000');
+        //
+        // lastFeeScaleX_128:  2068837391660357638882509492443416646402
+        // lastFeeScaleY_128:  4035272476368640862826774119690366512368
+
+        const costX_200_1000 = xInRange('80000', 200, 1000, '1.0001', true);
+        await testSwap.connect(trader).swapX2Y(tokenX.address, tokenY.address, 3000, '10000000000000000000', 200);
+        state = await getState(pool);
+        expect(state.currentPoint).to.equal('200');
+        const costXAcquireFee_200_1000 = getFeeAcquire(getFee(costX_200_1000, '3000'));
+
+        const deltaScale1 = await getDeltaFeeScale(testMint, pool, miner1, -500, 1000);
+        expect(deltaScale1.deltaScaleX).to.equal(stringDiv(stringMul(costXAcquireFee_200_1000, q128), '80000'));
+        expect(deltaScale1.deltaScaleY).to.equal('0');
+
+        const costX_0_200 = xInRange('80000', 0, 200, '1.0001', true);
+        const costX_M500_0 = xInRange('80000', -500, 0, '1.0001', true);
+       
+        const costXFeeScale_M500_200 = getSum([
+            feeScaleFromCost(costX_M500_0, '80000'),
+            feeScaleFromCost(costX_0_200, '80000')
+        ]);
+        await testSwap.connect(trader).swapX2Y(tokenX.address, tokenY.address, 3000, '10000000000000000000', -800);
+        state = await getState(pool);
+        expect(state.currentPoint).to.equal('-800');
+        const deltaScale2 = await getDeltaFeeScale(testMint, pool, miner1, -500, 1000);
+        expect(deltaScale2.deltaScaleX).to.equal(costXFeeScale_M500_200);
+        expect(deltaScale2.deltaScaleY).to.equal('0');
+
+        const costY_M500_M50 = yInRange('80000', -500, -50, '1.0001', true);
+        const costY_M50_1000 = yInRange('80000', -50, 1000, '1.0001', true);
+
+        const costYFeeScale_M500_1000 = getSum([
+            feeScaleFromCost(costY_M500_M50, '80000'),
+            feeScaleFromCost(costY_M50_1000, '80000')
+        ]);
+        await testSwap.connect(trader).swapY2X(tokenX.address, tokenY.address, 3000, '10000000000000000000', 2460);
+        state = await getState(pool);
+        expect(state.currentPoint).to.equal('2460');
+        const deltaScale3 = await getDeltaFeeScale(testMint, pool, miner1, -500, 1000);
+        expect(deltaScale3.deltaScaleX).to.equal('0');
+        expect(deltaScale3.deltaScaleY).to.equal(costYFeeScale_M500_1000);
+
+    });
+
+    it("add liquidity with existing endpoint and burn some existing liquid during swap (1)", async function () {
+        await addLiquidity(testMint, miner1, tokenX, tokenY, 3000, -1000, 2000, '20000');
+        await addLiquidity(testMint, miner1, tokenX, tokenY, 3000, 2500, 5000, '30000');
+
+        await testSwap.connect(trader).swapX2Y(tokenX.address, tokenY.address, 3000, '10000000000000000000', -1500);
+        let state = await getState(pool);
+        expect(state.currentPoint).to.equal('-1500');
+
+        await addLiquidity(testMint, miner1, tokenX, tokenY, 3000, 1000, 4000, '40000');
+
+        await testSwap.connect(trader).swapY2X(tokenX.address, tokenY.address, 3000, '10000000000000000000', 4210);
+        state = await getState(pool);
+        expect(state.currentPoint).to.equal('4210');
+
+        await testSwap.connect(trader).swapX2Y(tokenX.address, tokenY.address, 3000, '10000000000000000000', -1500);
+        state = await getState(pool);
+        expect(state.currentPoint).to.equal('-1500');
+
+        await testSwap.connect(trader).swapY2X(tokenX.address, tokenY.address, 3000, '10000000000000000000', 2460);
+        state = await getState(pool);
+        expect(state.currentPoint).to.equal('2460');
+
+        await addLiquidity(testMint, miner1, tokenX, tokenY, 3000, 1000, 2500, '50000');
+        const {lastFeeScaleX_128, lastFeeScaleY_128} = await getAbsFeeScale(testMint, miner1, -500, 1000);
+        console.log('lastFeeScaleX_128: ', lastFeeScaleX_128);
+        console.log('lastFeeScaleY_128: ', lastFeeScaleY_128);
+
+
+        state = await getState(pool);
+        expect(state.currentPoint).to.equal('2460');
+        const costXAt_2460_1 = stringMinus(l2x('100000', 2460, '1.0001', true),  state.currX);
+        const costX_2001_2460_1 = xInRange('100000', 2001, 2460, '1.0001', true);
+        await testSwap.connect(trader).swapX2Y(tokenX.address, tokenY.address, 3000, '10000000000000000000', 2001);
+        state = await getState(pool);
+        expect(state.currentPoint).to.equal('2001');
+        const costXFeeScale_2001_2460_1 = feeScaleFromCost(stringAdd(costXAt_2460_1, costX_2001_2460_1), '100000');
+        const deltaScale1 = await getDeltaFeeScale(testMint, pool, miner1, 1000, 2500);
+        expect(deltaScale1.deltaScaleX).to.equal(costXFeeScale_2001_2460_1);
+        expect(deltaScale1.deltaScaleY).to.equal('0');
+
+
+        const costX_2000_2001_2 = xInRange('100000', 2000, 2001, '1.0001', true);
+        const costX_1000_2000_2 = xInRange('120000', 1000, 2000, '1.0001', true);
+        const costXFeeScale_2 = getSum([
+            feeScaleFromCost(costX_1000_2000_2, '120000'),
+            feeScaleFromCost(costX_2000_2001_2, '100000'),
+        ]);
+
+        await testSwap.connect(trader).swapX2Y(tokenX.address, tokenY.address, 3000, '10000000000000000000', 900);
+        const deltaScale2 = await getDeltaFeeScale(testMint, pool, miner1, 1000, 2500);
+        expect(deltaScale2.deltaScaleX).to.equal(costXFeeScale_2);
+        expect(deltaScale2.deltaScaleY).to.equal('0');
+
+        await pool.connect(miner1).burn(1000, 4000, '40000');
+
+        const liquid4LeftPoint = await getPoint(pool, 1000);
+        expect(liquid4LeftPoint.liquidSum).to.equal('50000');
+        expect(liquid4LeftPoint.liquidDelta).to.equal('50000');
+        expect(liquid4LeftPoint.isEndpt).to.equal(true);
+
+        const costY_1000_2000_3 = yInRange('80000', 1000, 2000, '1.0001', true);
+        const costY_2000_2500_3 = yInRange('60000', 2000, 2500, '1.0001', true);
+       
+        
+        await testSwap.connect(trader).swapY2X(tokenX.address, tokenY.address, 3000, '10000000000000000000', 2600);
+        expect((await getState(pool)).currentPoint).to.equal('2600');
+
+        const costX_2200_2500_4 = xInRange('60000', 2200, 2500, '1.0001', true);
+        await testSwap.connect(trader).swapX2Y(tokenX.address, tokenY.address, 3000, '10000000000000000000', 2200);
+        expect((await getState(pool)).currentPoint).to.equal('2200');
+        await pool.connect(miner1).burn(2500, 5000, '30000');
+
+        const liquid3RightPoint = await getPoint(pool, 2500);
+        expect(liquid3RightPoint.liquidSum).to.equal('50000');
+        expect(liquid3RightPoint.liquidDelta).to.equal('-50000');
+        expect(liquid3RightPoint.isEndpt).to.equal(true);
+
+        const costX_2000_2200_5 = xInRange('60000', 2000, 2200, '1.0001', true);
+        const costX_1000_2000_5 = xInRange('80000', 1000, 2000, '1.0001', true);
+        await testSwap.connect(trader).swapX2Y(tokenX.address, tokenY.address, 3000, '10000000000000000000', 900);
+        expect((await getState(pool)).currentPoint).to.equal('900');
+
+        const costY_1000_1551_6 = yInRange('80000', 1000, 1551, '1.0001', true);
+
+        await testSwap.connect(trader).swapY2X(tokenX.address, tokenY.address, 3000, '10000000000000000000', 1551);
+        expect((await getState(pool)).currentPoint).to.equal('1551');
+        await addLiquidity(testMint, miner1, tokenX, tokenY, 3000, 800, 2100, '30000');
+        const costYAt1551 = stringMinus(l2y('110000', 1551, '1.0001', true), (await getState(pool)).currY);
+        const costY_1551_2000_7 = stringAdd(costYAt1551, yInRange('110000', 1552, 2000, '1.0001', true));
+        const costY_2000_2010_7 = yInRange('90000', 2000, 2010, '1.0001', true);
+        await testSwap.connect(trader).swapY2X(tokenX.address, tokenY.address, 3000, '10000000000000000000', 2010);
+        expect((await getState(pool)).currentPoint).to.equal('2010');
+
+        await pool.connect(miner1).burn(800, 2100, '20000');
+        const costY_2010_2100_8 = yInRange('70000', 2010, 2100, '1.0001', true);
+        const costY_2100_2400_8 = yInRange('60000', 2100, 2400, '1.0001', true);
+        await testSwap.connect(trader).swapY2X(tokenX.address, tokenY.address, 3000, '10000000000000000000', 2400);
+        expect((await getState(pool)).currentPoint).to.equal('2400');
+
+        await pool.connect(miner1).burn(800, 2100, '10000');
+        const costX_2080_2400_9 = xInRange('60000', 2080, 2400, '1.0001', true);
+        await testSwap.connect(trader).swapX2Y(tokenX.address, tokenY.address, 3000, '10000000000000000000', 2080);
+        expect((await getState(pool)).currentPoint).to.equal('2080');
+
+        await addLiquidity(testMint, miner1, tokenX, tokenY, 3000, 1900, 2050, '70000');
+        const costX_2050_2080_10 = xInRange('60000', 2050, 2080, '1.0001', true);
+        await testSwap.connect(trader).swapX2Y(tokenX.address, tokenY.address, 3000, '10000000000000000000', 2050);
+        expect((await getState(pool)).currentPoint).to.equal('2050');
+
+        const costX_2000_2050_11 = xInRange('130000', 2000, 2050, '1.0001', true);
+        const costX_1900_2000_11 = xInRange('150000', 1900, 2000, '1.0001', true);
+        const costX_1500_1900_11 = xInRange('80000', 1500, 1900, '1.0001', true);
+        await testSwap.connect(trader).swapX2Y(tokenX.address, tokenY.address, 3000, '10000000000000000000', 1500);
+
+        const feeScaleX = getSum([
+            feeScaleFromCost(costX_2200_2500_4, '60000'),
+            feeScaleFromCost(costX_2000_2200_5, '60000'),
+            feeScaleFromCost(costX_1000_2000_5, '80000'),
+            feeScaleFromCost(costX_2080_2400_9, '60000'),
+            feeScaleFromCost(costX_2050_2080_10, '60000'),
+            feeScaleFromCost(costX_2000_2050_11, '130000'),
+            feeScaleFromCost(costX_1900_2000_11, '150000'),
+            feeScaleFromCost(costX_1500_1900_11, '80000'),
+        ]);
+
+        const feeScaleY = getSum([
+            feeScaleFromCost(costY_1000_2000_3, '80000'),
+            feeScaleFromCost(costY_2000_2500_3, '60000'),
+            feeScaleFromCost(costY_1000_1551_6, '80000'),
+            feeScaleFromCost(costY_1551_2000_7, '110000'),
+            feeScaleFromCost(costY_2000_2010_7, '90000'),
+            feeScaleFromCost(costY_2010_2100_8, '70000'),
+            feeScaleFromCost(costY_2100_2400_8, '60000'),
+        ]);
+
+        const deltaFeeScale3 = await getDeltaFeeScale(testMint, pool, miner1, 1000, 2500);
+        expect(deltaFeeScale3.deltaScaleX).to.equal(feeScaleX);
+        expect(deltaFeeScale3.deltaScaleY).to.equal(feeScaleY);
+
+        await pool.connect(miner1).burn(1000, 2500, '50000');
+
+        const liquid5LeftPoint = await getPoint(pool, 1000);
+        const liquid5RightPoint = await getPoint(pool, 2500);
+        expect(liquid5LeftPoint.liquidSum).to.equal('0');
+        expect(liquid5LeftPoint.liquidDelta).to.equal('0');
+        expect(liquid5LeftPoint.isEndpt).to.equal(false);
+        expect(liquid5RightPoint.liquidSum).to.equal('0');
+        expect(liquid5RightPoint.liquidDelta).to.equal('0');
+        expect(liquid5RightPoint.isEndpt).to.equal(false);
     });
 });
