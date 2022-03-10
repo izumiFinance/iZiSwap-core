@@ -102,9 +102,7 @@ contract MintModule {
     /// @notice percent to charge from miner's fee
     uint24 public immutable feeChargePercent = 20;
 
-    // some data computed if user want to withdraw
-    // like refunding tokens after withdraw
-    //  or amount of currX or currY at current point after withdraw
+    // data used when removing liquidity
     struct WithdrawRet {
         // total amount of tokenX refund after withdraw
         uint256 x;
@@ -144,7 +142,7 @@ contract MintModule {
         orderOrEndpoint[point / pd] = val;
     }
 
-    /// @dev Add / Dec liquidity of a minter
+    /// @dev Add / Dec liquidity 
     /// @param minter the minter of the liquidity
     /// @param leftPoint left endpoint of the segment
     /// @param rightPoint right endpoint of the segment, [leftPoint, rightPoint)
@@ -213,9 +211,8 @@ contract MintModule {
         uint128 liquidDelta,
         uint160 sqrtPrice_96
     ) private pure returns (uint128 y) {
-        // to simplify computation
-        // minter is required to deposit only
-        // token y in point of current price
+        // to simplify computation, 
+        // minter is required to deposit only token y in point of current price
         uint256 amount = MulDivMath.mulDivCeil(
             liquidDelta,
             sqrtPrice_96,
@@ -284,8 +281,7 @@ contract MintModule {
         // liquidDelta <= liquidity
         // no need to require(liquidDelta <= liquidity)
 
-        // if only pay token y to minter
-        // how many token y are needed
+        // how much token y is needed if only pay token y
         uint256 amountY = MulDivMath.mulDivFloor(
             liquidDelta,
             sqrtPrice_96,
@@ -297,7 +293,7 @@ contract MintModule {
             y = uint128(amountY);
         } else {
             y = currY;
-            // token x need to payed for rest liquidity
+            // need token x to pay for the rest liquidity
             uint256 liquidY = MulDivMath.mulDivCeil(
                 y,
                 TwoPower.Pow96,
@@ -321,7 +317,7 @@ contract MintModule {
         }
     }
 
-    /// @notice compute some values (refunding tokens, currX or currY values of state) if user wants to withdraw
+    /// @notice Compute some values (refund token amount, currX/currY in state) when removing liquidity
     /// @param liquidDelta amount of liquidity user wants to withdraw
     /// @param leftPoint left endpoint of liquidity
     /// @param rightPoint right endpoint of liquidity
@@ -370,7 +366,7 @@ contract MintModule {
                 withRet.currX = currentState.currX;
                 withRet.currY = currentState.currY;
             }
-            // we nned compute yc at point of current price
+            // we need compute yc at point of current price
             (withRet.xc, withRet.yc) = _computeWithdrawXYAtCurrPt(
                 liquidDelta,
                 sqrtPrice_96,
@@ -391,7 +387,7 @@ contract MintModule {
         require(withRet.x == amountX, "XOFL");
     }
 
-    /// @notice add liquidity to the pool
+    /// @notice Add liquidity to the pool
     /// @param recipient Newly created liquidity will belong to this address
     /// @param leftPt left endpoint of the liquidity, be sure to be times of pointDelta
     /// @param rightPt right endpoint of the liquidity, be sure to be times of pointDelta
@@ -468,7 +464,7 @@ contract MintModule {
 
     }
 
-    /// @notice decrease a given amount of liquidity from msg.sender's liquidities
+    /// @notice Decrease liquidity from msg.sender's liquidities
     /// @param leftPt left endpoint of the liquidity
     /// @param rightPt right endpoint of the liquidity
     /// @param liquidDelta amount of liquidity to burn
@@ -519,7 +515,7 @@ contract MintModule {
         return (withRet.x, withRet.y);
     }
 
-    /// @notice Collects tokens (fee or refunded after burn) from a liquidity
+    /// @notice Collect tokens (fees or refunded tokens after burn) from a liquidity
     /// @param recipient The address which should receive the collected tokens
     /// @param leftPt left endpoint of the liquidity
     /// @param rightPt right endpoint of the liquidity
