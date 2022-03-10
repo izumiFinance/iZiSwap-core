@@ -150,7 +150,6 @@ contract SwapX2YModule {
         bytes calldata data
     ) external returns (uint256 amountX, uint256 amountY) {
         
-        // todo we will consider -amount of desired y later
         require(amount > 0, "AP");
         require(lowPt >= leftMostPt, "LO");
         amountX = 0;
@@ -166,8 +165,10 @@ contract SwapX2YModule {
         cache.startPoint = st.currentPoint;
         cache.startLiquidity = st.liquidity;
         cache.timestamp = uint32(block.number);
+
         while (lowPt <= st.currentPoint && !cache.finished) {
-            // clear limit order first
+
+            // step1: fill limit order 
             if (cache.currentOrderOrEndpt & 2 > 0) {
                 LimitOrder.Data storage od = limitOrderData[st.currentPoint];
                 uint256 currY = od.sellingY;
@@ -196,7 +197,8 @@ contract SwapX2YModule {
                 break;
             }
             int24 searchStart = st.currentPoint - 1;
-            // second, clear the liquid if the currentPoint is an endpoint
+
+            // step2: clear the liquidity if the currentPoint is an endpoint
             if (cache.currentOrderOrEndpt & 1 > 0) {
                 uint128 amountNoFee = uint128(uint256(amount) * 1e6 / (1e6 + fee));
                 if (amountNoFee > 0) {
@@ -311,6 +313,7 @@ contract SwapX2YModule {
                 break;
             }
         }
+
         if (cache.startPoint != st.currentPoint) {
             (st.observationCurrentIndex, st.observationQueueLen) = observations.append(
                 st.observationCurrentIndex,
