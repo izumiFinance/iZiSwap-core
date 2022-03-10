@@ -208,15 +208,15 @@ async function burn(poolAddr, miner, pl, pr, liquidDelta) {
     await pool.connect(miner).burn(pl, pr, liquidDelta);
 }
 async function getLiquidity(testMint, tokenX, tokenY, miner, pl, pr) {
-    [liquidity, lastFeeScaleX_128, lastFeeScaleY_128, remainFeeX, remainFeeY] = await testMint.connect(miner).liquidities(
+    [liquidity, lastFeeScaleX_128, lastFeeScaleY_128, tokenOwedX, tokenOwedY] = await testMint.connect(miner).liquidities(
         tokenX.address, tokenY.address, 3000, pl, pr
     );
     return [
         BigNumber(liquidity._hex),
         BigNumber(lastFeeScaleX_128._hex),
         BigNumber(lastFeeScaleY_128._hex),
-        BigNumber(remainFeeX._hex),
-        BigNumber(remainFeeY._hex)
+        BigNumber(tokenOwedX._hex),
+        BigNumber(tokenOwedY._hex)
     ]
 }
 function getWithDraw(pc, currX, currY, pl, pr, liquidity, rate) {
