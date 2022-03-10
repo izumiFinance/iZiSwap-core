@@ -373,19 +373,19 @@ interface IiZiSwapPool {
 
     /// @notice returns infomation of a point in the pool
     /// @param point the point
-    /// @return liquidAcc the total amount of liquidity that uses the point either as left endpoint or right endpoint
+    /// @return liquidSum the total amount of liquidity that uses the point either as left endpoint or right endpoint
     /// @return liquidDelta how much liquidity changes when the pool price crosses the point from left to right
-    /// @return feeScaleXBeyond_128 the fee growth on the other side of the point from the current point in tokenX
-    /// @return feeScaleYBeyond_128 the fee growth on the other side of the point from the current point in tokenY
-    /// @return isEndpt whether the point is an endpoint of a some miner's liquidity, true if liquidAcc > 0
+    /// @return accFeeXOut_128 the fee growth on the other side of the point from the current point in tokenX
+    /// @return accFeeYOut_128 the fee growth on the other side of the point from the current point in tokenY
+    /// @return isEndpt whether the point is an endpoint of a some miner's liquidity, true if liquidSum > 0
     function points(int24 point)
         external
         view
         returns (
-            uint128 liquidAcc,
+            uint128 liquidSum,
             int128 liquidDelta,
-            uint256 feeScaleXBeyond_128,
-            uint256 feeScaleYBeyond_128,
+            uint256 accFeeXOut_128,
+            uint256 accFeeYOut_128,
             bool isEndpt
         );
 

@@ -40,7 +40,7 @@ contract iZiSwapPool is IiZiSwapPool {
     int24 public leftMostPt;
     /// @notice right most point regularized by pointDelta
     int24 public rightMostPt;
-    /// @notice maximum liquidAcc for each point, see points() in IiZiSwapPool or library Point
+    /// @notice maximum liquidSum for each point, see points() in IiZiSwapPool or library Point
     uint128 public maxLiquidPt;
 
     /// @notice address of iZiSwapFactory

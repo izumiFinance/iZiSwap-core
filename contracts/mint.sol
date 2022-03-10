@@ -42,7 +42,7 @@ contract MintModule {
     int24 public leftMostPt;
     /// @notice right most point regularized by pointDelta
     int24 public rightMostPt;
-    /// @notice maximum liquidAcc for each point, see points() in IiZiSwapPool or library Point
+    /// @notice maximum liquidSum for each point, see points() in IiZiSwapPool or library Point
     uint128 public maxLiquidPt;
 
     /// @notice address of iZiSwapFactory
@@ -169,11 +169,11 @@ contract MintModule {
             rightFlipped = points.updateEndpoint(rightPoint, false, currentPoint, delta, maxLiquidPt, mFeeScaleX_128, mFeeScaleY_128);
         }
         // get sub fee scale of the range
-        (uint256 subFeeScaleX_128, uint256 subFeeScaleY_128) = 
+        (uint256 accFeeXIn_128, uint256 accFeeYIn_128) = 
             points.getSubFeeScale(
                 leftPoint, rightPoint, currentPoint, mFeeScaleX_128, mFeeScaleY_128
             );
-        lq.update(delta, subFeeScaleX_128, subFeeScaleY_128);
+        lq.update(delta, accFeeXIn_128, accFeeYIn_128);
         // update bitmap
         if (leftFlipped) {
             int24 leftVal = getOrderOrEndptVal(leftPoint, pd);

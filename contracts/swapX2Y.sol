@@ -43,7 +43,7 @@ contract SwapX2YModule {
     int24 public leftMostPt;
     /// @notice right most point regularized by pointDelta
     int24 public rightMostPt;
-    /// @notice maximum liquidAcc for each point, see points() in IiZiSwapPool or library Point
+    /// @notice maximum liquidSum for each point, see points() in IiZiSwapPool or library Point
     uint128 public maxLiquidPt;
 
     /// @notice address of iZiSwapFactory
@@ -269,8 +269,6 @@ contract SwapX2YModule {
                     SwapMathX2Y.RangeRetState memory retState = SwapMathX2Y.x2YRange(
                         st, nextPt, cache._sqrtRate_96, amountNoFee
                     );
-                    console.log('amount no fee: %s', uint256(amountNoFee));
-                    console.log('costX: %s', uint256(retState.costX));
                     cache.finished = retState.finished;
                     uint128 feeAmount;
                     if (retState.costX >= amountNoFee) {
@@ -288,8 +286,6 @@ contract SwapX2YModule {
 
                     uint256 chargedFeeAmount = uint256(feeAmount) * feeChargePercent / 100;
                     totalFeeXCharged += chargedFeeAmount;
-
-                    console.log('fee charged: %s', uint256(feeAmount) - chargedFeeAmount);
                     
                     cache.currFeeScaleX_128 = cache.currFeeScaleX_128 + MulDivMath.mulDivFloor(feeAmount - chargedFeeAmount, TwoPower.Pow128, st.liquidity);
                     st.currentPoint = retState.finalPt;

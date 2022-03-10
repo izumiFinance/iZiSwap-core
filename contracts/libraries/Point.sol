@@ -4,7 +4,7 @@ pragma solidity ^0.8.4;
 library Point {
     
     struct Data {
-        uint128 liquidAcc;
+        uint128 liquidSum;
         // value to add when pass this slot from left to right
         // value to dec when pass this slot from right to left
         int128 liquidDelta;
@@ -12,9 +12,9 @@ library Point {
         //    value = sigma(feeScaleX(p)), which p < pointPrice
         // if pointPrice >= currPrice
         //    value = sigma(feeScaleX(p)), which p >= pointPrice
-        uint256 feeScaleXBeyond_128;
-        // similar to feeScaleXBeyond_128
-        uint256 feeScaleYBeyond_128;
+        uint256 accFeeXOut_128;
+        // similar to accFeeXOut_128
+        uint256 accFeeYOut_128;
         // whether the point is endpoint of a liquid segment
         bool isEndpt;
     }
@@ -28,9 +28,9 @@ library Point {
         if (endpt <= currpt) {
             feeScaleL_128 = feeScaleBeyond_128;
         } else {
-            // feeScaleBeyond will never exceed feeScale
-            // so, simply minus in 0.8 is safe
-            feeScaleL_128 = feeScale_128 - feeScaleBeyond_128;
+            assembly {
+                feeScaleL_128:= sub(feeScale_128, feeScaleBeyond_128)
+            }
         }
     }
     function _getFeeScaleGE(
@@ -42,7 +42,9 @@ library Point {
         if (endpt > currpt) {
             feeScaleGE_128 = feeScaleBeyond_128;
         } else {
-            feeScaleGE_128 = feeScale_128 - feeScaleBeyond_128;
+            assembly {
+                feeScaleGE_128:= sub(feeScale_128, feeScaleBeyond_128)
+            }
         }
     }
     /// @dev calculate fee scale within range [pl, pr)
@@ -52,7 +54,7 @@ library Point {
     /// @param currpt point of the curr price
     /// @param feeScaleX_128 total fee scale of token x accummulated of the exchange
     /// @param feeScaleY_128 similar to feeScaleX_128
-    /// @return subFeeScaleX_128 subFeeScaleY_128 fee scale of token x and token y within range [pl, pr)
+    /// @return accFeeXIn_128 accFeeYIn_128 fee scale of token x and token y within range [pl, pr)
     function getSubFeeScale(
         mapping(int24 =>Point.Data) storage axies,
         int24 pl,
@@ -60,18 +62,18 @@ library Point {
         int24 currpt,
         uint256 feeScaleX_128,
         uint256 feeScaleY_128
-    ) internal view returns (uint256 subFeeScaleX_128, uint256 subFeeScaleY_128) {
+    ) internal view returns (uint256 accFeeXIn_128, uint256 accFeeYIn_128) {
         Point.Data storage plData = axies[pl];
         Point.Data storage prData = axies[pr];
         // tot fee scale of token x for price < pl
-        uint256 feeScaleLX_128 = _getFeeScaleL(pl, currpt, feeScaleX_128, plData.feeScaleXBeyond_128);
+        uint256 feeScaleLX_128 = _getFeeScaleL(pl, currpt, feeScaleX_128, plData.accFeeXOut_128);
         // to fee scale of token x for price >= pr
-        uint256 feeScaleGEX_128 = _getFeeScaleGE(pr, currpt, feeScaleX_128, prData.feeScaleXBeyond_128);
-        uint256 feeScaleLY_128 = _getFeeScaleL(pl, currpt, feeScaleY_128, plData.feeScaleYBeyond_128);
-        uint256 feeScaleGEY_128 = _getFeeScaleGE(pr, currpt, feeScaleY_128, prData.feeScaleYBeyond_128);
+        uint256 feeScaleGEX_128 = _getFeeScaleGE(pr, currpt, feeScaleX_128, prData.accFeeXOut_128);
+        uint256 feeScaleLY_128 = _getFeeScaleL(pl, currpt, feeScaleY_128, plData.accFeeYOut_128);
+        uint256 feeScaleGEY_128 = _getFeeScaleGE(pr, currpt, feeScaleY_128, prData.accFeeYOut_128);
         assembly{
-            subFeeScaleX_128 := sub(sub(feeScaleX_128, feeScaleLX_128), feeScaleGEX_128)
-            subFeeScaleY_128 := sub(sub(feeScaleY_128, feeScaleLY_128), feeScaleGEY_128)
+            accFeeXIn_128 := sub(sub(feeScaleX_128, feeScaleLX_128), feeScaleGEX_128)
+            accFeeYIn_128 := sub(sub(feeScaleY_128, feeScaleLY_128), feeScaleGEY_128)
         }
     }
     
@@ -95,7 +97,7 @@ library Point {
         uint256 feeScaleY_128
     ) internal returns (bool) {
         Point.Data storage data = axies[endpt];
-        uint128 liquidAccBefore = data.liquidAcc;
+        uint128 liquidAccBefore = data.liquidSum;
         // delta cannot be 0
         require(delta!=0, "D0");
         // liquide acc cannot overflow
@@ -108,7 +110,7 @@ library Point {
             require(liquidAccAfter < liquidAccBefore, "LASO");
         }
         require(liquidAccAfter <= liquidLimPt, "L LIM PT");
-        data.liquidAcc = liquidAccAfter;
+        data.liquidSum = liquidAccAfter;
 
         if (isLeft) {
             data.liquidDelta = data.liquidDelta + delta;
@@ -125,8 +127,8 @@ library Point {
             // the feeScaleBeyond can be initialized to arbitrary value
             // we here set the initial val to total feeScale to delay overflow
             if (endpt >= currpt) {
-                data.feeScaleXBeyond_128 = feeScaleX_128;
-                data.feeScaleYBeyond_128 = feeScaleY_128;
+                data.accFeeXOut_128 = feeScaleX_128;
+                data.accFeeYOut_128 = feeScaleY_128;
             }
         } else if (liquidAccAfter == 0) {
             // no segment use this endpoint
@@ -145,8 +147,14 @@ library Point {
         uint256 feeScaleX_128,
         uint256 feeScaleY_128
     ) internal {
-        endpt.feeScaleXBeyond_128 = feeScaleX_128 - endpt.feeScaleXBeyond_128;
-        endpt.feeScaleYBeyond_128 = feeScaleY_128 - endpt.feeScaleYBeyond_128;
+        uint256 accFeeXOut_128 = endpt.accFeeXOut_128;
+        uint256 accFeeYOut_128 = endpt.accFeeYOut_128;
+        assembly {
+            accFeeXOut_128 := sub(feeScaleX_128, accFeeXOut_128)
+            accFeeYOut_128 := sub(feeScaleY_128, accFeeYOut_128)
+        }
+        endpt.accFeeXOut_128 = accFeeXOut_128;
+        endpt.accFeeYOut_128 = accFeeYOut_128;
     }
 
 }
