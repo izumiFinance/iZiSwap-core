@@ -213,9 +213,8 @@ contract MintModule {
         uint128 liquidDelta,
         uint160 sqrtPrice_96
     ) private pure returns (uint128 y) {
-        // to simplify computation
-        // minter is required to deposit only
-        // token y in point of current price
+        // to simplify computation, 
+        // minter is required to deposit only token y in point of current price
         uint256 amount = MulDivMath.mulDivCeil(
             liquidDelta,
             sqrtPrice_96,
@@ -370,7 +369,7 @@ contract MintModule {
                 withRet.currX = currentState.currX;
                 withRet.currY = currentState.currY;
             }
-            // we nned compute yc at point of current price
+            // we need compute yc at point of current price
             (withRet.xc, withRet.yc) = _computeWithdrawXYAtCurrPt(
                 liquidDelta,
                 sqrtPrice_96,
