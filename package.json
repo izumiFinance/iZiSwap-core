@@ -1,0 +1,17 @@
+{
+  "devDependencies": {
+    "@nomiclabs/hardhat-ethers": "^2.0.2",
+    "@nomiclabs/hardhat-waffle": "^2.0.1",
+    "chai": "^4.3.4",
+    "ethereum-waffle": "^3.4.0",
+    "ethers": "^5.4.7",
+    "hardhat": "^2.6.5",
+    "web3": "^1.6.1"
+  },
+  "dependencies": {
+    "@openzeppelin/contracts": "^4.3.2",
+    "@uniswap/v3-core": "^1.0.0",
+    "bignumber.js": "^9.0.1",
+    "hardhat-contract-sizer": "^2.1.1"
+  }
+}
