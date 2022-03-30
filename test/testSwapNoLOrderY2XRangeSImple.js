@@ -186,7 +186,7 @@ describe("swap", function () {
     // [acquireX, costY] = y2xAt(5001, rate, amountY_5001);
     [acquireX, costY] = y2xAtLiquidity(5001, rate, amountY_5001, x_5001, BigNumber('0'), liquidity)
 
-    costY_WithFee = ceil(costY.times(1003).div(1000));
+    costY_WithFee = ceil(costY.times(1000).div(997));
     
     const testSwapFactory = await ethers.getContractFactory("TestSwap");
     const testSwap = await testSwapFactory.deploy(factory.address);
@@ -200,7 +200,7 @@ describe("swap", function () {
     costY_5001_Remain = l2y(BigNumber("30000"), 5001, rate, true).minus(currY);
     costY_5002_5050 = yInRange(BigNumber("30000"), 5002, 5050, rate, true);
     costYRange = costY_5001_Remain.plus(costY_5002_5050);
-    costYRangeWithFee = ceil(costYRange.times(1003).div(1000));
+    costYRangeWithFee = ceil(costYRange.times(1000).div(997));
     acquireX_5001_Remain = currX.plus("0");
     acquireX_5002_5050 = xInRange(BigNumber("30000"), 5002, 5050, rate, false);
     acquireXRange = acquireX_5001_Remain.plus(acquireX_5002_5050);

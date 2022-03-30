@@ -138,7 +138,7 @@ describe("swap y2x desireX", function () {
     acquireX_5001 = floor(x_5001.times(11).div(53));
     [acquireX, costY] = y2xAtLiquidity(5001, rate, acquireX_5001, x_5001, BigNumber('0'), BigNumber("30000"));
     
-    costY_WithFee = ceil(costY.times(1003).div(1000));
+    costY_WithFee = ceil(costY.times(1000).div(997));
     
     const testSwapFactory = await ethers.getContractFactory("TestSwap");
     const testSwap = await testSwapFactory.deploy(factory.address);

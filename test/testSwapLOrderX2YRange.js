@@ -140,7 +140,7 @@ function blockNum2BigNumber(blc) {
     return BigNumber(blc._hex);
 }
 function amountAddFee(amount) {
-    return ceil(amount.times(1003).div(1000));
+    return ceil(amount.times(1000).div(997));
 }
 
 async function checkLimOrder(eSellingX, eAccEarnX, eSellingY, eAccEarnY, eEarnX, eEarnY, poolAddr, pt) {
@@ -184,7 +184,7 @@ async function getPoolParts() {
     return [iZiSwapPoolPart.address, iZiSwapPoolPartDesire.address, mintModule.address];
   }
 function getFee(amount) {
-    const originFee = ceil(amount.times(3).div(1000));
+    const originFee = ceil(amount.times(3).div(997));
     const charged = floor(originFee.times(20).div(100));
     return originFee.minus(charged);
 }
@@ -333,8 +333,7 @@ describe("swap", function () {
         amountAddFee(costX_5000_5050)).plus(
         amountAddFee(costX_4950_5000)).plus(
         amountAddFee(costX_4900_4950)).plus(
-        amountAddFee(costX_4870_4900)).plus(
-        amountAddFee(costX_4869_Remain)).plus(costX_5050_Lim).plus(costX_4950_Lim);
+        amountAddFee(costX_4870_4900.plus(costX_4869_Remain))).plus(costX_5050_Lim).plus(costX_4950_Lim);
 
     await tokenX.transfer(trader2.address, 10000000000);
     await tokenX.connect(trader2).approve(testSwap.address, costXRangeWithFee.times(2).toFixed(0));

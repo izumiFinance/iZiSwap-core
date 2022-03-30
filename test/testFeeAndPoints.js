@@ -53,7 +53,7 @@ function ceil(b) {
 }
 
 function getFee(cost, fee) {
-    return ceil(BigNumber(cost).times(fee).div(1e6)).toFixed(0);
+    return ceil(BigNumber(cost).times(fee).div(1e6-fee)).toFixed(0);
 }
 
 function getFeeCharge(fee) {

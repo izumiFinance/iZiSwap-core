@@ -153,10 +153,33 @@ function xInRange(liquidity, pl, pr, rate, up) {
 function blockNum2BigNumber(blc) {
     return BigNumber(blc._hex);
 }
-function amountAddFee(amount) {
-    return ceil(amount.times(1003).div(1000));
+
+function stringMul(a, b) {
+    const mul = BigNumber(a).times(b).toFixed(0);
+    return mul;
 }
 
+function stringDiv(a, b) {
+    let an = BigNumber(a);
+    an = an.minus(an.mod(b));
+    return an.div(b).toFixed(0);
+}
+
+function stringMod(a, b) {
+    const an = BigNumber(a);
+    const md = an.mod(b);
+    return md.toFixed(0);
+}
+function stringAdd(a, b) {
+    return BigNumber(a).plus(b).toFixed(0);
+}
+function amountAddFee(amount) {
+    let feeAmount = stringDiv(stringMul(amount.toFixed(0, 3), '3'), '997');
+    if (stringMod(stringMul(amount.toFixed(0, 3), '3'), '997') !== '0') {
+        feeAmount = stringAdd(feeAmount, '1');
+    }
+    return amount.plus(feeAmount);
+}
 
 async function checkLimOrder(eSellingX, eAccEarnX, eSellingY, eAccEarnY, eEarnX, eEarnY, poolAddr, pt) {
     [sellingX, accEarnX, sellingY, accEarnY, earnX, earnY] = await getLimOrder(poolAddr, pt);
@@ -198,7 +221,7 @@ async function getPoolParts() {
   return [iZiSwapPoolPart.address, iZiSwapPoolPartDesire.address, mintModule.address];
 }
 function getFee(amount) {
-    const originFee = ceil(amount.times(3).div(1000));
+    const originFee = ceil(amount.times(3).div(997));
     const charged = floor(originFee.times(20).div(100));
     return originFee.minus(charged);
 }
@@ -383,19 +406,20 @@ describe("swap", function () {
         acquireY_4900_4950).plus(
         acquireY_4870_4900).plus(
         acquireY_4869_Remain).plus("700000000");
-    
+
     costXRangeWithFee = amountAddFee(costX_5100_Remain).plus(
         amountAddFee(costX_5050_5100)).plus(
         amountAddFee(costX_5000_5050)).plus(
         amountAddFee(costX_4950_5000)).plus(
         amountAddFee(costX_4900_4950)).plus(
-        amountAddFee(costX_4870_4900)).plus(
-        amountAddFee(costX_4869_Remain)).plus(costX_5050_Lim).plus(costX_4950_Lim);
+        amountAddFee(costX_4870_4900.plus(costX_4869_Remain))).plus(costX_5050_Lim).plus(costX_4950_Lim);
 
     await tokenX.transfer(trader2.address, 10000000000);
     await tokenX.connect(trader2).approve(testSwap.address, costXRangeWithFee.times(2).toFixed(0));
+
     await testSwap.connect(trader2).swapX2YDesireY(
         tokenX.address, tokenY.address, 3000, acquireYRange.toFixed(0), 4860);
+    
     expect(costXRangeWithFee.plus(blockNum2BigNumber(await tokenX.balanceOf(trader2.address))).toFixed(0)).to.equal("10000000000");
     expect(acquireYRange.toFixed(0)).to.equal(blockNum2BigNumber(await tokenY.balanceOf(trader2.address)).toFixed(0));
 

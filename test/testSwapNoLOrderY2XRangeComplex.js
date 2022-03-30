@@ -130,7 +130,7 @@ function blockNum2BigNumber(blc) {
     return BigNumber(blc._hex);
 }
 function amountAddFee(amount) {
-    return ceil(amount.times(1003).div(1000));
+    return ceil(amount.times(1000).div(997));
 }
 
 async function getPoolParts() {
@@ -192,7 +192,7 @@ describe("swap", function () {
 
     amountY_5001 = BigNumber(12000);
     [acquireX, costY] = y2xAt(5001, rate, amountY_5001, x_5001, BigNumber('0'), liquidity);
-    costY_WithFee = ceil(costY.times(1003).div(1000));
+    costY_WithFee = ceil(costY.times(1000).div(997));
     
     const testSwapFactory = await ethers.getContractFactory("TestSwap");
     const testSwap = await testSwapFactory.deploy(factory.address);

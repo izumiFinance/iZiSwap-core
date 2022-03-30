@@ -153,10 +153,10 @@ function blockNum2BigNumber(blc) {
     return BigNumber(blc._hex);
 }
 function amountAddFee(amount) {
-    return ceil(amount.times(1003).div(1000));
+    return ceil(amount.times(1000).div(997));
 }
 function getFee(amount) {
-    const originFee = ceil(amount.times(3).div(1000));
+    const originFee = ceil(amount.times(3).div(997));
     const charged = floor(originFee.times(20).div(100));
     return originFee.minus(charged);
 }

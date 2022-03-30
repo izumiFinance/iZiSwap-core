@@ -80,10 +80,10 @@ function blockNum2BigNumber(blc) {
     return BigNumber(blc._hex);
 }
 function amountAddFee(amount) {
-    return ceil(amount.times(1003).div(1000));
+    return ceil(amount.times(1000).div(997));
 }
 function getFee(amount) {
-    return ceil(amount.times(3).div(1000));
+    return ceil(amount.times(3).div(997));
 }
 
 async function getPoolParts() {
