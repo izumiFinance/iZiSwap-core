@@ -200,7 +200,7 @@ contract SwapX2YModule {
 
             // step2: clear the liquidity if the currentPoint is an endpoint
             if (cache.currentOrderOrEndpt & 1 > 0) {
-                uint128 amountNoFee = uint128(uint256(amount) * 1e6 / (1e6 + fee));
+                uint128 amountNoFee = uint128(uint256(amount) * (1e6 - fee) / 1e6);
                 if (amountNoFee > 0) {
                     if (st.liquidity > 0) {
                         SwapMathX2Y.RangeRetState memory retState = SwapMathX2Y.x2YRange(
@@ -214,8 +214,8 @@ contract SwapX2YModule {
                         if (retState.costX >= amountNoFee) {
                             feeAmount = amount - retState.costX;
                         } else {
-                            feeAmount = uint128(uint256(retState.costX) * fee / 1e6);
-                            uint256 mod = uint256(retState.costX) * fee % 1e6;
+                            feeAmount = uint128(uint256(retState.costX) * fee / (1e6 - fee));
+                            uint256 mod = uint256(retState.costX) * fee % (1e6 - fee);
                             if (mod > 0) {
                                 feeAmount += 1;
                             }
@@ -266,7 +266,7 @@ contract SwapX2YModule {
                 cache.currentOrderOrEndpt = nextVal;
             } else {
                 // amount > 0
-                uint128 amountNoFee = uint128(uint256(amount) * 1e6 / (1e6 + fee));
+                uint128 amountNoFee = uint128(uint256(amount) * (1e6 - fee) / 1e6);
                 if (amountNoFee > 0) {
                     SwapMathX2Y.RangeRetState memory retState = SwapMathX2Y.x2YRange(
                         st, nextPt, cache._sqrtRate_96, amountNoFee
@@ -276,8 +276,8 @@ contract SwapX2YModule {
                     if (retState.costX >= amountNoFee) {
                         feeAmount = amount - retState.costX;
                     } else {
-                        feeAmount = uint128(uint256(retState.costX) * fee / 1e6);
-                        uint256 mod = uint256(retState.costX) * fee % 1e6;
+                        feeAmount = uint128(uint256(retState.costX) * fee / (1e6 - fee));
+                        uint256 mod = uint256(retState.costX) * fee % (1e6 - fee);
                         if (mod > 0) {
                             feeAmount += 1;
                         }
@@ -407,7 +407,7 @@ contract SwapX2YModule {
                     );
                     cache.finished = retState.finished;
                     
-                    uint256 feeAmount = MulDivMath.mulDivCeil(retState.costX, fee, 1e6);
+                    uint256 feeAmount = MulDivMath.mulDivCeil(retState.costX, fee, 1e6 - fee);
                     uint256 chargedFeeAmount = feeAmount * feeChargePercent / 100;
                     totalFeeXCharged += chargedFeeAmount;
 
@@ -456,7 +456,7 @@ contract SwapX2YModule {
                     );
                     cache.finished = retState.finished;
                     
-                    uint256 feeAmount = MulDivMath.mulDivCeil(retState.costX, fee, 1e6);
+                    uint256 feeAmount = MulDivMath.mulDivCeil(retState.costX, fee, 1e6 - fee);
                     uint256 chargedFeeAmount = feeAmount * feeChargePercent / 100;
                     totalFeeXCharged += chargedFeeAmount;
 
