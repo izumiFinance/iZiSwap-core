@@ -170,27 +170,43 @@ contract SwapX2YModule {
 
             // step1: fill limit order 
             if (cache.currentOrderOrEndpt & 2 > 0) {
-                LimitOrder.Data storage od = limitOrderData[st.currentPoint];
-                uint256 currY = od.sellingY;
-                (uint128 costX, uint256 acquireY) = SwapMathX2Y.x2YAtPrice(
-                    amount, st.sqrtPrice_96, currY
-                );
-                if (acquireY < currY || costX >= amount) {
-                    cache.finished = true;
-                }
-                amount -= costX;
-                amountX = amountX + costX;
-                amountY += acquireY;
-                currY -= acquireY;
-                od.sellingY = currY;
-                od.earnX += costX;
-                od.accEarnX += costX;
-                if (od.sellingX == 0 && currY == 0) {
-                    int24 newVal = cache.currentOrderOrEndpt & 1;
-                    setOrderOrEndptValue(st.currentPoint, cache.pointDelta, newVal);
-                    if (newVal == 0) {
-                        pointBitmap.setZero(st.currentPoint, cache.pointDelta);
+                uint128 amountNoFee = uint128(uint256(amount) * (1e6 - fee) / 1e6);
+                if (amountNoFee > 0) {
+                    LimitOrder.Data storage od = limitOrderData[st.currentPoint];
+                    uint256 currY = od.sellingY;
+                    (uint128 costX, uint256 acquireY) = SwapMathX2Y.x2YAtPrice(
+                        amountNoFee, st.sqrtPrice_96, currY
+                    );
+                    if (acquireY < currY || costX >= amountNoFee) {
+                        cache.finished = true;
                     }
+                    uint128 feeAmount;
+                    if (costX >= amountNoFee) {
+                        feeAmount = amount - costX;
+                    } else {
+                        feeAmount = uint128(uint256(costX) * fee / (1e6 - fee));
+                        uint256 mod = uint256(costX) * fee % (1e6 - fee);
+                        if (mod > 0) {
+                            feeAmount += 1;
+                        }
+                    }
+                    totalFeeXCharged += feeAmount;
+                    amount -= (costX + feeAmount);
+                    amountX = amountX + costX + feeAmount;
+                    amountY += acquireY;
+                    currY -= acquireY;
+                    od.sellingY = currY;
+                    od.earnX += costX;
+                    od.accEarnX += costX;
+                    if (od.sellingX == 0 && currY == 0) {
+                        int24 newVal = cache.currentOrderOrEndpt & 1;
+                        setOrderOrEndptValue(st.currentPoint, cache.pointDelta, newVal);
+                        if (newVal == 0) {
+                            pointBitmap.setZero(st.currentPoint, cache.pointDelta);
+                        }
+                    }
+                } else {
+                    cache.finished = true;
                 }
             }
             if (cache.finished) {
@@ -377,8 +393,11 @@ contract SwapX2YModule {
                 if (acquireY >= desireY) {
                     cache.finished = true;
                 }
+
+                uint256 feeAmount = MulDivMath.mulDivCeil(costX, fee, 1e6 - fee);
+                totalFeeXCharged += feeAmount;
                 desireY = (desireY <= acquireY) ? 0 : desireY - uint128(acquireY);
-                amountX += costX;
+                amountX += (costX + feeAmount);
                 amountY += acquireY;
                 currY -= acquireY;
                 od.sellingY = currY;
