@@ -15,6 +15,7 @@ import './libraries/UserEarn.sol';
 import './libraries/TokenTransfer.sol';
 import './libraries/State.sol';
 import './libraries/Oracle.sol';
+import './libraries/OrderOrEndpoint.sol';
 import './interfaces/IiZiSwapCallback.sol';
 import 'hardhat/console.sol';
 
@@ -32,6 +33,7 @@ contract iZiSwapPool is IiZiSwapPool {
     using UserEarn for UserEarn.Data;
     using UserEarn for mapping(bytes32 =>UserEarn.Data);
     using Oracle for Oracle.Observation[65535];
+    using OrderOrEndpoint for mapping(int24 =>int24);
 
     int24 internal constant LEFT_MOST_PT = -800000;
     int24 internal constant RIGHT_MOST_PT = 800000;
@@ -219,8 +221,8 @@ contract iZiSwapPool is IiZiSwapPool {
         pointOrder.sellingX -= actualDeltaX;
         
         if (actualDeltaX > 0 && pointOrder.sellingX == 0) {
-            int24 newVal = getStatusVal(point, pointDelta) & 1;
-            setStatusVal(point, pointDelta, newVal);
+            int24 newVal = orderOrEndpoint.getOrderOrEndptVal(point, pointDelta) & 1;
+            orderOrEndpoint.setOrderOrEndptVal(point, pointDelta, newVal);
             if (newVal == 0) {
                 pointBitmap.setZero(point, pointDelta);
             }
@@ -248,8 +250,8 @@ contract iZiSwapPool is IiZiSwapPool {
         pointOrder.sellingY -= actualDeltaY;
         
         if (actualDeltaY > 0 && pointOrder.sellingY == 0) {
-            int24 newVal = getStatusVal(point, pointDelta) & 1;
-            setStatusVal(point, pointDelta, newVal);
+            int24 newVal = orderOrEndpoint.getOrderOrEndptVal(point, pointDelta) & 1;
+            orderOrEndpoint.setOrderOrEndptVal(point, pointDelta, newVal);
             if (newVal == 0) {
                 pointBitmap.setZero(point, pointDelta);
             }
@@ -307,19 +309,19 @@ contract iZiSwapPool is IiZiSwapPool {
         
         // update statusval and bitmap
         if (currX == 0 && currY == 0) {
-            int24 val = getStatusVal(point, pointDelta);
+            int24 val = orderOrEndpoint.getOrderOrEndptVal(point, pointDelta);
             if (val & 2 != 0) {
                 int24 newVal = val & 1;
-                setStatusVal(point, pointDelta, newVal);
+                orderOrEndpoint.setOrderOrEndptVal(point, pointDelta, newVal);
                 if (newVal == 0) {
                     pointBitmap.setZero(point, pointDelta);
                 }
             }
         } else {
-            int24 val = getStatusVal(point, pointDelta);
+            int24 val = orderOrEndpoint.getOrderOrEndptVal(point, pointDelta);
             if (val & 2 == 0) {
                 int24 newVal = val | 2;
-                setStatusVal(point, pointDelta, newVal);
+                orderOrEndpoint.setOrderOrEndptVal(point, pointDelta, newVal);
                 if (val == 0) {
                     pointBitmap.setOne(point, pointDelta);
                 }
@@ -380,19 +382,19 @@ contract iZiSwapPool is IiZiSwapPool {
 
         // update statusval and bitmap
         if (currX == 0 && currY == 0) {
-            int24 val = getStatusVal(point, pointDelta);
+            int24 val = orderOrEndpoint.getOrderOrEndptVal(point, pointDelta);
             if (val & 2 != 0) {
                 int24 newVal = val & 1;
-                setStatusVal(point, pointDelta, newVal);
+                orderOrEndpoint.setOrderOrEndptVal(point, pointDelta, newVal);
                 if (newVal == 0) {
                     pointBitmap.setZero(point, pointDelta);
                 }
             }
         } else {
-            int24 val = getStatusVal(point, pointDelta);
+            int24 val = orderOrEndpoint.getOrderOrEndptVal(point, pointDelta);
             if (val & 2 == 0) {
                 int24 newVal = val | 2;
-                setStatusVal(point, pointDelta, newVal);
+                orderOrEndpoint.setOrderOrEndptVal(point, pointDelta, newVal);
                 if (val == 0) {
                     pointBitmap.setOne(point, pointDelta);
                 }
@@ -592,16 +594,6 @@ contract iZiSwapPool is IiZiSwapPool {
         } else {
             revertDCData(d);
         }
-    }
-
-    function getStatusVal(int24 point, int24 pd) internal view returns(int24 val) {
-        if (point % pd != 0) {
-            return 0;
-        }
-        val = orderOrEndpoint[point / pd];
-    }
-    function setStatusVal(int24 point, int24 pd, int24 val) internal {
-        orderOrEndpoint[point / pd] = val;
     }
 
     /// @notice Swap tokenX for tokenY， given max amount of tokenX user willing to pay

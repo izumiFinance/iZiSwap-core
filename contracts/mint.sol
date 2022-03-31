@@ -17,6 +17,7 @@ import './libraries/TokenTransfer.sol';
 import './libraries/UserEarn.sol';
 import './libraries/State.sol';
 import './libraries/Oracle.sol';
+import './libraries/OrderOrEndpoint.sol';
 import './interfaces/IiZiSwapCallback.sol';
 
 import 'hardhat/console.sol';
@@ -34,6 +35,7 @@ contract MintModule {
     using SwapMathY2X for SwapMathY2X.RangeRetState;
     using SwapMathX2Y for SwapMathX2Y.RangeRetState;
     using Oracle for Oracle.Observation[65535];
+    using OrderOrEndpoint for mapping(int24 =>int24);
 
     int24 internal constant LEFT_MOST_PT = -800000;
     int24 internal constant RIGHT_MOST_PT = 800000;
@@ -132,16 +134,6 @@ contract MintModule {
         return abi.decode(data, (uint256));
     }
 
-    function getOrderOrEndptVal(int24 point, int24 pd) internal view returns(int24 val) {
-        if (point % pd != 0) {
-            return 0;
-        }
-        val = orderOrEndpoint[point / pd];
-    }
-    function setOrderOrEndptVal(int24 point, int24 pd, int24 val) internal {
-        orderOrEndpoint[point / pd] = val;
-    }
-
     /// @dev Add / Dec liquidity 
     /// @param minter the minter of the liquidity
     /// @param leftPoint left endpoint of the segment
@@ -174,15 +166,15 @@ contract MintModule {
         lq.update(delta, accFeeXIn_128, accFeeYIn_128);
         // update bitmap
         if (leftFlipped) {
-            int24 leftVal = getOrderOrEndptVal(leftPoint, pd);
+            int24 leftVal = orderOrEndpoint.getOrderOrEndptVal(leftPoint, pd);
             if (delta > 0) {
-                setOrderOrEndptVal(leftPoint, pd, leftVal | 1);
+                orderOrEndpoint.setOrderOrEndptVal(leftPoint, pd, leftVal | 1);
                 if (leftVal == 0) {
                     pointBitmap.setOne(leftPoint, pd);
                 }
             } else {
                 int24 newVal = leftVal & 2;
-                setOrderOrEndptVal(leftPoint, pd, newVal);
+                orderOrEndpoint.setOrderOrEndptVal(leftPoint, pd, newVal);
                 if (newVal == 0) {
                     pointBitmap.setZero(leftPoint, pd);
                 }
@@ -190,15 +182,15 @@ contract MintModule {
             }
         }
         if (rightFlipped) {
-            int24 rightVal = getOrderOrEndptVal(rightPoint, pd);
+            int24 rightVal = orderOrEndpoint.getOrderOrEndptVal(rightPoint, pd);
             if (delta > 0) {
-                setOrderOrEndptVal(rightPoint, pd, rightVal | 1);
+                orderOrEndpoint.setOrderOrEndptVal(rightPoint, pd, rightVal | 1);
                 if (rightVal == 0) {
                     pointBitmap.setOne(rightPoint, pd);
                 }
             } else {
                 int24 newVal = rightVal & 2;
-                setOrderOrEndptVal(rightPoint, pd, newVal);
+                orderOrEndpoint.setOrderOrEndptVal(rightPoint, pd, newVal);
                 if (newVal == 0) {
                     pointBitmap.setZero(rightPoint, pd);
                 }

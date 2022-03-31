@@ -18,6 +18,7 @@ import './libraries/UserEarn.sol';
 import './libraries/State.sol';
 import './libraries/SwapCache.sol';
 import './libraries/Oracle.sol';
+import './libraries/OrderOrEndpoint.sol';
 import './interfaces/IiZiSwapCallback.sol';
 
 import 'hardhat/console.sol';
@@ -35,6 +36,7 @@ contract SwapX2YModule {
     using SwapMathY2X for SwapMathY2X.RangeRetState;
     using SwapMathX2Y for SwapMathX2Y.RangeRetState;
     using Oracle for Oracle.Observation[65535];
+    using OrderOrEndpoint for mapping(int24 =>int24);
 
     int24 internal constant LEFT_MOST_PT = -800000;
     int24 internal constant RIGHT_MOST_PT = 800000;
@@ -126,16 +128,6 @@ contract SwapX2YModule {
         return abi.decode(data, (uint256));
     }
 
-    function getOrderOrEndptValue(int24 point, int24 _pointDelta) internal view returns(int24 val) {
-        if (point % _pointDelta != 0) {
-            return 0;
-        }
-        val = orderOrEndpoint[point / _pointDelta];
-    }
-    function setOrderOrEndptValue(int24 point, int24 _pointDelta, int24 val) internal {
-        orderOrEndpoint[point / _pointDelta] = val;
-    }
-
     /// @notice Swap tokenX for tokenY， given max amount of tokenX user willing to pay
     /// @param recipient The address to receive tokenY
     /// @param amount The max amount of tokenX user willing to pay
@@ -161,7 +153,7 @@ contract SwapX2YModule {
         cache.finished = false;
         cache._sqrtRate_96 = sqrtRate_96;
         cache.pointDelta = pointDelta;
-        cache.currentOrderOrEndpt = getOrderOrEndptValue(st.currentPoint, cache.pointDelta);
+        cache.currentOrderOrEndpt = orderOrEndpoint.getOrderOrEndptVal(st.currentPoint, cache.pointDelta);
         cache.startPoint = st.currentPoint;
         cache.startLiquidity = st.liquidity;
         cache.timestamp = uint32(block.number);
@@ -200,7 +192,7 @@ contract SwapX2YModule {
                     od.accEarnX += costX;
                     if (od.sellingX == 0 && currY == 0) {
                         int24 newVal = cache.currentOrderOrEndpt & 1;
-                        setOrderOrEndptValue(st.currentPoint, cache.pointDelta, newVal);
+                        orderOrEndpoint.setOrderOrEndptVal(st.currentPoint, cache.pointDelta, newVal);
                         if (newVal == 0) {
                             pointBitmap.setZero(st.currentPoint, cache.pointDelta);
                         }
@@ -270,7 +262,7 @@ contract SwapX2YModule {
             if (nextPt < lowPt) {
                 nextPt = lowPt;
             }
-            int24 nextVal = getOrderOrEndptValue(nextPt, cache.pointDelta);
+            int24 nextVal = orderOrEndpoint.getOrderOrEndptVal(nextPt, cache.pointDelta);
             
             // in [st.currentPoint, nextPt)
             if (st.liquidity == 0) {
@@ -378,7 +370,7 @@ contract SwapX2YModule {
         cache.finished = false;
         cache._sqrtRate_96 = sqrtRate_96;
         cache.pointDelta = pointDelta;
-        cache.currentOrderOrEndpt = getOrderOrEndptValue(st.currentPoint, cache.pointDelta);
+        cache.currentOrderOrEndpt = orderOrEndpoint.getOrderOrEndptVal(st.currentPoint, cache.pointDelta);
         cache.startPoint = st.currentPoint;
         cache.startLiquidity = st.liquidity;
         cache.timestamp = uint32(block.number);
@@ -405,7 +397,7 @@ contract SwapX2YModule {
                 od.accEarnX += costX;
                 if (od.sellingX == 0 && currY == 0) {
                     int24 newVal = cache.currentOrderOrEndpt & 1;
-                    setOrderOrEndptValue(st.currentPoint, cache.pointDelta, newVal);
+                    orderOrEndpoint.setOrderOrEndptVal(st.currentPoint, cache.pointDelta, newVal);
                     if (newVal == 0) {
                         pointBitmap.setZero(st.currentPoint, cache.pointDelta);
                     }
@@ -458,7 +450,7 @@ contract SwapX2YModule {
             if (nextPt < lowPt) {
                 nextPt = lowPt;
             }
-            int24 nextVal = getOrderOrEndptValue(nextPt, cache.pointDelta);
+            int24 nextVal = orderOrEndpoint.getOrderOrEndptVal(nextPt, cache.pointDelta);
             // in [st.currentPoint, nextPt)
             if (st.liquidity == 0) {
 

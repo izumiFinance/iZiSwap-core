@@ -17,6 +17,7 @@ import './libraries/UserEarn.sol';
 import './libraries/TokenTransfer.sol';
 import './libraries/State.sol';
 import './libraries/Oracle.sol';
+import './libraries/OrderOrEndpoint.sol';
 import './interfaces/IiZiSwapCallback.sol';
 import 'hardhat/console.sol';
 
@@ -33,6 +34,7 @@ contract SwapY2XModule {
     using SwapMathY2X for SwapMathY2X.RangeRetState;
     using SwapMathX2Y for SwapMathX2Y.RangeRetState;
     using Oracle for Oracle.Observation[65535];
+    using OrderOrEndpoint for mapping(int24 =>int24);
 
     int24 internal constant LEFT_MOST_PT = -800000;
     int24 internal constant RIGHT_MOST_PT = 800000;
@@ -163,7 +165,7 @@ contract SwapY2XModule {
         cache.finished = false;
         cache._sqrtRate_96 = sqrtRate_96;
         cache.pointDelta = pointDelta;
-        cache.currentOrderOrEndPoint = getOrderOrEndptValue(st.currentPoint, cache.pointDelta);
+        cache.currentOrderOrEndPoint = orderOrEndpoint.getOrderOrEndptVal(st.currentPoint, cache.pointDelta);
         cache.startPoint = st.currentPoint;
         cache.startLiquidity = st.liquidity;
         cache.timestamp = uint32(block.number);
@@ -201,7 +203,7 @@ contract SwapY2XModule {
                     od.accEarnY += costY;
                     if (od.sellingY == 0 && currX == 0) {
                         int24 newVal = cache.currentOrderOrEndPoint & 1;
-                        setOrderOrEndptValue(st.currentPoint, cache.pointDelta, newVal);
+                        orderOrEndpoint.setOrderOrEndptVal(st.currentPoint, cache.pointDelta, newVal);
                         if (newVal == 0) {
                             pointBitmap.setZero(st.currentPoint, cache.pointDelta);
                         }
@@ -216,7 +218,7 @@ contract SwapY2XModule {
             }
 
             int24 nextPoint = pointBitmap.nearestRightOneOrBoundary(st.currentPoint, cache.pointDelta);
-            int24 nextVal = getOrderOrEndptValue(nextPoint, cache.pointDelta);
+            int24 nextVal = orderOrEndpoint.getOrderOrEndptVal(nextPoint, cache.pointDelta);
             if (nextPoint > highPt) {
                 nextVal = 0;
                 nextPoint = highPt;
@@ -340,7 +342,7 @@ contract SwapY2XModule {
         cache.finished = false;
         cache._sqrtRate_96 = sqrtRate_96;
         cache.pointDelta = pointDelta;
-        cache.currentOrderOrEndPoint = getOrderOrEndptValue(st.currentPoint, cache.pointDelta);
+        cache.currentOrderOrEndPoint = orderOrEndpoint.getOrderOrEndptVal(st.currentPoint, cache.pointDelta);
         cache.startPoint = st.currentPoint;
         cache.startLiquidity = st.liquidity;
         cache.timestamp = uint32(block.number);
@@ -366,7 +368,7 @@ contract SwapY2XModule {
                 od.accEarnY += costY;
                 if (od.sellingY == 0 && currX == 0) {
                     int24 newVal = cache.currentOrderOrEndPoint & 1;
-                    setOrderOrEndptValue(st.currentPoint, cache.pointDelta, newVal);
+                    orderOrEndpoint.setOrderOrEndptVal(st.currentPoint, cache.pointDelta, newVal);
                     if (newVal == 0) {
                         pointBitmap.setZero(st.currentPoint, cache.pointDelta);
                     }
@@ -377,7 +379,7 @@ contract SwapY2XModule {
                 break;
             }
             int24 nextPoint = pointBitmap.nearestRightOneOrBoundary(st.currentPoint, cache.pointDelta);
-            int24 nextVal = getOrderOrEndptValue(nextPoint, cache.pointDelta);
+            int24 nextVal = orderOrEndpoint.getOrderOrEndptVal(nextPoint, cache.pointDelta);
             if (nextPoint > highPt) {
                 nextVal = 0;
                 nextPoint = highPt;
@@ -460,16 +462,6 @@ contract SwapY2XModule {
             require(balanceY() >= by + amountY, "YE");
         }
         
-    }
-
-    function getOrderOrEndptValue(int24 point, int24 _pointDelta) internal view returns(int24 val) {
-        if (point % _pointDelta != 0) {
-            return 0;
-        }
-        val = orderOrEndpoint[point / _pointDelta];
-    }
-    function setOrderOrEndptValue(int24 point, int24 _pointDelta, int24 val) internal {
-        orderOrEndpoint[point / _pointDelta] = val;
     }
 
 }
