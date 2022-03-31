@@ -28,6 +28,10 @@ interface IiZiSwapFactory {
     /// @return mintModule address
     function mintModule() external returns (address);
 
+    /// @notice address of module for user to manage limit orders
+    /// @return limitOrderModule address
+    function limitOrderModule() external returns (address);
+
     /// @notice Enables a fee amount with the given pointDelta
     /// @dev Fee amounts may never be removed once enabled
     /// @param fee fee amount (3000 means 0.3%)

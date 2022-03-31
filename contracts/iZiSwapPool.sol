@@ -100,6 +100,7 @@ contract iZiSwapPool is IiZiSwapPool {
     address private swapModuleX2Y;
     address private swapModuleY2X;
     address private mintModule;
+    address private limitOrderModule;
 
     /// @notice percent to charge from miner's fee
     uint24 public immutable override feeChargePercent = 20;
@@ -143,6 +144,7 @@ contract iZiSwapPool is IiZiSwapPool {
         swapModuleX2Y = IiZiSwapFactory(_factory).swapX2YModule();
         swapModuleY2X = IiZiSwapFactory(_factory).swapY2XModule();
         mintModule = IiZiSwapFactory(_factory).mintModule();
+        limitOrderModule = IiZiSwapFactory(_factory).limitOrderModule();
 
         console.log("swapX2Y: ", swapModuleX2Y);
         console.log("swapY2X: ", swapModuleY2X);
@@ -178,13 +180,15 @@ contract iZiSwapPool is IiZiSwapPool {
         int24 point,
         uint256 assignY
     ) external override noDelegateCall lock returns (uint256 actualAssignY) {
-        actualAssignY = assignY;
-        UserEarn.Data storage ue = userEarnY.get(msg.sender, point);
-        if (actualAssignY > ue.earn) {
-            actualAssignY = ue.earn;
+        
+        (bool success, bytes memory d) = limitOrderModule.delegatecall(
+            abi.encodeWithSignature("assignLimOrderEarnY(int24,uint256)", point, assignY)
+        );
+        if (success) {
+            actualAssignY = abi.decode(d, (uint256));
+        } else {
+            revertDCData(d);
         }
-        ue.earn -= actualAssignY;
-        ue.earnAssign += actualAssignY;
     }
 
     /// @notice mark a given amount of tokenX in a limitorder(selly and earn x) as assigned
@@ -195,13 +199,15 @@ contract iZiSwapPool is IiZiSwapPool {
         int24 point,
         uint256 assignX
     ) external override noDelegateCall lock returns (uint256 actualAssignX) {
-        actualAssignX = assignX;
-        UserEarn.Data storage ue = userEarnX.get(msg.sender, point);
-        if (actualAssignX > ue.earn) {
-            actualAssignX = ue.earn;
+        
+        (bool success, bytes memory d) = limitOrderModule.delegatecall(
+            abi.encodeWithSignature("assignLimOrderEarnX(int24,uint256)", point, assignX)
+        );
+        if (success) {
+            actualAssignX = abi.decode(d, (uint256));
+        } else {
+            revertDCData(d);
         }
-        ue.earn -= actualAssignX;
-        ue.earnAssign += actualAssignX;
     }
 
     /// @notice decrease limitorder of selling X
@@ -213,23 +219,16 @@ contract iZiSwapPool is IiZiSwapPool {
         uint128 deltaX
     ) external override noDelegateCall lock returns (uint128 actualDeltaX) {
         
-        require(point % pointDelta == 0, "PD");
-
-        UserEarn.Data storage ue = userEarnY.get(msg.sender, point);
-        LimitOrder.Data storage pointOrder = limitOrderData[point];
-        uint160 sqrtPrice_96 = LogPowMath.getSqrtPrice(point);
-        (actualDeltaX, pointOrder.earnY) = ue.dec(deltaX, pointOrder.accEarnY, sqrtPrice_96, pointOrder.earnY, true);
-        pointOrder.sellingX -= actualDeltaX;
-        
-        if (actualDeltaX > 0 && pointOrder.sellingX == 0) {
-            int24 newVal = orderOrEndpoint.getOrderOrEndptVal(point, pointDelta) & 1;
-            orderOrEndpoint.setOrderOrEndptVal(point, pointDelta, newVal);
-            if (newVal == 0) {
-                pointBitmap.setZero(point, pointDelta);
-            }
+        (bool success, bytes memory d) = limitOrderModule.delegatecall(
+            abi.encodeWithSignature("decLimOrderWithX(int24,uint128)", point, deltaX)
+        );
+        if (success) {
+            actualDeltaX = abi.decode(d, (uint128));
+            emit DecLimitOrder(actualDeltaX, point, true);
+        } else {
+            revertDCData(d);
         }
 
-        emit DecLimitOrder(actualDeltaX, point, true);
     }
 
     /// @notice decrease limitorder of selling Y
@@ -241,24 +240,16 @@ contract iZiSwapPool is IiZiSwapPool {
         uint128 deltaY
     ) external override noDelegateCall lock returns (uint128 actualDeltaY) {
         
-        require(point % pointDelta == 0, "PD");
-
-        UserEarn.Data storage ue = userEarnX.get(msg.sender, point);
-        LimitOrder.Data storage pointOrder = limitOrderData[point];
-        uint160 sqrtPrice_96 = LogPowMath.getSqrtPrice(point);
-        (actualDeltaY, pointOrder.earnX) = ue.dec(deltaY, pointOrder.accEarnX, sqrtPrice_96, pointOrder.earnX, false);
-
-        pointOrder.sellingY -= actualDeltaY;
-        
-        if (actualDeltaY > 0 && pointOrder.sellingY == 0) {
-            int24 newVal = orderOrEndpoint.getOrderOrEndptVal(point, pointDelta) & 1;
-            orderOrEndpoint.setOrderOrEndptVal(point, pointDelta, newVal);
-            if (newVal == 0) {
-                pointBitmap.setZero(point, pointDelta);
-            }
+        (bool success, bytes memory d) = limitOrderModule.delegatecall(
+            abi.encodeWithSignature("decLimOrderWithY(int24,uint128)", point, deltaY)
+        );
+        if (success) {
+            actualDeltaY = abi.decode(d, (uint128));
+            emit DecLimitOrder(actualDeltaY, point, false);
+        } else {
+            revertDCData(d);
         }
         
-        emit DecLimitOrder(actualDeltaY, point, false);
     }
 
     /// @notice add a limit order (selling x) in the pool
@@ -275,66 +266,16 @@ contract iZiSwapPool is IiZiSwapPool {
         bytes calldata data
     ) external override noDelegateCall lock returns (uint128 orderX, uint256 acquireY) {
         
-        require(point % pointDelta == 0, "PD");
-        require(point >= state.currentPoint, "PG");
-        require(point <= rightMostPt, "HO");
-        require(amountX > 0, "XP");
-
-        
-        // update point order
-        LimitOrder.Data storage pointOrder = limitOrderData[point];
-
-        orderX = amountX;
-        acquireY = 0;
-        uint160 sqrtPrice_96 = LogPowMath.getSqrtPrice(point);
-        
-        uint256 currY = pointOrder.sellingY;
-        uint256 currX = pointOrder.sellingX;
-        if (currY > 0) {
-            uint128 costX;
-            (costX, acquireY) = SwapMathX2Y.x2YAtPrice(amountX, sqrtPrice_96, currY);
-            orderX -= costX;
-            currY -= acquireY;
-            pointOrder.accEarnX = pointOrder.accEarnX + costX;
-            pointOrder.earnX = pointOrder.earnX + costX;
-            pointOrder.sellingY = currY;
-        }
-        if (orderX > 0) {
-            currX += orderX;
-            pointOrder.sellingX = currX;
-        }
-
-        UserEarn.Data storage ue = userEarnY.get(recipient, point);
-        pointOrder.earnY = ue.add(orderX, pointOrder.accEarnY, sqrtPrice_96, pointOrder.earnY, true);
-        ue.earnAssign = ue.earnAssign + acquireY;
-        
-        // update statusval and bitmap
-        if (currX == 0 && currY == 0) {
-            int24 val = orderOrEndpoint.getOrderOrEndptVal(point, pointDelta);
-            if (val & 2 != 0) {
-                int24 newVal = val & 1;
-                orderOrEndpoint.setOrderOrEndptVal(point, pointDelta, newVal);
-                if (newVal == 0) {
-                    pointBitmap.setZero(point, pointDelta);
-                }
-            }
+        (bool success, bytes memory d) = limitOrderModule.delegatecall(
+            abi.encodeWithSignature("addLimOrderWithX(address,int24,uint128,bytes)", recipient, point, amountX, data)
+        );
+        if (success) {
+            (orderX, acquireY) = abi.decode(d, (uint128, uint256));
+            emit AddLimitOrder(orderX, point, true);
         } else {
-            int24 val = orderOrEndpoint.getOrderOrEndptVal(point, pointDelta);
-            if (val & 2 == 0) {
-                int24 newVal = val | 2;
-                orderOrEndpoint.setOrderOrEndptVal(point, pointDelta, newVal);
-                if (val == 0) {
-                    pointBitmap.setOne(point, pointDelta);
-                }
-            }
+            revertDCData(d);
         }
-
-        // trader pay x
-        uint256 bx = balanceX();
-        IiZiSwapAddLimOrderCallback(msg.sender).payCallback(amountX, 0, data);
-        require(balanceX() >= bx + amountX, "XE");
         
-        emit AddLimitOrder(orderX, point, true);
     }
     
     /// @notice add a limit order (selling y) in the pool
@@ -351,63 +292,16 @@ contract iZiSwapPool is IiZiSwapPool {
         bytes calldata data
     ) external override noDelegateCall lock returns (uint128 orderY, uint256 acquireX) {
         
-        require(point % pointDelta == 0, "PD");
-        require(point <= state.currentPoint, "PL");
-        require(point >= leftMostPt, "LO");
-        require(amountY > 0, "YP");
-
-        // update point order
-        LimitOrder.Data storage pointOrder = limitOrderData[point];
-
-        orderY = amountY;
-        acquireX = 0;
-        uint160 sqrtPrice_96 = LogPowMath.getSqrtPrice(point);
-        uint256 currY = pointOrder.sellingY;
-        uint256 currX = pointOrder.sellingX;
-        if (currX > 0) {
-            uint128 costY;
-            (costY, acquireX) = SwapMathY2X.y2XAtPrice(amountY, sqrtPrice_96, currX);
-            orderY -= costY;
-            currX -= acquireX;
-            pointOrder.accEarnY = pointOrder.accEarnY + costY;
-            pointOrder.earnY = pointOrder.earnY + costY;
-            pointOrder.sellingX = currX;
-        }
-        if (orderY > 0) {
-            currY += orderY;
-            pointOrder.sellingY = currY;
-        }
-        UserEarn.Data storage ue = userEarnX.get(recipient, point);
-        pointOrder.earnX = ue.add(orderY, pointOrder.accEarnX, sqrtPrice_96, pointOrder.earnX, false);
-        ue.earnAssign = ue.earnAssign + acquireX;
-
-        // update statusval and bitmap
-        if (currX == 0 && currY == 0) {
-            int24 val = orderOrEndpoint.getOrderOrEndptVal(point, pointDelta);
-            if (val & 2 != 0) {
-                int24 newVal = val & 1;
-                orderOrEndpoint.setOrderOrEndptVal(point, pointDelta, newVal);
-                if (newVal == 0) {
-                    pointBitmap.setZero(point, pointDelta);
-                }
-            }
+        (bool success, bytes memory d) = limitOrderModule.delegatecall(
+            abi.encodeWithSignature("addLimOrderWithY(address,int24,uint128,bytes)", recipient, point, amountY, data)
+        );
+        if (success) {
+            (orderY, acquireX) = abi.decode(d, (uint128, uint256));
+            emit AddLimitOrder(orderY, point, false);
         } else {
-            int24 val = orderOrEndpoint.getOrderOrEndptVal(point, pointDelta);
-            if (val & 2 == 0) {
-                int24 newVal = val | 2;
-                orderOrEndpoint.setOrderOrEndptVal(point, pointDelta, newVal);
-                if (val == 0) {
-                    pointBitmap.setOne(point, pointDelta);
-                }
-            }
+            revertDCData(d);
         }
-
-        // trader pay y
-        uint256 by = balanceY();
-        IiZiSwapAddLimOrderCallback(msg.sender).payCallback(0, amountY, data);
-        require(balanceY() >= by + amountY, "YE");
         
-        emit AddLimitOrder(orderY, point, false);
     }
 
     /// @notice collect earned or decreased token from limit order
@@ -421,23 +315,13 @@ contract iZiSwapPool is IiZiSwapPool {
     function collectLimOrder(
         address recipient, int24 point, uint256 collectDec, uint256 collectEarn, bool isEarnY
     ) external override noDelegateCall lock returns(uint256 actualCollectDec, uint256 actualCollectEarn) {
-        UserEarn.Data storage ue = isEarnY? userEarnY.get(msg.sender, point) : userEarnX.get(msg.sender, point);
-        actualCollectDec = collectDec;
-        if (actualCollectDec > ue.sellingDec) {
-            actualCollectDec = ue.sellingDec;
-        }
-        ue.sellingDec = ue.sellingDec - actualCollectDec;
-        actualCollectEarn = collectEarn;
-        if (actualCollectEarn > ue.earnAssign) {
-            actualCollectEarn = ue.earnAssign;
-        }
-        ue.earnAssign = ue.earnAssign - actualCollectEarn;
-        (uint256 x, uint256 y) = isEarnY? (actualCollectDec, actualCollectEarn): (actualCollectEarn, actualCollectDec);
-        if (x > 0) {
-            TokenTransfer.transferToken(tokenX, recipient, x);
-        }
-        if (y > 0) {
-            TokenTransfer.transferToken(tokenY, recipient, y);
+        (bool success, bytes memory d) = limitOrderModule.delegatecall(
+            abi.encodeWithSignature("collectLimOrder(address,int24,uint256,uint256,bool)", recipient, point, collectDec, collectEarn, isEarnY)
+        );
+        if (success) {
+            (actualCollectDec, actualCollectEarn) = abi.decode(d, (uint256, uint256));
+        } else {
+            revertDCData(d);
         }
     }
     
