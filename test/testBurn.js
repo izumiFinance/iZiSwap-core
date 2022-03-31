@@ -208,18 +208,7 @@ async function addLimOrderWithX(tokenX, tokenY, seller, testAddLimOrder, amountX
         tokenX.address, tokenY.address, 3000, point, amountX
     );
 }
-async function getPoolParts() {
-  const iZiSwapPoolPartFactory = await ethers.getContractFactory("SwapX2YModule");
-  const iZiSwapPoolPart = await iZiSwapPoolPartFactory.deploy();
-  await iZiSwapPoolPart.deployed();
-  const iZiSwapPoolPartDesireFactory = await ethers.getContractFactory("SwapY2XModule");
-  const iZiSwapPoolPartDesire = await iZiSwapPoolPartDesireFactory.deploy();
-  await iZiSwapPoolPartDesire.deployed();
-  const MintModuleFactory = await ethers.getContractFactory('MintModule');
-  const mintModule = await MintModuleFactory.deploy();
-  await mintModule.deployed();
-  return [iZiSwapPoolPart.address, iZiSwapPoolPartDesire.address, mintModule.address];
-}
+
 function getFee(amount) {
     const originFee = ceil(amount.times(3).div(997));
     const charged = floor(originFee.times(20).div(100));
@@ -286,15 +275,39 @@ function getWithDraw(pc, currX, currY, pl, pr, liquidity, rate) {
     }
     return [amountX, amountY, xc, yc];
 }
+
+async function getPoolParts() {
+    const SwapX2YModuleFactory = await ethers.getContractFactory("SwapX2YModule");
+    const swapX2YModule = await SwapX2YModuleFactory.deploy();
+    await swapX2YModule.deployed();
+    
+    const SwapY2XModuleFactory = await ethers.getContractFactory("SwapY2XModule");
+    const swapY2XModule = await SwapY2XModuleFactory.deploy();
+    await swapY2XModule.deployed();
+  
+    const MintModuleFactory = await ethers.getContractFactory('MintModule');
+    const mintModule = await MintModuleFactory.deploy();
+    await mintModule.deployed();
+  
+    const LimitOrderModuleFactory = await ethers.getContractFactory('LimitOrderModule');
+    const limitOrderModule = await LimitOrderModuleFactory.deploy();
+    await limitOrderModule.deployed();
+    return {
+      swapX2YModule: swapX2YModule.address,
+      swapY2XModule: swapY2XModule.address,
+      mintModule: mintModule.address,
+      limitOrderModule: limitOrderModule.address,
+    };
+  }
 describe("swap", function () {
   it("swap with limorder x2y desireY range complex", async function () {
     const [signer, miner1, miner2, miner3, seller0, seller1, trader, trader2, trader3, receiver] = await ethers.getSigners();
 
-    [poolPart, poolPartDesire, mintModule] = await getPoolParts();
+    const {swapX2YModule, swapY2XModule, mintModule, limitOrderModule} = await getPoolParts();
     // deploy a factory
     const iZiSwapFactory = await ethers.getContractFactory("iZiSwapFactory");
 
-    const factory = await iZiSwapFactory.deploy(receiver.address, poolPart, poolPartDesire, mintModule);
+    const factory = await iZiSwapFactory.deploy(receiver.address, swapX2YModule, swapY2XModule, mintModule, limitOrderModule);
     await factory.deployed();
 
     [tokenX, tokenY] = await getToken();
@@ -317,8 +330,6 @@ describe("swap", function () {
     await testMint.deployed();
     getPoolAddr = await testMint.pool(txAddr, tyAddr, 3000);
     expect(getPoolAddr).to.equal(poolAddr);
-
-    
 
     await addLiquidity(testMint, miner1, tokenX, tokenY, 3000, 4850, 5000, 10000);
     await addLiquidity(testMint, miner2, tokenX, tokenY, 3000, 5050, 5150, 20000);
@@ -344,6 +355,7 @@ describe("swap", function () {
 
     await testSwap.connect(trader).swapX2YDesireY(
         tokenX.address, tokenY.address, 3000, acquireY_5100.toFixed(0), 5100);
+
     expect(costX_5100_WithFee.plus(blockNum2BigNumber(await tokenX.balanceOf(trader.address))).toFixed(0)).to.equal("10000000000");
 
     expect(acquireY_5100.toFixed(0)).to.equal(blockNum2BigNumber(await tokenY.balanceOf(trader.address)).toFixed(0));
@@ -388,6 +400,7 @@ describe("swap", function () {
     const testAddLimOrderFactory = await ethers.getContractFactory("TestAddLimOrder");
     const testAddLimOrder = await testAddLimOrderFactory.deploy(factory.address);
     await testAddLimOrder.deployed();
+
     await addLimOrderWithX(tokenX, tokenY, seller0, testAddLimOrder, 100000000, 5150);
     await addLimOrderWithX(tokenX, tokenY, seller0, testAddLimOrder, 200000000, 5100);
     await addLimOrderWithY(tokenX, tokenY, seller1, testAddLimOrder, 300000000, 5050);

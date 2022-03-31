@@ -130,16 +130,27 @@ async function checkUserEarn(
     expect(eEarnAssign.toFixed(0)).to.equal(earnAssign.toFixed(0));
 }
 async function getPoolParts() {
-    const iZiSwapPoolPartFactory = await ethers.getContractFactory("SwapX2YModule");
-    const iZiSwapPoolPart = await iZiSwapPoolPartFactory.deploy();
-    await iZiSwapPoolPart.deployed();
-    const iZiSwapPoolPartDesireFactory = await ethers.getContractFactory("SwapY2XModule");
-    const iZiSwapPoolPartDesire = await iZiSwapPoolPartDesireFactory.deploy();
-    await iZiSwapPoolPartDesire.deployed();
+    const SwapX2YModuleFactory = await ethers.getContractFactory("SwapX2YModule");
+    const swapX2YModule = await SwapX2YModuleFactory.deploy();
+    await swapX2YModule.deployed();
+    
+    const SwapY2XModuleFactory = await ethers.getContractFactory("SwapY2XModule");
+    const swapY2XModule = await SwapY2XModuleFactory.deploy();
+    await swapY2XModule.deployed();
+  
     const MintModuleFactory = await ethers.getContractFactory('MintModule');
     const mintModule = await MintModuleFactory.deploy();
     await mintModule.deployed();
-    return [iZiSwapPoolPart.address, iZiSwapPoolPartDesire.address, mintModule.address];
+  
+    const LimitOrderModuleFactory = await ethers.getContractFactory('LimitOrderModule');
+    const limitOrderModule = await LimitOrderModuleFactory.deploy();
+    await limitOrderModule.deployed();
+    return {
+      swapX2YModule: swapX2YModule.address,
+      swapY2XModule: swapY2XModule.address,
+      mintModule: mintModule.address,
+      limitOrderModule: limitOrderModule.address,
+    };
   }
 async function getLimOrder(poolAddr, pt) {
     const iZiSwapPool = await ethers.getContractFactory("iZiSwapPool");
@@ -177,10 +188,10 @@ describe("LimOrder SellX earn", function () {
     var testSwap;
     beforeEach(async function() {
         [signer, seller1, seller2, seller3, trader, receiver] = await ethers.getSigners();
-        [poolPart, poolPartDesire, mintModule] = await getPoolParts();
+        const {swapX2YModule, swapY2XModule, mintModule, limitOrderModule} = await getPoolParts();
         // deploy a factory
         const iZiSwapFactory = await ethers.getContractFactory("iZiSwapFactory");
-        factory = await iZiSwapFactory.deploy(receiver.address, poolPart, poolPartDesire, mintModule);
+        const factory = await iZiSwapFactory.deploy(receiver.address, swapX2YModule, swapY2XModule, mintModule, limitOrderModule);
         await factory.deployed();
         console.log("factory addr: " + factory.address);
         [tokenX, tokenY] = await getToken();
