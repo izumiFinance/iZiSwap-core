@@ -338,7 +338,7 @@ describe("swap", function () {
         amountAddFee(costX_5000_5050)).plus(
         amountAddFee(costX_4950_5000)).plus(
         amountAddFee(costX_4900_4950)).plus(
-        amountAddFee(costX_4870_4900.plus(costX_4869_Remain))).plus(costX_5050_Lim).plus(costX_4950_Lim);
+        amountAddFee(costX_4870_4900.plus(costX_4869_Remain))).plus(amountAddFee(costX_5050_Lim)).plus(amountAddFee(costX_4950_Lim));
 
     await tokenX.transfer(trader2.address, 10000000000);
     await tokenX.connect(trader2).approve(testSwap.address, costXRangeWithFee.times(2).toFixed(0));

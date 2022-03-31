@@ -308,8 +308,8 @@ describe("swap", function () {
         amountAddFee(costY_5050_5100)).plus(
         amountAddFee(costY_5100_5125)).plus(
         amountAddFee(costY_5125_part)).plus(
-        costY_5050_Lim).plus(
-        costY_5100_Lim);
+        amountAddFee(costY_5050_Lim)).plus(
+        amountAddFee(costY_5100_Lim));
     acquireX_5002_Remain = currX.plus("0");
     acquireX_5003_5050 = xInRange(BigNumber("30000"), 5003, 5050, rate, false);
     acquireX_5050_5100 = xInRange(BigNumber("50000"), 5050, 5100, rate, false);

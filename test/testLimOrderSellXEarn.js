@@ -120,6 +120,11 @@ async function getPoolParts() {
   await mintModule.deployed();
   return [iZiSwapPoolPart.address, iZiSwapPoolPartDesire.address, mintModule.address];
 }
+
+function amountAddFee(amount) {
+    return ceil(amount.times(1000).div(997));
+}
+
 describe("LimOrder SellX earn", function () {
     var signer, seller1, seller2, seller3, trader;
     var factory;
@@ -166,8 +171,9 @@ describe("LimOrder SellX earn", function () {
 
         acquireXExpect = sellX1.plus(sellX2.div(3));
         costY = getCostY(5050, rate, acquireXExpect);
+        let costYWithFee = amountAddFee(costY);
         acquireXExpect = getAcquireX(5050, rate, costY);
-        await testSwap.connect(trader).swapY2X(tokenX.address, tokenY.address, 3000, costY.toFixed(0), 5051);
+        await testSwap.connect(trader).swapY2X(tokenX.address, tokenY.address, 3000, costYWithFee.toFixed(0), 5051);
 
         await decLimOrderWithX(poolAddr, seller1, 5050, "500000000");
         seller1EarnPhase1 = getAcquireY(5050, rate, sellX1);
@@ -233,8 +239,9 @@ describe("LimOrder SellX earn", function () {
         // trade of phase 2
         acquireXExpect = sellX2.plus(sellX1.div(3));
         costY = getCostY(5050, rate, acquireXExpect);
+        costYWithFee = amountAddFee(costY);
         acquireXExpect = getAcquireX(5050, rate, costY);
-        await testSwap.connect(trader).swapY2X(tokenX.address, tokenY.address, 3000, costY.toFixed(0), 5051);
+        await testSwap.connect(trader).swapY2X(tokenX.address, tokenY.address, 3000, costYWithFee.toFixed(0), 5051);
         // seller2 claim first
         await decLimOrderWithX(poolAddr, seller2, 5050, "500000");
         await checkUserEarn(
@@ -279,8 +286,9 @@ describe("LimOrder SellX earn", function () {
 
         acquireXExpect = sellX1.plus(sellX2.div(3));
         costY = getCostY(5050, rate, acquireXExpect);
+        const costYWithFee = amountAddFee(costY);
         acquireXExpect = getAcquireX(5050, rate, costY);
-        await testSwap.connect(trader).swapY2X(tokenX.address, tokenY.address, 3000, costY.toFixed(0), 5051);
+        await testSwap.connect(trader).swapY2X(tokenX.address, tokenY.address, 3000, costYWithFee.toFixed(0), 5051);
 
         sellX3 = BigNumber("2000000000");
         await addLimOrderWithX(tokenX, tokenY, seller3, testAddLimOrder, sellX3.toFixed(0), 5050);
@@ -289,7 +297,8 @@ describe("LimOrder SellX earn", function () {
         costY3 = BigNumber("10000");
         acquireXExpect3 = getAcquireX(5050, rate, costY3);
         costY3 = getCostY(5050, rate, acquireXExpect3);
-        await testSwap.connect(trader).swapY2X(tokenX.address, tokenY.address, 3000, costY3.toFixed(0), 5051);
+        const costY3WithFee = amountAddFee(costY3);
+        await testSwap.connect(trader).swapY2X(tokenX.address, tokenY.address, 3000, costY3WithFee.toFixed(0), 5051);
         await decLimOrderWithX(poolAddr, seller3, 5050, "20000");
         await checkUserEarn(
             costY.plus(costY3),

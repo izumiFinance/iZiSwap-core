@@ -321,8 +321,8 @@ describe("swap", function () {
         amountAddFee(costY_5050_5100)).plus(
         amountAddFee(costY_5100_5125)).plus(
         amountAddFee(costY_5125_part)).plus(
-        costY_5050_Lim).plus(
-        costY_5100_Lim);
+        amountAddFee(costY_5050_Lim)).plus(
+        amountAddFee(costY_5100_Lim));
     
     feeScaleY_5001_Remain_5002_5050 = getFee(costY_5001_Remain.plus(costY_5002_5050)).div(BigNumber("30000"));
     feeScaleY_5050_5100 = getFee(costY_5050_5100).div(BigNumber("50000"));

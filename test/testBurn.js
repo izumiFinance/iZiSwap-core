@@ -412,7 +412,7 @@ describe("swap", function () {
         amountAddFee(costX_5000_5050)).plus(
         amountAddFee(costX_4950_5000)).plus(
         amountAddFee(costX_4900_4950)).plus(
-        amountAddFee(costX_4870_4900.plus(costX_4869_Remain))).plus(costX_5050_Lim).plus(costX_4950_Lim);
+        amountAddFee(costX_4870_4900.plus(costX_4869_Remain))).plus(amountAddFee(costX_5050_Lim)).plus(amountAddFee(costX_4950_Lim));
 
     await tokenX.transfer(trader2.address, 10000000000);
     await tokenX.connect(trader2).approve(testSwap.address, costXRangeWithFee.times(2).toFixed(0));
@@ -559,8 +559,9 @@ describe("swap", function () {
     acquireX_5100_Lim = BigNumber("50000000");
     costY_5100_Lim = ceil(acquireX_5100_Lim.times(rate.pow(5100)));
     [acquireX_5100_Lim, costY_5100_Lim] = y2XAt(5100, rate, costY_5100_Lim);
+    const costY_5100_Lim_WithFee = amountAddFee(costY_5100_Lim);
 
-    costYRange = costY_4869_WithFee.plus(costY_4870_5000_WithFee).plus(costY_5050_5100_WithFee).plus(costY_5100_Lim);
+    costYRange = costY_4869_WithFee.plus(costY_4870_5000_WithFee).plus(costY_5050_5100_WithFee).plus(costY_5100_Lim_WithFee);
     acquireXRange = acquireX_4869.plus(acquireX_4870_5000).plus(acquireX_5050_5100).plus(acquireX_5100_Lim);
 
     await tokenY.transfer(trader3.address, 10000000000);
