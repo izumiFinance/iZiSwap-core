@@ -52,6 +52,23 @@ interface IiZiSwapPool {
         uint256 amountY
     );
 
+
+    /// @notice Emitted by the pool for any flashes of tokenX/tokenY
+    /// @param sender The address that initiated the swap call, and that received the callback
+    /// @param recipient The address that received the tokens from flash
+    /// @param amountX The amount of tokenX that was flashed
+    /// @param amountY The amount of tokenY that was flashed
+    /// @param paidX The amount of tokenX paid for the flash, which can exceed the amountX plus the fee
+    /// @param paidY The amount of tokenY paid for the flash, which can exceed the amountY plus the fee
+    event Flash(
+        address indexed sender,
+        address indexed recipient,
+        uint256 amountX,
+        uint256 amountY,
+        uint256 paidX,
+        uint256 paidY
+    );
+
     /// @notice Emitted when a seller successfully add a limit order
     /// @param amount amount of token to sell the seller added
     /// @param point point of limit order
@@ -408,6 +425,21 @@ interface IiZiSwapPool {
     /// @notice expand max-length of observation queue
     /// @param newNextQueueLen new value of observationNextQueueLen, which should be greater than current observationNextQueueLen
     function expandObservationQueue(uint16 newNextQueueLen) external;
+
+    /// @notice Receive tokenX and/or tokenY and pay it back, plus a fee, in the callback
+    /// @dev The caller of this method receives a callback in the form of IiZiSwapPool#flashCallback
+    /// @dev Can be used to donate underlying tokens pro-rata to currently in-range liquidity providers by calling
+    /// with 0 amount{0,1} and sending the donation amount(s) from the callback
+    /// @param recipient The address which will receive the token0 and token1 amounts
+    /// @param amountX The amount of tokenX to borrow
+    /// @param amountY The amount of tokenY to borrow
+    /// @param data Any data to be passed through to the callback
+    function flash(
+        address recipient,
+        uint256 amountX,
+        uint256 amountY,
+        bytes calldata data
+    ) external;
 
     /// @notice return a snapshot infomation of Liquidity in [leftPoint, rightPoint)
     /// @param leftPoint left endpoint of range, should be times of pointDelta

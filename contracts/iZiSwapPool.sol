@@ -3,6 +3,7 @@ pragma solidity ^0.8.4;
 
 import './interfaces/IiZiSwapPool.sol';
 import './interfaces/IiZiSwapFactory.sol';
+import './interfaces/IiZiSwapFlashCallback.sol';
 import './libraries/Liquidity.sol';
 import './libraries/Point.sol';
 import './libraries/PointBitmap.sol';
@@ -708,5 +709,48 @@ contract iZiSwapPool is IiZiSwapPool {
         TokenTransfer.transferToken(tokenY, msg.sender, totalFeeYCharged);
         totalFeeXCharged = 0;
         totalFeeYCharged = 0;
+    }
+
+
+    function flash(
+        address recipient,
+        uint256 amountX,
+        uint256 amountY,
+        bytes calldata data
+    ) external override lock noDelegateCall {
+        uint128 currentLiquidity = state.liquidity;
+        require(currentLiquidity > 0, 'L');
+
+        uint256 feeX = MulDivMath.mulDivCeil(amountX, fee, 1e6);
+        uint256 feeY = MulDivMath.mulDivCeil(amountY, fee, 1e6);
+        uint256 balanceXBefore = balanceX();
+        uint256 balanceYBefore = balanceY();
+
+        if (amountX > 0) TokenTransfer.transferToken(tokenX, recipient, amountX);
+        if (amountY > 0) TokenTransfer.transferToken(tokenY, recipient, amountY);
+
+        IiZiSwapFlashCallback(msg.sender).flashCallback(feeX, feeY, data);
+        uint256 balanceXAfter = balanceX();
+        uint256 balanceYAfter = balanceY();
+
+        require(balanceXBefore + feeX <= balanceXAfter, 'FX');
+        require(balanceXBefore + feeY <= balanceYAfter, 'FY');
+
+        // sub is safe because we know balanceAfter is gt balanceBefore by at least fee
+        uint256 paidX = balanceXAfter - balanceXBefore;
+        uint256 paidY = balanceYAfter - balanceYBefore;
+
+        if (paidX > 0) {
+            uint256 chargedFeeAmount = paidX * feeChargePercent / 100;
+            totalFeeXCharged += chargedFeeAmount;
+            feeScaleX_128 = feeScaleX_128 + MulDivMath.mulDivFloor(paidX - chargedFeeAmount, TwoPower.Pow128, currentLiquidity);
+        }
+        if (paidY > 0) {
+            uint256 chargedFeeAmount = paidY * feeChargePercent / 100;
+            totalFeeYCharged += chargedFeeAmount;
+            feeScaleY_128 = feeScaleY_128 + MulDivMath.mulDivFloor(paidY - chargedFeeAmount, TwoPower.Pow128, currentLiquidity);
+        }
+
+        emit Flash(msg.sender, recipient, amountX, amountY, paidX, paidY);
     }
 }
