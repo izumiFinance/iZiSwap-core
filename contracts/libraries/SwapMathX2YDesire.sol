@@ -156,9 +156,11 @@ library SwapMathX2YDesire {
             }
         } else if (currentHasY) { // all y
             currentState.currentPoint = currentState.currentPoint + 1;
+            // sqrt(price) + sqrt(price) * (1.0001 - 1) = 
+            // sqrt(price) * 1.0001
             currentState.sqrtPrice_96 = uint160(
-                currentState.sqrtPrice_96 +
-                currentState.sqrtPrice_96 * (sqrtRate_96 - TwoPower.Pow96) / TwoPower.Pow96
+                uint256(currentState.sqrtPrice_96) +
+                uint256(currentState.sqrtPrice_96) * (uint256(sqrtRate_96) - TwoPower.Pow96) / TwoPower.Pow96
             );
         } else {
             retState.liquidityX = currentState.liquidityX;
@@ -191,7 +193,7 @@ library SwapMathX2YDesire {
             } else {
                 // locPt > leftPt
                 ret.locPt = ret.locPt - 1;
-                ret.sqrtLoc_96 = uint160(ret.sqrtLoc_96 * TwoPower.Pow96 / sqrtRate_96);
+                ret.sqrtLoc_96 = uint160(uint256(ret.sqrtLoc_96) * TwoPower.Pow96 / uint256(sqrtRate_96));
                 uint256 locCostX;
                 uint128 locAcquireY;
                 // trade at locPt
