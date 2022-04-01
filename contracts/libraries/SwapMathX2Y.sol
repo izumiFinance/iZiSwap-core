@@ -170,7 +170,10 @@ library SwapMathX2Y {
             }
         } else if (currentHasY) { // all y
             currentState.currentPoint = currentState.currentPoint + 1;
-            currentState.sqrtPrice_96 = uint160(MulDivMath.mulDivFloor(currentState.sqrtPrice_96, sqrtRate_96, TwoPower.Pow96));
+            currentState.sqrtPrice_96 = uint160(
+                currentState.sqrtPrice_96 +
+                currentState.sqrtPrice_96 * (sqrtRate_96 - TwoPower.Pow96) / TwoPower.Pow96
+            );
         } else {
             retState.liquidityX = currentState.liquidityX;
         }
