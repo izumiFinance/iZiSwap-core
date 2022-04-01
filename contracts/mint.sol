@@ -424,13 +424,13 @@ contract MintModule {
         );
         // update state
         if (yc > 0) {
-            if (!currentState.allX) {
-                state.currY = currentState.currY + yc;
-            } else {
-                state.allX = false;
-                state.currX = MulDivMath.mulDivFloor(currentState.liquidity, TwoPower.Pow96, currentState.sqrtPrice_96);
-                state.currY = yc;
-            }
+            // if (!currentState.allX) {
+            //     state.currY = currentState.currY + yc;
+            // } else {
+            //     state.allX = false;
+            //     state.currX = MulDivMath.mulDivFloor(currentState.liquidity, TwoPower.Pow96, currentState.sqrtPrice_96);
+            //     state.currY = yc;
+            // }
             state.liquidity = currentState.liquidity + liquidDelta;
         }
         uint256 bx;

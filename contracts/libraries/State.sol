@@ -6,14 +6,18 @@ struct State {
         uint160 sqrtPrice_96;
         // The current point of the pool, 1.0001 ^ currentPoint = price
         int24 currentPoint;
-        // amount of tokenX (from liquidity) on the currentPoint, this value is meaningless if allX is true
-        uint256 currX;
-        // amount of tokenY (from liquidity) on the currentPoint, this value is meaningless if allX is true
-        uint256 currY;
-        // liquidity on the currentPoint (currX * sqrtPrice + currY / sqrtPrice)
+
+        // // amount of tokenX (from liquidity) on the currentPoint, this value is meaningless if allX is true
+        // uint256 currX;
+        // // amount of tokenY (from liquidity) on the currentPoint, this value is meaningless if allX is true
+        // uint256 currY;
+
+        // total liquidity on the currentPoint (currX * sqrtPrice + currY / sqrtPrice)
         uint128 liquidity;
-        // whether there is no tokenY on the currentPoint
-        bool allX;
+        // liquidity of tokenX
+        // liquidity of tokenY is liquidity - liquidityX
+        uint128 liquidityX;
+
         // The index of the last oracle observation that was written,
         uint16 observationCurrentIndex;
         // The current maximum number of observations stored in the pool,

@@ -237,9 +237,7 @@ contract SwapX2YModule {
                         amount -= (retState.costX + feeAmount);
                         st.currentPoint = retState.finalPt;
                         st.sqrtPrice_96 = retState.sqrtFinalPrice_96;
-                        st.allX = retState.finalAllX;
-                        st.currX = retState.finalCurrX;
-                        st.currY = retState.finalCurrY;
+                        st.liquidityX = retState.liquidityX;
                     }
                     if (!cache.finished) {
                         Point.Data storage pointdata = points[st.currentPoint];
@@ -247,9 +245,7 @@ contract SwapX2YModule {
                         st.liquidity = liquidityAddDelta(st.liquidity, - pointdata.liquidDelta);
                         st.currentPoint = st.currentPoint - 1;
                         st.sqrtPrice_96 = LogPowMath.getSqrtPrice(st.currentPoint);
-                        st.allX = false;
-                        st.currX = 0;
-                        st.currY = MulDivMath.mulDivFloor(st.liquidity, st.sqrtPrice_96, TwoPower.Pow96);
+                        st.liquidityX = 0;
                     }
                 } else {
                     cache.finished = true;
@@ -270,7 +266,7 @@ contract SwapX2YModule {
                 // no liquidity in the range [nextPt, st.currentPoint]
                 st.currentPoint = nextPt;
                 st.sqrtPrice_96 = LogPowMath.getSqrtPrice(st.currentPoint);
-                st.allX = true;
+                // st.liquidityX must be 0
                 cache.currentOrderOrEndpt = nextVal;
             } else {
                 // amount > 0
@@ -300,9 +296,7 @@ contract SwapX2YModule {
                     cache.currFeeScaleX_128 = cache.currFeeScaleX_128 + MulDivMath.mulDivFloor(feeAmount - chargedFeeAmount, TwoPower.Pow128, st.liquidity);
                     st.currentPoint = retState.finalPt;
                     st.sqrtPrice_96 = retState.sqrtFinalPrice_96;
-                    st.allX = retState.finalAllX;
-                    st.currX = retState.finalCurrX;
-                    st.currY = retState.finalCurrY;
+                    st.liquidityX = retState.liquidityX;
                 } else {
                     cache.finished = true;
                 }
@@ -425,12 +419,10 @@ contract SwapX2YModule {
                     cache.currFeeScaleX_128 = cache.currFeeScaleX_128 + MulDivMath.mulDivFloor(feeAmount - chargedFeeAmount, TwoPower.Pow128, st.liquidity);
                     amountX += (retState.costX + feeAmount);
                     amountY += retState.acquireY;
-                    desireY = (desireY <= retState.acquireY) ? 0 : desireY - uint128(retState.acquireY);
+                    desireY -= retState.acquireY;
                     st.currentPoint = retState.finalPt;
                     st.sqrtPrice_96 = retState.sqrtFinalPrice_96;
-                    st.allX = retState.finalAllX;
-                    st.currX = retState.finalCurrX;
-                    st.currY = retState.finalCurrY;
+                    st.liquidityX = retState.liquidityX;
                 }
                 if (!cache.finished) {
                     Point.Data storage pointdata = points[st.currentPoint];
@@ -438,9 +430,7 @@ contract SwapX2YModule {
                     st.liquidity = liquidityAddDelta(st.liquidity, - pointdata.liquidDelta);
                     st.currentPoint = st.currentPoint - 1;
                     st.sqrtPrice_96 = LogPowMath.getSqrtPrice(st.currentPoint);
-                    st.allX = false;
-                    st.currX = 0;
-                    st.currY = MulDivMath.mulDivFloor(st.liquidity, st.sqrtPrice_96, TwoPower.Pow96);
+                    st.liquidityX = 0;
                 }
             }
             if (cache.finished || st.currentPoint < lowPt) {
@@ -457,7 +447,7 @@ contract SwapX2YModule {
                 // no liquidity in the range [nextPt, st.currentPoint]
                 st.currentPoint = nextPt;
                 st.sqrtPrice_96 = LogPowMath.getSqrtPrice(st.currentPoint);
-                st.allX = true;
+                // st.liquidityX must be 0
                 cache.currentOrderOrEndpt = nextVal;
             } else {
                 // amount > 0
@@ -473,15 +463,13 @@ contract SwapX2YModule {
 
                     amountY += retState.acquireY;
                     amountX += (retState.costX + feeAmount);
-                    desireY = (desireY <= retState.acquireY) ? 0 : desireY - uint128(retState.acquireY);
+                    desireY -= retState.acquireY;
                     
                     cache.currFeeScaleX_128 = cache.currFeeScaleX_128 + MulDivMath.mulDivFloor(feeAmount - chargedFeeAmount, TwoPower.Pow128, st.liquidity);
 
                     st.currentPoint = retState.finalPt;
                     st.sqrtPrice_96 = retState.sqrtFinalPrice_96;
-                    st.allX = retState.finalAllX;
-                    st.currX = retState.finalCurrX;
-                    st.currY = retState.finalCurrY;
+                    st.liquidityX = retState.liquidityX;
                 // } else {
                 //     cache.finished = true;
                 // }
