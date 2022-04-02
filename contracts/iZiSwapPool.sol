@@ -161,10 +161,7 @@ contract iZiSwapPool is IiZiSwapPool {
         state.currentPoint = currentPoint;
         state.sqrtPrice_96 = LogPowMath.getSqrtPrice(currentPoint);
         state.liquidity = 0;
-        state.allX = true;
-        state.currX = 0;
-        state.currY = 0;
-        state.locked = false;
+        state.liquidityX = 0;
 
         sqrtRate_96 = LogPowMath.getSqrtPrice(1);
 

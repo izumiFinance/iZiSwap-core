@@ -114,10 +114,8 @@ contract MintModule {
         uint256 xc;
         // amount of refund tokenY at current point after withdraw
         uint256 yc;
-        // value of currX at current point after withdraw
-        uint256 currX;
-        // value of currY at current point after withdraw
-        uint256 currY;
+        // value of liquidityX at current point after withdraw
+        uint128 liquidityX;
     }
 
     function balanceX() private view returns (uint256) {
@@ -351,27 +349,18 @@ contract MintModule {
             amountX += xr;
         }
         if (leftPoint <= pc && rightPoint > pc) {
-            if (currentState.allX) {
-                withRet.currY = 0;
-                withRet.currX = MulDivMath.mulDivFloor(currentState.liquidity, TwoPower.Pow96, currentState.sqrtPrice_96);
-            } else {
-                withRet.currX = currentState.currX;
-                withRet.currY = currentState.currY;
-            }
-            // we need compute yc at point of current price
-            (withRet.xc, withRet.yc) = _computeWithdrawXYAtCurrPt(
-                liquidDelta,
-                sqrtPrice_96,
-                withRet.currX,
-                withRet.currY
-            );
-            withRet.currX -= withRet.xc;
-            withRet.currY -= withRet.yc;
+            uint128 originLiquidityY = currentState.liquidity - currentState.liquidityX;
+            uint128 withdrawedLiquidityY = (originLiquidityY < liquidDelta) ? originLiquidityY : liquidDelta;
+            uint128 withdrawedLiquidityX = liquidDelta - withdrawedLiquidityY;
+            withRet.yc = MulDivMath.mulDivFloor(withdrawedLiquidityY, sqrtPrice_96, TwoPower.Pow96);
+            withRet.xc = uint256(withdrawedLiquidityX) * TwoPower.Pow96 / sqrtPrice_96;
+            withRet.liquidityX = currentState.liquidityX - withdrawedLiquidityX;
             amountY += withRet.yc;
             amountX += withRet.xc;
         } else {
             withRet.yc = 0;
             withRet.xc = 0;
+            withRet.liquidityX = currentState.liquidityX;
         }
         withRet.y = uint128(amountY);
         require(withRet.y == amountY, "YOFL");
@@ -495,9 +484,7 @@ contract MintModule {
         // update state
         if (withRet.yc > 0 || withRet.xc > 0) {
             state.liquidity = liquidity - liquidDelta;
-            state.allX = (withRet.currY == 0);
-            state.currX = withRet.currX;
-            state.currY = withRet.currY;
+            state.liquidityX = withRet.liquidityX;
         }
         if (withRet.x > 0 || withRet.y > 0) {
             Liquidity.Data storage lq = liquidities.get(msg.sender, leftPt, rightPt);

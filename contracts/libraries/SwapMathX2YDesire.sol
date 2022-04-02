@@ -183,7 +183,7 @@ library SwapMathX2YDesire {
             );
             
             retState.costX += ret.costX;
-            desireY -= retState.acquireY;
+            desireY -= ret.acquireY;
             retState.acquireY += ret.acquireY;
             if (ret.completeLiquidity) {
                 retState.finished = (desireY == 0);

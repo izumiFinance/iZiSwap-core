@@ -229,7 +229,6 @@ contract SwapY2XModule {
                 // no liquidity in the range [st.currentPoint, nextPoint)
                 st.currentPoint = nextPoint;
                 st.sqrtPrice_96 = LogPowMath.getSqrtPrice(st.currentPoint);
-                st.allX = true;
                 if (nextVal & 1 > 0) {
                     Point.Data storage endPt = points[nextPoint];
                     // pass next point from left to right
@@ -237,6 +236,7 @@ contract SwapY2XModule {
                     // we should add delta liquid of nextPoint
                     int128 liquidDelta = endPt.liquidDelta;
                     st.liquidity = liquidityAddDelta(st.liquidity, liquidDelta);
+                    st.liquidityX = st.liquidity;
                 }
                 cache.currentOrderOrEndPoint = nextVal;
             } else {
@@ -270,18 +270,19 @@ contract SwapY2XModule {
 
                     st.currentPoint = retState.finalPt;
                     st.sqrtPrice_96 = retState.sqrtFinalPrice_96;
-                    st.allX = retState.finalAllX;
-                    st.currX = retState.finalCurrX;
-                    st.currY = retState.finalCurrY;
+                    st.liquidityX = retState.liquidityX;
                 } else {
                     cache.finished = true;
                 }
 
-                if (st.currentPoint == nextPoint && (nextVal & 1) > 0) {
-                    Point.Data storage endPt = points[nextPoint];
-                    // pass next point from left to right
-                    endPt.passEndpoint(cache.currFeeScaleX_128, cache.currFeeScaleY_128);
-                    st.liquidity = liquidityAddDelta(st.liquidity, endPt.liquidDelta);
+                if (st.currentPoint == nextPoint) {
+                    if ((nextVal & 1) > 0) {
+                        Point.Data storage endPt = points[nextPoint];
+                        // pass next point from left to right
+                        endPt.passEndpoint(cache.currFeeScaleX_128, cache.currFeeScaleY_128);
+                        st.liquidity = liquidityAddDelta(st.liquidity, endPt.liquidDelta);
+                    }
+                    st.liquidityX = st.liquidity;
                 }
                 if (st.currentPoint == nextPoint) {
                     cache.currentOrderOrEndPoint = nextVal;
@@ -389,7 +390,6 @@ contract SwapY2XModule {
                 // no liquidity in the range [st.currentPoint, nextPoint)
                 st.currentPoint = nextPoint;
                 st.sqrtPrice_96 = LogPowMath.getSqrtPrice(st.currentPoint);
-                st.allX = true;
                 if (nextVal & 1 > 0) {
                     Point.Data storage endPt = points[nextPoint];
                     // pass next point from left to right
@@ -397,6 +397,7 @@ contract SwapY2XModule {
                     // we should add delta liquid of nextPoint
                     int128 liquidDelta = endPt.liquidDelta;
                     st.liquidity = liquidityAddDelta(st.liquidity, liquidDelta);
+                    st.liquidityX = st.liquidity;
                 }
                 cache.currentOrderOrEndPoint = nextVal;
             } else {
@@ -412,23 +413,25 @@ contract SwapY2XModule {
 
                     amountX += retState.acquireX;
                     amountY += (retState.costY + feeAmount);
-                    desireX = (desireX <= retState.acquireX) ? 0 : desireX - uint128(retState.acquireX);
+                    desireX -= retState.acquireX;
                     
                     cache.currFeeScaleY_128 = cache.currFeeScaleY_128 + MulDivMath.mulDivFloor(feeAmount - chargedFeeAmount, TwoPower.Pow128, st.liquidity);
 
                     st.currentPoint = retState.finalPt;
                     st.sqrtPrice_96 = retState.sqrtFinalPrice_96;
-                    st.allX = retState.finalAllX;
-                    st.currX = retState.finalCurrX;
-                    st.currY = retState.finalCurrY;
+                    st.liquidityX = retState.liquidityX;
                 } else {
                     cache.finished = true;
                 }
-                if (st.currentPoint == nextPoint && (nextVal & 1) > 0) {
-                    Point.Data storage endPt = points[nextPoint];
-                    // pass next point from left to right
-                    endPt.passEndpoint(cache.currFeeScaleX_128, cache.currFeeScaleY_128);
-                    st.liquidity = liquidityAddDelta(st.liquidity, endPt.liquidDelta);
+
+                if (st.currentPoint == nextPoint) {
+                    if ((nextVal & 1) > 0) {
+                        Point.Data storage endPt = points[nextPoint];
+                        // pass next point from left to right
+                        endPt.passEndpoint(cache.currFeeScaleX_128, cache.currFeeScaleY_128);
+                        st.liquidity = liquidityAddDelta(st.liquidity, endPt.liquidDelta);
+                    }
+                    st.liquidityX = st.liquidity;
                 }
                 if (st.currentPoint == nextPoint) {
                     cache.currentOrderOrEndPoint = nextVal;
