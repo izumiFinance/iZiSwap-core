@@ -173,7 +173,7 @@ library SwapMathY2XDesire {
         bool currentHasY = (currentState.liquidityX < currentState.liquidity);
         if (currentHasY) {
             (retState.costY, retState.acquireX, retState.liquidityX) = y2XAtPriceLiquidity(desireX, currentState.sqrtPrice_96, currentState.liquidityX);
-            if (retState.liquidityX < currentState.liquidity || retState.acquireX >= desireX) {
+            if (retState.liquidityX > 0 || retState.acquireX >= desireX) {
                 // currX remain, means desire runout
                 retState.finished = true;
                 retState.finalPt = currentState.currentPoint;

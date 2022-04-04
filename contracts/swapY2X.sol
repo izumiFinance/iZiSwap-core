@@ -306,15 +306,14 @@ contract SwapY2XModule {
         feeScaleY_128 = cache.currFeeScaleY_128;
         // write back state
         state = st;
+        require(amountX > 0, "PR");
         // transfer x to trader
-        if (amountX > 0) {
-            TokenTransfer.transferToken(tokenX, recipient, amountX);
-            // trader pay y
-            require(amountY > 0, "PP");
-            uint256 by = balanceY();
-            IiZiSwapCallback(msg.sender).swapY2XCallback(amountX, amountY, data);
-            require(balanceY() >= by + amountY, "YE");
-        }
+        TokenTransfer.transferToken(tokenX, recipient, amountX);
+        // trader pay y
+        require(amountY > 0, "PP");
+        uint256 by = balanceY();
+        IiZiSwapCallback(msg.sender).swapY2XCallback(amountX, amountY, data);
+        require(balanceY() >= by + amountY, "YE");
         
     }
 
@@ -456,14 +455,13 @@ contract SwapY2XModule {
         // write back state
         state = st;
         // transfer x to trader
-        if (amountX > 0) {
-            TokenTransfer.transferToken(tokenX, recipient, amountX);
-            // trader pay y
-            require(amountY > 0, "PP");
-            uint256 by = balanceY();
-            IiZiSwapCallback(msg.sender).swapY2XCallback(amountX, amountY, data);
-            require(balanceY() >= by + amountY, "YE");
-        }
+        require(amountX > 0, "PR");
+        TokenTransfer.transferToken(tokenX, recipient, amountX);
+        // trader pay y
+        require(amountY > 0, "PP");
+        uint256 by = balanceY();
+        IiZiSwapCallback(msg.sender).swapY2XCallback(amountX, amountY, data);
+        require(balanceY() >= by + amountY, "YE");
         
     }
 

@@ -161,7 +161,7 @@ library SwapMathY2X {
         int24 rightPt,
         uint160 sqrtRate_96,
         uint128 amountY
-    ) internal pure returns (
+    ) internal view returns (
         RangeRetState memory retState
     ) {
         retState.costY = 0;
@@ -175,7 +175,7 @@ library SwapMathY2X {
                 currentState.sqrtPrice_96,
                 currentState.liquidityX
             );
-            if (retState.liquidityX < currentState.liquidity || retState.costY >= amountY) {
+            if (retState.liquidityX > 0 || retState.costY >= amountY) {
                 // it means remaining y is not enough to rise current price to price*1.0001
                 // but y may remain, so we cannot simply use (costY == amountY)
                 retState.finished = true;
