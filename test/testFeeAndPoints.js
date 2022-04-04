@@ -36,12 +36,12 @@ async function addLiquidity(testMint, miner, tokenX, tokenY, fee, pl, pr, liquid
 }
 
 async function getState(pool) {
-    const {sqrtPrice_96, currentPoint, currX, currY} = await pool.state();
+    const {sqrtPrice_96, currentPoint, liquidity, liquidityX} = await pool.state();
     return {
         sqrtPrice_96: sqrtPrice_96.toString(),
         currentPoint: currentPoint.toString(),
-        currX: currX.toString(),
-        currY: currY.toString()
+        liquidity: liquidity.toString(),
+        liquidityX: liquidityX.toString()
     }
 }
 
@@ -439,8 +439,9 @@ describe("swap", function () {
         const {feeList: costYFeeList4, feeAcquireList: costYFeeAcquireList4} = getFeeOfList(costYList4, 3000);
 
         let state = await getState(pool);
+        expect(state.liquidityX).to.equal('10000');
 
-        const costXAt_2460_4 = stringMinus(l2x('50000', 2460, '1.0001', true),  state.currX);
+        const costXAt_2460_4 = l2x(stringMinus('50000', state.liquidityX), 2460, '1.0001', true);
 
         const costX_999_1000_4 = xInRange('10000', 999, 1000, '1.0001', true);
         const costX_1000_2461_4 = stringAdd(xInRange('50000', 1000, 2460, '1.0001', true), costXAt_2460_4);
@@ -455,6 +456,7 @@ describe("swap", function () {
         state = await getState(pool);
         expect(state.currentPoint).to.equal('999');
         const {feeList: costXFeeList4, feeAcquireList: costXFeeAcquireList4} = getFeeOfList(costXList4, 3000);
+        console.log('costXFeeAcquireList4: ', costXFeeAcquireList4)
         await testSwap.connect(trader).swapY2X(tokenX.address, tokenY.address, 3000, '10000000000000000000', 2460);
 
         state = await getState(pool);
@@ -635,10 +637,10 @@ describe("swap", function () {
         console.log('lastFeeScaleX_128: ', lastFeeScaleX_128);
         console.log('lastFeeScaleY_128: ', lastFeeScaleY_128);
 
-
         state = await getState(pool);
         expect(state.currentPoint).to.equal('2460');
-        const costXAt_2460_1 = stringMinus(l2x('100000', 2460, '1.0001', true),  state.currX);
+        expect(state.liquidityX).to.equal('50000');
+        const costXAt_2460_1 = l2x('50000', 2460, '1.0001', true);
         const costX_2001_2460_1 = xInRange('100000', 2001, 2460, '1.0001', true);
         await testSwap.connect(trader).swapX2Y(tokenX.address, tokenY.address, 3000, '10000000000000000000', 2001);
         state = await getState(pool);
@@ -694,8 +696,9 @@ describe("swap", function () {
 
         await testSwap.connect(trader).swapY2X(tokenX.address, tokenY.address, 3000, '10000000000000000000', 1551);
         expect((await getState(pool)).currentPoint).to.equal('1551');
+        expect((await getState(pool)).liquidityX).to.equal('80000');
         await addLiquidity(testMint, miner1, tokenX, tokenY, 3000, 800, 2100, '30000');
-        const costYAt1551 = stringMinus(l2y('110000', 1551, '1.0001', true), (await getState(pool)).currY);
+        const costYAt1551 = l2y('80000', 1551, '1.0001', true);
         const costY_1551_2000_7 = stringAdd(costYAt1551, yInRange('110000', 1552, 2000, '1.0001', true));
         const costY_2000_2010_7 = yInRange('90000', 2000, 2010, '1.0001', true);
         await testSwap.connect(trader).swapY2X(tokenX.address, tokenY.address, 3000, '10000000000000000000', 2010);

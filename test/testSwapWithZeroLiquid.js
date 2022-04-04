@@ -36,13 +36,6 @@ async function addLiquidity(testMint, miner, tokenX, tokenY, fee, pl, pr, liquid
   await testMint.connect(miner).mint(tokenX.address, tokenY.address, fee, pl, pr, liquidity);
 }
 
-async function printState(poolAddr) {
-  const iZiSwapPool = await ethers.getContractFactory("iZiSwapPool");
-  pool = await iZiSwapPool.attach(poolAddr);
-  [sqrtPrice_96, currPt, currX, currY, liquidity, allX, locked] = await pool.state();
-  return [currPt, BigNumber(currX._hex), BigNumber(currY._hex), BigNumber(liquidity._hex), allX, locked]
-}
-
 function floor(a) {
     return BigNumber(a.toFixed(0, 3));
 }
