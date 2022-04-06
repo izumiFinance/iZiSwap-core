@@ -39,10 +39,19 @@ async function addLiquidity(testMint, miner, tokenX, tokenY, fee, pl, pr, liquid
 async function printState(poolAddr) {
   const iZiSwapPool = await ethers.getContractFactory("iZiSwapPool");
   pool = await iZiSwapPool.attach(poolAddr);
-  [sqrtPrice_96, currPt, currX, currY, liquidity, allX, locked] = await pool.state();
-  return [currPt, BigNumber(currX._hex), BigNumber(currY._hex), BigNumber(liquidity._hex), allX, locked]
+  [sqrtPrice_96, currPt, liquidity, liquidityX, locked] = await pool.state();
+  return [currPt, BigNumber(liquidity.toString()), BigNumber(liquidityX.toString())]
 }
 
+function l2y(liquidity, tick, rate, up) {
+  price = rate.pow(tick);
+  y = liquidity.times(price.sqrt());
+  if (up) {
+      return BigNumber(y.toFixed(0, 2));
+  } else {
+      return BigNumber(y.toFixed(0, 3));
+  }
+}
 function l2x(liquidity, tick, rate, up) {
     price = rate.pow(tick);
     x = liquidity.div(price.sqrt());
@@ -59,19 +68,33 @@ function floor(a) {
 function ceil(b) {
     return BigNumber(b.toFixed(0, 2));
 }
-function y2xAtLiquidity(point, rate, desireX, currX, currY, liquidity) {
-    sp = rate.pow(point).sqrt();
-    currYLim = ceil(liquidity.times(sp));
-    deltaY = BigNumber('0');
-    if (currYLim.gte(currY)) {
-      deltaY = currYLim.minus(currY);
+
+function x2l(x, tick, rate, up) {
+    const price = rate.pow(tick);
+    const l = x.times(price.sqrt());
+    if (up) {
+        return ceil(l);
+    } else {
+        return floor(l);
     }
-    if (desireX.gte(currX)) {
-      return [currX, deltaY];
+}
+
+function y2l(y, tick, rate, up) {
+    const price = rate.pow(tick);
+    const l = y.div(price.sqrt());
+    if (up) {
+        return ceil(l);
+    } else {
+        return floor(l);
     }
-    acquireX = desireX.plus('0');
-    costY = ceil(acquireX.times(deltaY).div(currX));
-    return [acquireX, costY];
+}
+function y2xAtLiquidity(point, rate, desireX, liquidity, liquidityX) {
+    const maxLiquidityX = x2l(desireX, point, rate, false);
+
+    const transformLiquidityY = liquidityX.gt(maxLiquidityX) ? maxLiquidityX : liquidityX;
+    const acquireX = l2x(transformLiquidityY, point, rate, false);
+    const costY = l2y(transformLiquidityY, point, rate, true);
+    return [acquireX, costY, liquidityX.minus(transformLiquidityY)];
 }
 function blockNum2BigNumber(blc) {
     return BigNumber(blc._hex);
@@ -141,13 +164,13 @@ describe("swap y2x desireX", function () {
 
     let rate = BigNumber('1.0001');
 
-    [currPt, currX, currY, liquidity, allX, locked] = await printState(poolAddr);
+    [currPt, liquidity, liquidityX] = await printState(poolAddr);
 
     await tokenY.transfer(trader.address, 10000000000);
     x_5001 = l2x(BigNumber(30000), 5001, rate, false);
 
-    acquireX_5001 = floor(x_5001.times(11).div(53));
-    [acquireX, costY] = y2xAtLiquidity(5001, rate, acquireX_5001, x_5001, BigNumber('0'), BigNumber("30000"));
+    desireX_5001 = floor(x_5001.times(11).div(53));
+    [acquireX, costY, liquidityXExpect] = y2xAtLiquidity(5001, rate, desireX_5001, BigNumber("30000"), BigNumber("30000"));
     
     costY_WithFee = ceil(costY.times(1000).div(997));
     
@@ -157,15 +180,13 @@ describe("swap y2x desireX", function () {
     await tokenY.connect(trader).approve(testSwap.address, costY_WithFee.times(2).toFixed(0));
 
     await testSwap.connect(trader).swapY2XDesireX(
-        tokenX.address, tokenY.address, 3000, acquireX.toFixed(0), 5002);
+        tokenX.address, tokenY.address, 3000, desireX_5001.toFixed(0), 5002);
     expect(costY_WithFee.plus(blockNum2BigNumber(await tokenY.balanceOf(trader.address))).toFixed(0)).to.equal("10000000000");
     expect(acquireX.toFixed(0)).to.equal(blockNum2BigNumber(await tokenX.balanceOf(trader.address)).toFixed(0));
 
-    [currPt, currX, currY, liquidity, allX, locked] = await printState(poolAddr);
+    [currPt, liquidity, liquidityX] = await printState(poolAddr);
     expect(currPt).to.equal(5001);
-    expect(currX.toFixed(0)).to.equal(l2x(BigNumber(30000), 5001, rate, false).minus(acquireX).toFixed(0));
-    expect(currY.toFixed(0)).to.equal(costY.toFixed(0));
     expect(liquidity.toFixed(0)).to.equal("30000");
-    expect(allX).to.equal(false);
+    expect(liquidityX.toFixed(0)).to.equal(liquidityXExpect.toFixed(0));
   });
 });

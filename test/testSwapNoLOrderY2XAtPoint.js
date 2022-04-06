@@ -37,10 +37,10 @@ async function addLiquidity(testMint, miner, tokenX, tokenY, fee, pl, pr, liquid
 }
 
 async function printState(poolAddr) {
-  const iZiSwapPool = await ethers.getContractFactory("iZiSwapPool");
-  pool = await iZiSwapPool.attach(poolAddr);
-  [sqrtPrice_96, currPt, currX, currY, liquidity, allX, locked] = await pool.state();
-  return [currPt, BigNumber(currX._hex), BigNumber(currY._hex), BigNumber(liquidity._hex), allX, locked]
+    const iZiSwapPool = await ethers.getContractFactory("iZiSwapPool");
+    pool = await iZiSwapPool.attach(poolAddr);
+    [sqrtPrice_96, currPt, liquidity, liquidityX, locked] = await pool.state();
+    return [currPt, BigNumber(liquidity.toString()), BigNumber(liquidityX.toString())]
 }
 
 function l2y(liquidity, tick, rate, up) {
@@ -69,23 +69,33 @@ function floor(a) {
 function ceil(b) {
     return BigNumber(b.toFixed(0, 2));
 }
-function y2xAtLiquidity(point, rate, amountY, currX, currY, liquidity) {
-    sp = rate.pow(point).sqrt();
-    currYLim = ceil(liquidity.times(sp));
-    deltaY = BigNumber('0');
-    if (currYLim.gte(currY)) {
-        deltaY = currYLim.minus(currY);
+function x2l(x, tick, rate, up) {
+    const price = rate.pow(tick);
+    const l = x.times(price.sqrt());
+    if (up) {
+        return ceil(l);
+    } else {
+        return floor(l);
     }
-    if (amountY.gte(deltaY)) {
-        return [currX, deltaY];
-    }
-    acquireX = floor(amountY.times(currX).div(deltaY));
-    if (acquireX.eq('0')) {
-        return [BigNumber('0'), BigNumber('0')];
-    }
-    return [acquireX, amountY];
 }
 
+function y2l(y, tick, rate, up) {
+    const price = rate.pow(tick);
+    const l = y.div(price.sqrt());
+    if (up) {
+        return ceil(l);
+    } else {
+        return floor(l);
+    }
+}
+function y2xAtLiquidity(point, rate, amountY, liquidity, liquidityX) {
+    const maxLiquidityX = y2l(amountY, point, rate, false);
+
+    const transformLiquidityY = liquidityX.gt(maxLiquidityX) ? maxLiquidityX : liquidityX;
+    const acquireX = l2x(transformLiquidityY, point, rate, false);
+    const costY = l2y(transformLiquidityY, point, rate, true);
+    return [acquireX, costY, liquidityX.minus(transformLiquidityY)];
+}
 function blockNum2BigNumber(blc) {
     return BigNumber(blc._hex);
 }
@@ -154,14 +164,14 @@ describe("Mint", function () {
 
     let rate = BigNumber('1.0001');
 
-    [currPt, currX, currY, liquidity, allX, locked] = await printState(poolAddr);
+    [currPt, liquidity, liquidityX] = await printState(poolAddr);
 
     await tokenY.transfer(trader.address, 10000000000);
     x_5001 = l2x(BigNumber(30000), 5001, rate, false);
 
     amountY_5001 = BigNumber(12000);
 
-    [acquireX, costY] = y2xAtLiquidity(5001, rate, amountY_5001, x_5001, BigNumber('0'), BigNumber("30000"));
+    [acquireX, costY, liquidityExpectX] = y2xAtLiquidity(5001, rate, amountY_5001, BigNumber("30000"), BigNumber("30000"));
     costY_WithFee = ceil(costY.times(1000).div(997));
     
     const testSwapFactory = await ethers.getContractFactory("TestSwap");
@@ -173,11 +183,9 @@ describe("Mint", function () {
     expect(costY_WithFee.plus(blockNum2BigNumber(await tokenY.balanceOf(trader.address))).toFixed(0)).to.equal("10000000000");
     expect(acquireX.toFixed(0)).to.equal(blockNum2BigNumber(await tokenX.balanceOf(trader.address)).toFixed(0));
 
-    [currPt, currX, currY, liquidity, allX, locked] = await printState(poolAddr);
+    [currPt, liquidity, liquidityX] = await printState(poolAddr);
     expect(currPt).to.equal(5001);
-    expect(currX.toFixed(0)).to.equal(l2x(BigNumber(30000), 5001, rate, false).minus(acquireX).toFixed(0));
-    expect(currY.toFixed(0)).to.equal(costY.toFixed(0));
     expect(liquidity.toFixed(0)).to.equal("30000");
-    expect(allX).to.equal(false);
+    expect(liquidityX.toFixed(0)).to.equal(liquidityExpectX.toFixed(0));
   });
 });
