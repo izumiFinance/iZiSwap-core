@@ -260,9 +260,8 @@ contract SwapX2YModule {
             }
             int24 nextVal = orderOrEndpoint.getOrderOrEndptVal(nextPt, cache.pointDelta);
             
-            // in [st.currentPoint, nextPt)
+            // in [nextPt, st.currentPoint)
             if (st.liquidity == 0) {
-
                 // no liquidity in the range [nextPt, st.currentPoint]
                 st.currentPoint = nextPt;
                 st.sqrtPrice_96 = LogPowMath.getSqrtPrice(st.currentPoint);
@@ -440,9 +439,9 @@ contract SwapX2YModule {
                 nextPt = lowPt;
             }
             int24 nextVal = orderOrEndpoint.getOrderOrEndptVal(nextPt, cache.pointDelta);
-            // in [st.currentPoint, nextPt)
-            if (st.liquidity == 0) {
 
+            // in [nextPt, st.currentPoint)
+            if (st.liquidity == 0) {
                 // no liquidity in the range [nextPt, st.currentPoint]
                 st.currentPoint = nextPt;
                 st.sqrtPrice_96 = LogPowMath.getSqrtPrice(st.currentPoint);
