@@ -14,6 +14,9 @@ contract TestMint is IiZiSwapMintCallback {
     }
     address public factory;
 
+    bool public notEnoughX;
+    bool public notEnoughY;
+
     function safeTransferFrom(
         address token,
         address from,
@@ -33,13 +36,32 @@ contract TestMint is IiZiSwapMintCallback {
         MintCallbackData memory dt = abi.decode(data, (MintCallbackData));
         require(pool(dt.tokenX, dt.tokenY, dt.fee) == msg.sender, "sp");
         if (x > 0) {
-            safeTransferFrom(dt.tokenX, dt.payer, msg.sender, x);
+            if (!notEnoughX) {
+                safeTransferFrom(dt.tokenX, dt.payer, msg.sender, x);
+            } else {
+                safeTransferFrom(dt.tokenX, dt.payer, msg.sender, x - 1);
+            }
         }
         if (y > 0) {
-            safeTransferFrom(dt.tokenY, dt.payer, msg.sender, y);
+            if (!notEnoughY) {
+                safeTransferFrom(dt.tokenY, dt.payer, msg.sender, y);
+            } else {
+                safeTransferFrom(dt.tokenY, dt.payer, msg.sender, y - 1);
+            }
         }
     }
-    constructor(address fac) { factory = fac; }
+    constructor(address fac) { 
+        factory = fac;
+        notEnoughX = false;
+        notEnoughY = false;
+    }
+
+    function setNotEnoughX(bool value) public {
+        notEnoughX = value;
+    }
+    function setNotEnoughY(bool value) public {
+        notEnoughY = value;
+    }
     
     function mint(
         address tokenX, 

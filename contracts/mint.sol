@@ -262,50 +262,6 @@ contract MintModule {
         y = uint128(amountY);
         require(y == amountY, "YOFL");
     }
-    function _computeWithdrawXYAtCurrPt(
-        uint128 liquidDelta,
-        uint160 sqrtPrice_96,
-        uint256 currX,
-        uint256 currY
-    ) private pure returns (uint256 x, uint256 y) {
-        // liquidDelta <= liquidity
-        // no need to require(liquidDelta <= liquidity)
-
-        // how much token y is needed if only pay token y
-        uint256 amountY = MulDivMath.mulDivFloor(
-            liquidDelta,
-            sqrtPrice_96,
-            TwoPower.Pow96
-        );
-        // token y is enough to pay
-        if (amountY <= currY) {
-            x = 0;
-            y = uint128(amountY);
-        } else {
-            y = currY;
-            // need token x to pay for the rest liquidity
-            uint256 liquidY = MulDivMath.mulDivCeil(
-                y,
-                TwoPower.Pow96,
-                sqrtPrice_96
-            );
-
-            if (liquidY >= liquidDelta) {
-                // no need to pay x
-                x = 0;
-            } else {
-                uint128 liquidX = liquidDelta - uint128(liquidY);
-                x = MulDivMath.mulDivFloor(
-                    liquidX,
-                    TwoPower.Pow96,
-                    sqrtPrice_96
-                );
-                if (x > currX) {
-                    x = currX;
-                }
-            }
-        }
-    }
 
     /// @notice Compute some values (refund token amount, currX/currY in state) when removing liquidity
     /// @param liquidDelta amount of liquidity user wants to withdraw
