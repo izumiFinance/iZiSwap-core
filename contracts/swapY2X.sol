@@ -265,7 +265,7 @@ contract SwapY2XModule {
 
                     uint256 chargedFeeAmount = uint256(feeAmount) * feeChargePercent / 100;
                     totalFeeYCharged += chargedFeeAmount;
-                    
+
                     cache.currFeeScaleY_128 = cache.currFeeScaleY_128 + MulDivMath.mulDivFloor(feeAmount - chargedFeeAmount, TwoPower.Pow128, st.liquidity);
 
                     st.currentPoint = retState.finalPt;
