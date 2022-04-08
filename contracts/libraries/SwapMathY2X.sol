@@ -5,6 +5,7 @@ import './MulDivMath.sol';
 import './TwoPower.sol';
 import './AmountMath.sol';
 import './State.sol';
+import './MaxMinMath.sol';
 import "hardhat/console.sol";
 
 
@@ -111,41 +112,40 @@ library SwapMathY2X {
                     has_sqrtLoc_96 = true;
                 }
             }
-            if (ret.locPt >= rg.rightPt) {
-                // it is imposible
-                ret.locPt = rg.rightPt - 1;
-                has_sqrtLoc_96 = false;
-            }
+
+            ret.completeLiquidity = false;
+            ret.locPt = MaxMinMath.max(rg.leftPt, ret.locPt);
+            ret.locPt = MaxMinMath.min(rg.rightPt - 1, ret.locPt);
             if (ret.locPt == rg.leftPt) {
                 ret.costY = 0;
                 ret.acquireX = 0;
                 ret.sqrtLoc_96 = rg.sqrtPriceL_96;
-                ret.completeLiquidity = false;
-            } else {
-                if (!has_sqrtLoc_96) {
-                    ret.sqrtLoc_96 = LogPowMath.getSqrtPrice(ret.locPt);
-                }
-                ret.costY = uint128(AmountMath.getAmountY(
-                    rg.liquidity,
-                    rg.sqrtPriceL_96,
-                    ret.sqrtLoc_96,
-                    rg.sqrtRate_96,
-                    true
-                ));
-                // it is believed that costY <= amountY even if 
-                // the costY is the upperbound of the result
-                // because amountY is not a real and 
-                // sqrtLoc_96 <= sqrtLoc256_96
-                ret.acquireX = AmountMath.getAmountX(
-                    rg.liquidity,
-                    rg.leftPt,
-                    ret.locPt,
-                    ret.sqrtLoc_96,
-                    rg.sqrtRate_96,
-                    false
-                );
-                ret.completeLiquidity = false;
+                return ret;
             }
+            
+            if (!has_sqrtLoc_96) {
+                ret.sqrtLoc_96 = LogPowMath.getSqrtPrice(ret.locPt);
+            }
+            ret.costY = MaxMinMath.min(uint128(AmountMath.getAmountY(
+                rg.liquidity,
+                rg.sqrtPriceL_96,
+                ret.sqrtLoc_96,
+                rg.sqrtRate_96,
+                true
+            )), amountY);
+            // it is believed that costY <= amountY even if 
+            // the costY is the upperbound of the result
+            // because amountY is not a real and 
+            // sqrtLoc_96 <= sqrtLoc256_96
+            ret.acquireX = AmountMath.getAmountX(
+                rg.liquidity,
+                rg.leftPt,
+                ret.locPt,
+                ret.sqrtLoc_96,
+                rg.sqrtRate_96,
+                false
+            );
+        
         }
     }
 
@@ -161,7 +161,7 @@ library SwapMathY2X {
         int24 rightPt,
         uint160 sqrtRate_96,
         uint128 amountY
-    ) internal view returns (
+    ) internal pure returns (
         RangeRetState memory retState
     ) {
         retState.costY = 0;

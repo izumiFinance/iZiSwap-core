@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BUSL-1.1
-pragma solidity >=0.7.3;
+pragma solidity ^0.8.4;
 
 import './MulDivMath.sol';
 import './TwoPower.sol';
@@ -32,11 +32,11 @@ library AmountMath {
         bool upper
     ) internal pure returns (uint256 amount) {
         // rightPt - (leftPt - 1), pc = leftPt - 1
-        uint160 sqrtPricePrPc_96 = LogPowMath.getSqrtPrice(rightPt - leftPt + 1);
-        uint160 sqrtPricePrPd_96 = LogPowMath.getSqrtPrice(rightPt + 1);
+        uint160 sqrtPricePrPl_96 = LogPowMath.getSqrtPrice(rightPt - leftPt);
+        uint160 sqrtPricePrM1_96 = uint160(uint256(sqrtPriceR_96) * TwoPower.Pow96 / sqrtRate_96);
 
-        uint160 numerator = sqrtPricePrPc_96 - sqrtRate_96;
-        uint160 denominator = sqrtPricePrPd_96 - sqrtPriceR_96;
+        uint160 numerator = sqrtPricePrPl_96 - uint160(TwoPower.Pow96);
+        uint160 denominator = sqrtPriceR_96 - sqrtPricePrM1_96;
         if (!upper) {
             amount = MulDivMath.mulDivFloor(liquidity, numerator, denominator);
         } else {
