@@ -13,7 +13,7 @@ library Liquidity {
         uint256 tokenOwedY;
     }
     
-    // delta cannot be int128.min and it can be proofed that
+    // delta cannot be int128.min and it can be proved that
     // liquidDelta of any one point will not be int128.min
     function liquidityAddDelta(uint128 l, int128 delta) internal pure returns (uint128 nl) {
         if (delta < 0) {
@@ -22,6 +22,7 @@ library Liquidity {
             nl = l + uint128(delta);
         }
     }
+
     function get(
         mapping(bytes32 => Data) storage self,
         address minter,
@@ -47,7 +48,7 @@ library Liquidity {
         }
         uint256 deltaScaleX = data.lastFeeScaleX_128;
         uint256 deltaScaleY = data.lastFeeScaleY_128;
-        // we use assembly to prevent revert if overflow
+        // use assembly to prevent revert if overflow
         // data.lastFeeScaleX(Y)_128 may be "negative" (>=2^255)
         assembly {
             deltaScaleX := sub(feeScaleX_128, deltaScaleX)

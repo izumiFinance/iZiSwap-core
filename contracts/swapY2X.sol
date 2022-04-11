@@ -223,9 +223,9 @@ contract SwapY2XModule {
                 nextVal = 0;
                 nextPoint = highPt;
             }
+
             // in [st.currentPoint, nextPoint)
             if (st.liquidity == 0) {
-
                 // no liquidity in the range [st.currentPoint, nextPoint)
                 st.currentPoint = nextPoint;
                 st.sqrtPrice_96 = LogPowMath.getSqrtPrice(st.currentPoint);
