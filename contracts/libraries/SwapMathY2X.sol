@@ -86,46 +86,26 @@ library SwapMathY2X {
             ret.completeLiquidity = true;
         } else {
             // we should locate highest price
-            uint256 sqrtLoc256_96 = MulDivMath.mulDivFloor(
+            // it is believed that uint160 is enough for muldiv and adding, because amountY < maxY
+            uint160 sqrtLoc_96 = uint160(MulDivMath.mulDivFloor(
                 amountY,
                 rg.sqrtRate_96 - TwoPower.Pow96,
                 rg.liquidity
-            ) + rg.sqrtPriceL_96;
-            // it is believed that uint160 is enough for muldiv and adding, because amountY < maxY
-            // if (sqrtLoc256_96 >= sqrtPriceR_96) {
-            //     costY = maxY;
-            //     acquireX = AmountMath.getAmountX(liquidity, leftPt, rightPt, sqrtPriceR_96, sqrtRate_96, false);
-            //     completeLiquidity = true;
-            //     return;
-            // }
-            (int24 locPtLo, int24 locPtHi) = LogPowMath.getLogSqrtPriceFU(uint160(sqrtLoc256_96));
-            // to save one sqrt(1.0001^pt)
-            bool has_sqrtLoc_96 = false;
-            if (locPtLo == locPtHi) {
-                ret.locPt = locPtLo;
-            } else {
-                ret.sqrtLoc_96 = LogPowMath.getSqrtPrice(locPtHi);
-                if (ret.sqrtLoc_96 > sqrtLoc256_96) {
-                    ret.locPt = locPtLo;
-                } else {
-                    ret.locPt = locPtHi;
-                    has_sqrtLoc_96 = true;
-                }
-            }
+            ) + rg.sqrtPriceL_96);
+            ret.locPt = LogPowMath.getLogSqrtPriceFloor(sqrtLoc_96);
 
-            ret.completeLiquidity = false;
             ret.locPt = MaxMinMath.max(rg.leftPt, ret.locPt);
             ret.locPt = MaxMinMath.min(rg.rightPt - 1, ret.locPt);
+
+            ret.completeLiquidity = false;
             if (ret.locPt == rg.leftPt) {
                 ret.costY = 0;
                 ret.acquireX = 0;
                 ret.sqrtLoc_96 = rg.sqrtPriceL_96;
                 return ret;
             }
+            ret.sqrtLoc_96 = LogPowMath.getSqrtPrice(ret.locPt);
             
-            if (!has_sqrtLoc_96) {
-                ret.sqrtLoc_96 = LogPowMath.getSqrtPrice(ret.locPt);
-            }
             ret.costY = MaxMinMath.min(uint128(AmountMath.getAmountY(
                 rg.liquidity,
                 rg.sqrtPriceL_96,

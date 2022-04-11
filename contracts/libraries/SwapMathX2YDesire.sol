@@ -5,6 +5,7 @@ import './MulDivMath.sol';
 import './TwoPower.sol';
 import './AmountMath.sol';
 import './State.sol';
+import './MaxMinMath.sol';
 import "hardhat/console.sol";
 
 library SwapMathX2YDesire {
@@ -87,38 +88,30 @@ library SwapMathX2YDesire {
             ret.completeLiquidity = true;
             return ret;
         }
-        uint256 cl = uint256(rg.sqrtPriceR_96);
-        uint256 sub1 = uint256(desireY) * (rg.sqrtRate_96 - TwoPower.Pow96) / rg.liquidity;
-        assembly {
-            cl := sub(cl, sub1)
-        }
-        if (cl > rg.sqrtPriceR_96 || cl <= rg.sqrtPriceL_96) {
-            // imposible, this means cl < 0 or too small and l <=rg.leftPt
-            ret.acquireY = desireY;
-            ret.costX = AmountMath.getAmountX(rg.liquidity, rg.leftPt, rg.rightPt, rg.sqrtPriceR_96, rg.sqrtRate_96, true);
-            ret.completeLiquidity = true;
-            return ret;
-        }
-        ret.locPt = LogPowMath.getLogSqrtPriceFloor(uint160(cl)) + 1;
-        if (ret.locPt <= rg.leftPt) {
-            // imposible, this means cl < 0 or too small and l <=rg.leftPt
-            ret.acquireY = desireY;
-            ret.costX = AmountMath.getAmountX(rg.liquidity, rg.leftPt, rg.rightPt, rg.sqrtPriceR_96, rg.sqrtRate_96, true);
-            ret.completeLiquidity = true;
-            return ret;
-        }
-        if (ret.locPt >= rg.rightPt) {
-            ret.acquireY = 0;
-            ret.costX = 0;
-            ret.completeLiquidity = false;
-            ret.locPt = rg.rightPt;
-            ret.sqrtLoc_96 = rg.sqrtPriceR_96;
-            return ret;
-        }
+        // desireY < maxY = rg.liquidity * (rg.sqrtPriceR_96 - rg.sqrtPriceL_96) / (rg.sqrtRate_96 - 2^96)
+        // here, '/' means div of int
+        // desireY < rg.liquidity * (rg.sqrtPriceR_96 - rg.sqrtPriceL_96) / (rg.sqrtRate_96 - 2^96)
+        // => desireY * (rg.sqrtRate_96 - TwoPower.Pow96) / rg.liquidity < rg.sqrtPriceR_96 - rg.sqrtPriceL_96
+        // => rg.sqrtPriceR_96 - desireY * (rg.sqrtRate_96 - TwoPower.Pow96) / rg.liquidity > rg.sqrtPriceL_96
+        uint160 cl = uint160(uint256(rg.sqrtPriceR_96) - uint256(desireY) * (rg.sqrtRate_96 - TwoPower.Pow96) / rg.liquidity);
+        
+        ret.locPt = LogPowMath.getLogSqrtPriceFloor(cl) + 1;
+        
+        ret.locPt = MaxMinMath.min(ret.locPt, rg.rightPt);
+        ret.locPt = MaxMinMath.max(ret.locPt, rg.leftPt + 1);
         ret.completeLiquidity = false;
-        ret.sqrtLoc_96 = LogPowMath.getSqrtPrice(ret.locPt);
-        ret.acquireY = uint128(AmountMath.getAmountY(rg.liquidity, ret.sqrtLoc_96, rg.sqrtPriceR_96, rg.sqrtRate_96, false));
-        ret.costX = AmountMath.getAmountX(rg.liquidity, ret.locPt, rg.rightPt, rg.sqrtPriceR_96, rg.sqrtRate_96, true);
+
+        if (ret.locPt == rg.rightPt) {
+            ret.costX = 0;
+            ret.acquireY = 0;
+            ret.sqrtLoc_96 = rg.sqrtPriceR_96;
+        } else {
+            uint160 sqrtPricePrMloc_96 = LogPowMath.getSqrtPrice(rg.rightPt - ret.locPt);
+            uint160 sqrtPricePrM1_96 = uint160(mulDivCeil(rg.sqrtPriceR_96, TwoPower.Pow96, rg.sqrtRate_96));
+            ret.costX = mulDivCeil(rg.liquidity, sqrtPricePrMloc_96 - TwoPower.Pow96, rg.sqrtPriceR_96 - sqrtPricePrM1_96);
+            ret.sqrtLoc_96 = LogPowMath.getSqrtPrice(ret.locPt);
+            ret.acquireY = MaxMinMath.min(uint128(AmountMath.getAmountY(rg.liquidity, ret.sqrtLoc_96, rg.sqrtPriceR_96, rg.sqrtRate_96, false)), desireY);
+        }
     }
 
     /// @notice compute amount of tokens exchanged during swapX2YDesireY and some amount values (currX, currY, allX) on final point

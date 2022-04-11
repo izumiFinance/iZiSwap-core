@@ -5,6 +5,7 @@ import './MulDivMath.sol';
 import './TwoPower.sol';
 import './AmountMath.sol';
 import './State.sol';
+import './MaxMinMath.sol';
 import "hardhat/console.sol";
 
 library SwapMathX2Y {
@@ -95,41 +96,48 @@ library SwapMathX2Y {
     ) internal pure returns (
         RangeCompRet memory ret
     ) {
-        uint160 sqrtPricePrPd_96 = LogPowMath.getSqrtPrice(rg.rightPt + 1);
-        uint160 sqrtPricePrPc_96 = LogPowMath.getSqrtPrice(rg.rightPt - (rg.leftPt - 1));
-        uint256 maxX = MulDivMath.mulDivCeil(rg.liquidity, sqrtPricePrPc_96 - rg.sqrtRate_96, sqrtPricePrPd_96 - rg.sqrtPriceR_96);
+        uint160 sqrtPricePrM1_96 = uint160(mulDivCeil(rg.sqrtPriceR_96, TwoPower.Pow96, rg.sqrtRate_96));
+        uint160 sqrtPricePrMl_96 = LogPowMath.getSqrtPrice(rg.rightPt - rg.leftPt);
+        // rg.rightPt - rg.leftPt <= 256 * 100
+        // 1.0001 ** 25600 < 13
+        // 13 * 2^96 - 2^96 < 2^100
+        // rg.liquidity * (sqrtPricePrMl_96 - TwoPower.Pow96) < 2^228 < 2^256
+        uint256 maxX = mulDivCeil(rg.liquidity, sqrtPricePrMl_96 - TwoPower.Pow96, rg.sqrtPriceR_96 - sqrtPricePrM1_96);
         if (maxX <= amountX) {
             ret.costX = uint128(maxX);
             ret.acquireY = AmountMath.getAmountY(rg.liquidity, rg.sqrtPriceL_96, rg.sqrtPriceR_96, rg.sqrtRate_96, false);
             ret.completeLiquidity = true;
         } else {
             // we should locate lowest price
-            uint256 sqrtValue256_96 = MulDivMath.mulDivFloor(
-                amountX,
-                sqrtPricePrPd_96 - rg.sqrtPriceR_96,
-                rg.liquidity
-            ) + rg.sqrtRate_96;
-            uint160 sqrtValue_96 = uint160(sqrtValue256_96);
-            require(sqrtValue256_96 == sqrtValue_96, "X2YVOF");
+            // 1. amountX * (rg.sqrtPriceR_96 - sqrtPricePrM1_96)
+            // < maxX * (rg.sqrtPriceR_96 - sqrtPricePrM1_96)
+            // < rg.liquidity * (sqrtPricePrMl_96 - TwoPower.Pow96) + (rg.sqrtPriceR_96 - sqrtPricePrM1_96)
+            // < 2^228 + 2^160 < 2^256
+            // 2. sqrtValue_96 = amountX * (rg.sqrtPriceR_96 - sqrtPricePrM1_96) // rg.liquidity + 2^96
+            // <= amountX * (rg.sqrtPriceR_96 - sqrtPricePrM1_96) / rg.liquidity + 2^96
+            // <= (maxX - 1) * (rg.sqrtPriceR_96 - sqrtPricePrM1_96) / rg.liquidity + 2^96
+            // < rg.liquidity * (sqrtPricePrMl_96 - 2^96) / (rg.sqrtPriceR_96 - sqrtPricePrM1_96) * (rg.sqrtPriceR_96 - sqrtPricePrM1_96) / rg.liquidity + 2^96
+            // = sqrtPricePrMl_96 < 2^160
+            uint160 sqrtValue_96 = uint160(uint256(amountX) * (uint256(rg.sqrtPriceR_96) - sqrtPricePrM1_96) / uint256(rg.liquidity) + TwoPower.Pow96);
+
             int24 logValue = LogPowMath.getLogSqrtPriceFloor(sqrtValue_96);
-            ret.locPt = rg.rightPt + 1 - logValue;
-            if (ret.locPt <= rg.leftPt) {
-                // it is impossible
-                ret.locPt = rg.leftPt + 1;
-            }
+
+            ret.locPt = rg.rightPt - logValue;
+
+            ret.locPt = MaxMinMath.min(ret.locPt, rg.rightPt);
+            ret.locPt = MaxMinMath.max(ret.locPt, rg.leftPt + 1);
+            ret.completeLiquidity = false;
+            
             if (ret.locPt == rg.rightPt) {
                 ret.costX = 0;
                 ret.acquireY = 0;
                 ret.sqrtLoc_96 = rg.sqrtPriceR_96;
-                ret.completeLiquidity = false;
             } else {
-                uint160 sqrtPricePrPloc_96 = LogPowMath.getSqrtPrice(rg.rightPt - (ret.locPt - 1));
-                ret.costX = uint128(MulDivMath.mulDivCeil(
-                    rg.liquidity, sqrtPricePrPloc_96 - rg.sqrtRate_96, sqrtPricePrPd_96 - rg.sqrtPriceR_96
-                ));
+                uint160 sqrtPricePrMloc_96 = LogPowMath.getSqrtPrice(rg.rightPt - ret.locPt);
+                ret.costX = uint128(mulDivCeil(rg.liquidity, sqrtPricePrMloc_96 - TwoPower.Pow96, rg.sqrtPriceR_96 - sqrtPricePrM1_96));
+                ret.costX = MaxMinMath.min(ret.costX, amountX);
                 ret.sqrtLoc_96 = LogPowMath.getSqrtPrice(ret.locPt);
                 ret.acquireY = AmountMath.getAmountY(rg.liquidity, ret.sqrtLoc_96, rg.sqrtPriceR_96, rg.sqrtRate_96, false);
-                ret.completeLiquidity = false;
             }
         }
     }
