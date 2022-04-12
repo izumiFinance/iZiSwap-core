@@ -104,13 +104,21 @@ library SwapMathX2YDesire {
         if (ret.locPt == rg.rightPt) {
             ret.costX = 0;
             ret.acquireY = 0;
-            ret.sqrtLoc_96 = rg.sqrtPriceR_96;
+            ret.locPt = ret.locPt - 1;
+            ret.sqrtLoc_96 = LogPowMath.getSqrtPrice(ret.locPt);
         } else {
             uint160 sqrtPricePrMloc_96 = LogPowMath.getSqrtPrice(rg.rightPt - ret.locPt);
             uint160 sqrtPricePrM1_96 = uint160(mulDivCeil(rg.sqrtPriceR_96, TwoPower.Pow96, rg.sqrtRate_96));
             ret.costX = mulDivCeil(rg.liquidity, sqrtPricePrMloc_96 - TwoPower.Pow96, rg.sqrtPriceR_96 - sqrtPricePrM1_96);
+
+            ret.locPt = ret.locPt - 1;
             ret.sqrtLoc_96 = LogPowMath.getSqrtPrice(ret.locPt);
-            ret.acquireY = MaxMinMath.min(uint128(AmountMath.getAmountY(rg.liquidity, ret.sqrtLoc_96, rg.sqrtPriceR_96, rg.sqrtRate_96, false)), desireY);
+
+            uint160 sqrtLocA1_96 = uint160(
+                uint256(ret.sqrtLoc_96) +
+                uint256(ret.sqrtLoc_96) * (uint256(rg.sqrtRate_96) - TwoPower.Pow96) / TwoPower.Pow96
+            );
+            ret.acquireY = MaxMinMath.min(uint128(AmountMath.getAmountY(rg.liquidity, sqrtLocA1_96, rg.sqrtPriceR_96, rg.sqrtRate_96, false)), desireY);
         }
     }
 
@@ -173,8 +181,7 @@ library SwapMathX2YDesire {
                     sqrtRate_96: sqrtRate_96
                 }), 
                 desireY
-            );
-            
+            );            
             retState.costX += ret.costX;
             desireY -= ret.acquireY;
             retState.acquireY += ret.acquireY;
@@ -185,14 +192,13 @@ library SwapMathX2YDesire {
                 retState.liquidityX = currentState.liquidity;
             } else {
                 // locPt > leftPt
-                ret.locPt = ret.locPt - 1;
-                ret.sqrtLoc_96 = uint160(uint256(ret.sqrtLoc_96) * TwoPower.Pow96 / uint256(sqrtRate_96));
                 uint256 locCostX;
                 uint128 locAcquireY;
                 // trade at locPt
                 (locCostX, locAcquireY, retState.liquidityX) = x2YAtPriceLiquidity(
                     desireY, ret.sqrtLoc_96, currentState.liquidity, 0
                 );
+
                 retState.costX += locCostX;
                 retState.acquireY += locAcquireY;
                 retState.finished = true;

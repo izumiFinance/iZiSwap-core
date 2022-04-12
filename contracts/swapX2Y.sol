@@ -458,7 +458,7 @@ contract SwapX2YModule {
                     uint256 feeAmount = MulDivMath.mulDivCeil(retState.costX, fee, 1e6 - fee);
                     uint256 chargedFeeAmount = feeAmount * feeChargePercent / 100;
                     totalFeeXCharged += chargedFeeAmount;
-
+                    
                     amountY += retState.acquireY;
                     amountX += (retState.costX + feeAmount);
                     desireY -= retState.acquireY;

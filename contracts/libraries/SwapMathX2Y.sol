@@ -131,13 +131,21 @@ library SwapMathX2Y {
             if (ret.locPt == rg.rightPt) {
                 ret.costX = 0;
                 ret.acquireY = 0;
-                ret.sqrtLoc_96 = rg.sqrtPriceR_96;
+                ret.locPt = ret.locPt - 1;
+                ret.sqrtLoc_96 = LogPowMath.getSqrtPrice(ret.locPt);
             } else {
                 uint160 sqrtPricePrMloc_96 = LogPowMath.getSqrtPrice(rg.rightPt - ret.locPt);
                 ret.costX = uint128(mulDivCeil(rg.liquidity, sqrtPricePrMloc_96 - TwoPower.Pow96, rg.sqrtPriceR_96 - sqrtPricePrM1_96));
                 ret.costX = MaxMinMath.min(ret.costX, amountX);
+                
+                ret.locPt = ret.locPt - 1;
                 ret.sqrtLoc_96 = LogPowMath.getSqrtPrice(ret.locPt);
-                ret.acquireY = AmountMath.getAmountY(rg.liquidity, ret.sqrtLoc_96, rg.sqrtPriceR_96, rg.sqrtRate_96, false);
+
+                uint160 sqrtLocA1_96 = uint160(
+                    uint256(ret.sqrtLoc_96) +
+                    uint256(ret.sqrtLoc_96) * (uint256(rg.sqrtRate_96) - TwoPower.Pow96) / TwoPower.Pow96
+                );
+                ret.acquireY = AmountMath.getAmountY(rg.liquidity, sqrtLocA1_96, rg.sqrtPriceR_96, rg.sqrtRate_96, false);
             }
         }
     }
@@ -214,8 +222,6 @@ library SwapMathX2Y {
                 retState.sqrtFinalPrice_96 = sqrtPriceL_96;
                 retState.liquidityX = currentState.liquidity;
             } else {
-                ret.locPt = ret.locPt - 1;
-                ret.sqrtLoc_96 = uint160(uint256(ret.sqrtLoc_96) * TwoPower.Pow96 / uint256(sqrtRate_96));
                 uint128 locCostX;
                 uint256 locAcquireY;
                 (locCostX, locAcquireY, retState.liquidityX) = x2YAtPriceLiquidity(amountX, ret.sqrtLoc_96, currentState.liquidity, 0);
