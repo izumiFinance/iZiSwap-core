@@ -18,6 +18,7 @@ import './libraries/TokenTransfer.sol';
 import './libraries/State.sol';
 import './libraries/Oracle.sol';
 import './libraries/OrderOrEndpoint.sol';
+import './libraries/MaxMinMath.sol';
 import './interfaces/IiZiSwapCallback.sol';
 import 'hardhat/console.sol';
 
@@ -154,7 +155,7 @@ contract SwapY2XModule {
     ) external returns (uint256 amountX, uint256 amountY) {
         
         require(amount > 0, "AP");
-        require(highPt <= rightMostPt, "HO");
+        highPt = MaxMinMath.min(highPt, rightMostPt);
         amountX = 0;
         amountY = 0;
         State memory st = state;
@@ -332,7 +333,7 @@ contract SwapY2XModule {
     ) external returns (uint256 amountX, uint256 amountY) {
         
         require (desireX > 0, "XP");
-        require (highPt <= rightMostPt, "HO");
+        highPt = MaxMinMath.min(highPt, rightMostPt);
         amountX = 0;
         amountY = 0;
         State memory st = state;
