@@ -133,10 +133,10 @@ function y2xAtLiquidity(point, rate, amountY, liquidity, liquidityX) {
 
 function x2yAtLiquidityDesire(point, rate, desireY, liquidity, liquidityX) {
     const liquidityY = stringMinus(liquidity, liquidityX);
-    const maxLiquidityY = y2l(desireY, point, rate, false);
+    const maxLiquidityY = y2l(desireY, point, rate, true);
 
     const transformLiquidityX = stringMin(liquidityY, maxLiquidityY);
-    const acquireY = l2y(transformLiquidityX, point, rate, false);
+    const acquireY = stringMin(l2y(transformLiquidityX, point, rate, false), desireY);
     const costX = l2x(transformLiquidityX, point, rate, true);
     return {acquireY, costX, liquidityX: stringAdd(liquidityX, transformLiquidityX)};
 }
@@ -511,7 +511,11 @@ describe("swap", function () {
         const expectResAtCp = x2yAtLiquidityDesire(cp, '1.0001', desireYAtCp, '50000', '20000');
         console.log('expectResAtCp: ', expectResAtCp)
 
+        console.log('--------------------');
+        console.log('desireY at cp: ', desireYAtCp);
         const swapResAtCp = await swapX2YDesireY(testSwap, trader, tokenX, tokenY, 3000, desireYAtCp, -3000);
+        console.log('expect acquireY: ', expectResAtCp.acquireY);
+        console.log('--------------------');
         expect(swapResAtCp.costX).to.equal(amountAddFee(expectResAtCp.costX));
         expect(swapResAtCp.acquireY).to.equal(expectResAtCp.acquireY);
 
@@ -587,14 +591,14 @@ describe("swap", function () {
         const costXAt999 = l2x('10000', 999, '1.0001', true);
 
         const costXWithFee_1000_2911 = amountAddFee(stringAdd(costXAt2911, costX_1000_2911));
-        const costXWithFee_999 = amountAddFee(costXAt999);
-        const costXWithFee = getSum([costXWithFee_999, costXWithFee_1000_2911]);
 
         const acquireYAt2911 = l2y('30000', cp, '1.0001', false);
         const acquireY_1000_2911 = yInRange('50000', 1000, 2911, '1.0001', false);
         const desireYAt999 = l2y('10000', 999, '1.0001', true);
 
         const expectResAt999 = x2yAtLiquidityDesire(999, '1.0001', desireYAt999, '30000', '0');
+        const costXWithFee_999 = amountAddFee(expectResAt999.costX);
+        const costXWithFee = getSum([costXWithFee_999, costXWithFee_1000_2911]);
         console.log('expectResAt999: ', expectResAt999)
         const acquireY = getSum([acquireYAt2911, acquireY_1000_2911, expectResAt999.acquireY])
         const desireY = getSum([acquireYAt2911, acquireY_1000_2911, desireYAt999])
