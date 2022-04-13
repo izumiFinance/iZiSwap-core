@@ -49,12 +49,13 @@ library SwapMathX2YDesire {
         uint160 sqrtPrice_96,
         uint128 liquidity,
         uint128 liquidityX
-    ) internal pure returns (uint256 costX, uint128 acquireY, uint128 newLiquidityX) {
+    ) internal view returns (uint256 costX, uint128 acquireY, uint128 newLiquidityX) {
         uint256 liquidityY = uint256(liquidity - liquidityX);
-        uint256 maxTransformLiquidityX = uint256(desireY) * TwoPower.Pow96 / sqrtPrice_96;
+        uint256 maxTransformLiquidityX = mulDivCeil(uint256(desireY), TwoPower.Pow96, sqrtPrice_96);
         uint128 transformLiquidityX = uint128((maxTransformLiquidityX > liquidityY) ? liquidityY : maxTransformLiquidityX);
         costX = mulDivCeil(transformLiquidityX, TwoPower.Pow96, sqrtPrice_96);
-        acquireY = uint128(transformLiquidityX * sqrtPrice_96 / TwoPower.Pow96);
+        acquireY = MaxMinMath.min(uint128(transformLiquidityX * sqrtPrice_96 / TwoPower.Pow96), desireY);
+        console.log('acquireY: %d', uint256(acquireY));
         newLiquidityX = liquidityX + transformLiquidityX;
     }
 
@@ -134,7 +135,7 @@ library SwapMathX2YDesire {
         int24 leftPt,
         uint160 sqrtRate_96,
         uint128 desireY
-    ) internal pure returns (
+    ) internal view returns (
         RangeRetState memory retState
     ) {
         retState.costX = 0;
