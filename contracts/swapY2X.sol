@@ -413,7 +413,7 @@ contract SwapY2XModule {
 
                     amountX += retState.acquireX;
                     amountY += (retState.costY + feeAmount);
-                    desireX -= retState.acquireX;
+                    desireX -= MaxMinMath.min(desireX, retState.acquireX);
                     
                     cache.currFeeScaleY_128 = cache.currFeeScaleY_128 + MulDivMath.mulDivFloor(feeAmount - chargedFeeAmount, TwoPower.Pow128, st.liquidity);
 

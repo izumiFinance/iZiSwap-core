@@ -43,7 +43,7 @@ library SwapMathY2XDesire {
         uint128 desireX,
         uint160 sqrtPrice_96,
         uint128 liquidityX
-    ) internal pure returns (uint256 costY, uint128 acquireX, uint128 newLiquidityX) {
+    ) internal view returns (uint256 costY, uint128 acquireX, uint128 newLiquidityX) {
         uint256 maxTransformLiquidityY = MulDivMath.mulDivCeil(desireX, sqrtPrice_96, TwoPower.Pow96);
         uint128 transformLiquidityY = uint128((maxTransformLiquidityY > liquidityX) ? liquidityX : maxTransformLiquidityY);
         costY = MulDivMath.mulDivCeil(transformLiquidityY, sqrtPrice_96, TwoPower.Pow96);
@@ -143,7 +143,7 @@ library SwapMathY2XDesire {
         int24 rightPt,
         uint160 sqrtRate_96,
         uint128 desireX
-    ) internal pure returns (
+    ) internal view returns (
         RangeRetState memory retState
     ) {
         retState.costY = 0;

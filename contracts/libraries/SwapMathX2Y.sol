@@ -56,10 +56,9 @@ library SwapMathX2Y {
         uint160 sqrtPrice_96,
         uint128 liquidity,
         uint128 liquidityX
-    ) internal pure returns (uint128 costX, uint256 acquireY, uint128 newLiquidityX) {
+    ) internal view returns (uint128 costX, uint256 acquireY, uint128 newLiquidityX) {
         uint256 liquidityY = uint256(liquidity - liquidityX);
         uint256 maxTransformLiquidityX = MulDivMath.mulDivFloor(amountX, sqrtPrice_96, TwoPower.Pow96);
-
         // transformLiquidityX <= floor(amountX * sqrtPrice_96 / TwoPower.Pow96)
         uint128 transformLiquidityX = uint128((maxTransformLiquidityX > liquidityY) ? liquidityY : maxTransformLiquidityX);
 
@@ -163,7 +162,7 @@ library SwapMathX2Y {
         int24 leftPt,
         uint160 sqrtRate_96,
         uint128 amountX
-    ) internal pure returns (
+    ) internal view returns (
         RangeRetState memory retState
     ) {
         retState.costX = 0;
