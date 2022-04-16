@@ -126,7 +126,7 @@ function x2yAt(point, rate, amountX) {
 
 function x2yAtLiquidity(point, rate, desireY, liquidity, liquidityX) {
     const liquidityY = liquidity.minus(liquidityX);
-    const maxLiquidityY = y2l(desireY, point, rate, false);
+    const maxLiquidityY = y2l(desireY, point, rate, true);
 
     const transformLiquidityX = liquidityY.gt(maxLiquidityY) ? maxLiquidityY : liquidityY;
     const acquireY = l2y(transformLiquidityX, point, rate, false);
