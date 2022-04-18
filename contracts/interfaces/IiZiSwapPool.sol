@@ -325,23 +325,23 @@ interface IiZiSwapPool {
     /// @notice some values of pool
     /// @return sqrtPrice_96 a 96 fixpoing number describe the sqrt value of current price(tokenX/tokenY)
     /// @return currentPoint The current point of the pool, 1.0001 ^ currentPoint = price
-    /// @return liquidity liquidity on the currentPoint (currX * sqrtPrice + currY / sqrtPrice)
-    /// @return liquidityX liquidity of tokenX
     /// @return observationCurrentIndex The index of the last oracle observation that was written,
     /// @return observationQueueLen The current maximum number of observations stored in the pool,
     /// @return observationNextQueueLen The next maximum number of observations, to be updated when the observation.
     /// @return locked whether the pool is locked (only used for checking reentrance)
+    /// @return liquidity liquidity on the currentPoint (currX * sqrtPrice + currY / sqrtPrice)
+    /// @return liquidityX liquidity of tokenX
     function state()
         external view
         returns(
             uint160 sqrtPrice_96,
             int24 currentPoint,
-            uint128 liquidity,
-            uint128 liquidityX,
             uint16 observationCurrentIndex,
             uint16 observationQueueLen,
             uint16 observationNextQueueLen,
-            bool locked
+            bool locked,
+            uint128 liquidity,
+            uint128 liquidityX
         );
     
     /// @notice limitOrder info on a given point
