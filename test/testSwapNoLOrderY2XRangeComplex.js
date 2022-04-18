@@ -36,13 +36,6 @@ async function addLiquidity(testMint, miner, tokenX, tokenY, fee, pl, pr, liquid
   await testMint.connect(miner).mint(tokenX.address, tokenY.address, fee, pl, pr, liquidity);
 }
 
-async function printState(poolAddr) {
-  const iZiSwapPool = await ethers.getContractFactory("iZiSwapPool");
-  pool = await iZiSwapPool.attach(poolAddr);
-  [sqrtPrice_96, currPt, currX, currY, liquidity, allX, locked] = await pool.state();
-  return [currPt, BigNumber(currX._hex), BigNumber(currY._hex), BigNumber(liquidity._hex), allX, locked]
-}
-
 function l2y(liquidity, tick, rate, up) {
     price = rate.pow(tick);
     y = liquidity.times(price.sqrt());
@@ -101,8 +94,8 @@ function y2xAtLiquidity(point, rate, amountY, liquidity, liquidityX) {
 async function printState(poolAddr) {
     const iZiSwapPool = await ethers.getContractFactory("iZiSwapPool");
     pool = await iZiSwapPool.attach(poolAddr);
-    [sqrtPrice_96, currPt, liquidity, liquidityX, locked] = await pool.state();
-    return [currPt, BigNumber(liquidity._hex), BigNumber(liquidityX._hex)]
+    const {sqrtPrice_96, currentPoint, liquidity, liquidityX, locked} = await pool.state();
+    return [currentPoint, BigNumber(liquidity._hex), BigNumber(liquidityX._hex)]
 }
 
 function y2xAt(point, rate, amountY) {

@@ -96,13 +96,11 @@ function depositXY(l, r, p, rate, liquidity) {
 async function printState(poolAddr) {
   const iZiSwapPool = await ethers.getContractFactory("iZiSwapPool");
   pool = await iZiSwapPool.attach(poolAddr);
-  [sqrtPrice_96, currPt, currX, currY, liquidity, allX, locked] = await pool.state();
+  const {sqrtPrice_96, currentPoint, liquidity, liquidityX, locked} = await pool.state();
   console.log(sqrtPrice_96);
-  console.log(currPt);
-  console.log(currX);
-  console.log(currY);
+  console.log(currentPoint);
   console.log(liquidity);
-  console.log(allX);
+  console.log(liquidityX);
   console.log(locked);
 }
 

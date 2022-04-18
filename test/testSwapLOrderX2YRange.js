@@ -39,8 +39,8 @@ async function addLiquidity(testMint, miner, tokenX, tokenY, fee, pl, pr, liquid
 async function printState(poolAddr) {
     const iZiSwapPool = await ethers.getContractFactory("iZiSwapPool");
     pool = await iZiSwapPool.attach(poolAddr);
-    [sqrtPrice_96, currPt, liquidity, liquidityX, locked] = await pool.state();
-    return [currPt, BigNumber(liquidity._hex), BigNumber(liquidityX._hex)]
+    const {sqrtPrice_96, currentPoint, liquidity, liquidityX, locked} = await pool.state();
+    return [currentPoint, BigNumber(liquidity._hex), BigNumber(liquidityX._hex)]
 }
 
 async function getLimOrder(poolAddr, pt) {
