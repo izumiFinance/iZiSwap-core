@@ -102,7 +102,7 @@ contract SwapY2XModule {
     address private mintModule;
 
     /// @notice percent to charge from miner's fee
-    uint24 public immutable feeChargePercent = 20;
+    uint24 public immutable feeChargePercent = 50;
 
     struct SwapCache {
         uint256 currFeeScaleX_128;

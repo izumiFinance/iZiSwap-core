@@ -41,8 +41,10 @@ contract iZiSwapFactory is IiZiSwapFactory {
     constructor(address _chargeReceiver, address _swapX2YModule, address _swapY2XModule, address _mintModule, address _limitOrderModule) {
         only_addr_ = address(this);
         owner = msg.sender;
-        fee2pointDelta[500] = 10;
-        fee2pointDelta[3000] = 50;
+        fee2pointDelta[100] = 1;
+        fee2pointDelta[400] = 8;
+        fee2pointDelta[2000] = 40;
+        fee2pointDelta[10000] = 200;
         swapX2YModule = _swapX2YModule;
         swapY2XModule = _swapY2XModule;
         mintModule = _mintModule;
@@ -61,7 +63,7 @@ contract iZiSwapFactory is IiZiSwapFactory {
     /// @param pointDelta The spacing between points to be enforced for all pools created with the given fee amount
     function enableFeeAmount(uint24 fee, uint24 pointDelta) external override noDelegateCall {
         require(msg.sender == owner, "ON");
-        require(pointDelta > 1, "P1");
+        require(pointDelta > 0, "P0");
         require(fee2pointDelta[fee] == 0, "FD0");
         fee2pointDelta[fee] = int24(pointDelta);
     }

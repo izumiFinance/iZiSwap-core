@@ -105,7 +105,7 @@ contract SwapX2YModule {
     address private mintModule;
 
     /// @notice percent to charge from miner's fee
-    uint24 public immutable feeChargePercent = 20;
+    uint24 public immutable feeChargePercent = 50;
 
     // delta cannot be int128.min and it can be proofed that
     // liquidDelta of any one point will not be int128.min

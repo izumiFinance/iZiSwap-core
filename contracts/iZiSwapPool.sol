@@ -103,7 +103,7 @@ contract iZiSwapPool is IiZiSwapPool {
     address private limitOrderModule;
 
     /// @notice percent to charge from miner's fee
-    uint24 public immutable override feeChargePercent = 20;
+    uint24 public immutable override feeChargePercent = 50;
 
     modifier lock() {
         require(!state.locked, 'LKD');
@@ -138,7 +138,7 @@ contract iZiSwapPool is IiZiSwapPool {
         int24 _pointDelta
     ) public {
         require(_tokenX < _tokenY, 'x<y');
-        require(_pointDelta > 1);
+        require(_pointDelta > 0, 'pd0');
         original = address(this);
         factory = _factory;
         swapModuleX2Y = IiZiSwapFactory(_factory).swapX2YModule();
