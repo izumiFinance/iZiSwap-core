@@ -3,6 +3,7 @@ const { ethers } = require("hardhat");
 
 const BigNumber = require('bignumber.js');
 const { assert } = require("console");
+const { getLimOrder} = require('./funcs.js');
 
 async function getToken() {
 
@@ -44,19 +45,6 @@ async function printState(poolAddr) {
   return {currPt: currentPoint, liquidity: BigNumber(liquidity._hex).toFixed(0), liquidityX: BigNumber(liquidityX._hex).toFixed(0), locked}
 }
 
-async function getLimOrder(poolAddr, pt) {
-    const iZiSwapPool = await ethers.getContractFactory("iZiSwapPool");
-    pool = await iZiSwapPool.attach(poolAddr);
-    const {sellingX, accEarnX, sellingY, accEarnY, earnX, earnY} = await pool.limitOrderData(pt);
-    return {
-        sellingX: BigNumber(sellingX._hex),
-        accEarnX: BigNumber(accEarnX._hex),
-        sellingY: BigNumber(sellingY._hex),
-        accEarnY: BigNumber(accEarnY._hex),
-        earnX: BigNumber(earnX._hex),
-        earnY: BigNumber(earnY._hex)
-    }
-}
 async function getStatusVal(poolAddr, pt) {
     const iZiSwapPool = await ethers.getContractFactory("iZiSwapPool");
     pool = await iZiSwapPool.attach(poolAddr);
