@@ -3,6 +3,7 @@ const { ethers } = require("hardhat");
 
 const BigNumber = require('bignumber.js');
 
+const {getFeeCharge} = require('./funcs');
 async function getToken() {
 
     // deploy token
@@ -84,7 +85,7 @@ function amountAddFee(amount) {
 }
 function getFee(amount) {
     const originFee = ceil(amount.times(3).div(997));
-    const charged = floor(originFee.times(20).div(100));
+    const charged = getFeeCharge(originFee);
     return originFee.minus(charged);
 }
 
@@ -158,6 +159,7 @@ describe("miner burn and collect fee after swaps", function () {
         const factory = await iZiSwapFactory.deploy(receiver.address, swapX2YModule, swapY2XModule, mintModule, limitOrderModule);
         await factory.deployed();
     
+        await factory.enableFeeAmount(3000, 50);
         [tokenX, tokenY] = await getToken();
         txAddr = tokenX.address.toLowerCase();
         tyAddr = tokenY.address.toLowerCase();
@@ -167,7 +169,7 @@ describe("miner burn and collect fee after swaps", function () {
 
         await factory.newPool(txAddr, tyAddr, 3000, -5000);
         poolAddr = await factory.pool(txAddr, tyAddr, 3000);
-    
+
         // test mint
         const testMintFactory = await ethers.getContractFactory("TestMint");
         testMint = await testMintFactory.deploy(factory.address);

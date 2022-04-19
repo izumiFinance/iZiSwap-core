@@ -15,6 +15,23 @@ async function getLimOrder(poolAddr, pt) {
     }
 }
 
+function floor(a) {
+    return a.toFixed(0, 3);
+}
+function ceil(b) {
+    return b.toFixed(0, 2);
+}
+function getAcquiredFee(amount, chargePercent = 50) {
+    const originFee = ceil(BigNumber(amount).times(3).div(997));
+    const charged = floor(BigNumber(originFee).times(chargePercent).div(100));
+    return BigNumber(originFee).minus(charged).toFixed(0);
+}
+
+function getFeeCharge(fee, chargePercent = 50) {
+    return floor(BigNumber(fee).times(chargePercent).div('100'));
+}
 module.exports ={
-    getLimOrder
+    getLimOrder,
+    getAcquiredFee,
+    getFeeCharge,
 }

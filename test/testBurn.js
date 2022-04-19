@@ -3,7 +3,7 @@ const { ethers } = require("hardhat");
 
 const BigNumber = require('bignumber.js');
 const { assert } = require("console");
-const { getLimOrder} = require('./funcs.js');
+const { getLimOrder, getAcquiredFee} = require('./funcs.js');
 
 async function getToken() {
 
@@ -246,12 +246,6 @@ async function addLimOrderWithX(tokenX, tokenY, seller, testAddLimOrder, amountX
     );
 }
 
-function getAcquiredFee(amount) {
-    const originFee = ceil(BigNumber(amount).times(3).div(997));
-    const charged = floor(BigNumber(originFee).times(20).div(100));
-    return BigNumber(originFee).minus(charged).toFixed(0);
-}
-
 function getFeeScale(feeAmount, liquidity) {
     const q128 = BigNumber(2).pow(128);
     const a = BigNumber(feeAmount).times(q128).toFixed(0);
@@ -341,6 +335,8 @@ describe("swap", function () {
 
     const factory = await iZiSwapFactory.deploy(receiver.address, swapX2YModule, swapY2XModule, mintModule, limitOrderModule);
     await factory.deployed();
+
+    await factory.enableFeeAmount(3000, 50);
 
     [tokenX, tokenY] = await getToken();
     txAddr = tokenX.address.toLowerCase();

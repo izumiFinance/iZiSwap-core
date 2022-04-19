@@ -4,6 +4,7 @@ const { ethers } = require("hardhat");
 const BigNumber = require('bignumber.js');
 const { tree } = require("fp-ts/lib/Tree");
 
+const {getFeeCharge} = require('../funcs');
 var tokenX;
 var tokenY;
 
@@ -68,10 +69,6 @@ function limitCostY(point, rate, amountX, maxAmountX) {
 
 function getFee(cost, fee) {
     return ceil(BigNumber(cost).times(fee).div(1e6-fee)).toFixed(0);
-}
-
-function getFeeCharge(fee) {
-    return floor(BigNumber(fee).times('20').div('100')).toFixed(0);
 }
 
 function getFeeAcquire(fee) {
@@ -306,6 +303,7 @@ describe("swap", function () {
 
         const factory = await iZiSwapFactory.deploy(receiver.address, swapX2YModule, swapY2XModule, mintModule, limitOrderModule);
         await factory.deployed();
+        await factory.enableFeeAmount(3000, 50);
 
         const testAddLimOrderFactory = await ethers.getContractFactory("TestAddLimOrder");
         testAddLimOrder = await testAddLimOrderFactory.deploy(factory.address);
