@@ -318,30 +318,6 @@ describe("log pow math", function () {
     //     console.log(2**(-96));
 
     // });
-<<<<<<< HEAD
-    it("compute", async function () {
-        const a = await contract.getSqrtPrice(-269246);
-        console.log('a: ', a.toString());
-        // for (var i=700001; i< 800000; i ++) {
-        //     if (i % 1000 === 0){
-        //         console.log(i);
-        //     }
-        //     //   const a = await contract.getSqrtPrice(i);
-        //     //   const res = await contract.getLogSqrtPriceFU(a);
-        //     //   expect(res[0]).to.equal(i-1);
-        //     //   expect(res[0] + 1).to.equal(res[1]);
-
-        //       let a2 = await contract.getSqrtPrice(-i);
-        //       a2 = new BigNumber(a2.toString()).div(1.0001 ** 0.499999);
-        //       const res2 = await contract.getLogSqrtPriceFU(a2.toFixed(0));
-        //       const res3 = await contract.getSqrtPrice(res2[0]);
-        //       if (new BigNumber(res3.toString()) > a2) {
-        //           console.log(a2.toFixed(0));
-        //           console.log(res3.toString());
-        //           console.log(i);
-        //       }
-        // }
-=======
 
     // it("test first getSqrtPrice and then log ....", async function () {
     //     for (var i=700001; i< 800000; i ++) {
@@ -363,7 +339,6 @@ describe("log pow math", function () {
     //               console.log(i);
     //           }
     //     }
->>>>>>> d896fdce65d6846f3915ece607456febde843931
 
     //     // const res = await contract.getSqrtPrice(400000);
     //     // //const a = (new BigNumber(1.0001).pow(-8000)).pow(10).pow(10).sqrt().times(2**96);
