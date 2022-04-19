@@ -2,6 +2,7 @@ const { expect } = require("chai");
 const { ethers } = require("hardhat");
 
 const BigNumber = require('bignumber.js');
+const { getLimOrder} = require('./funcs.js');
 
 async function getToken() {
 
@@ -43,19 +44,7 @@ async function printState(poolAddr) {
     return [currentPoint, BigNumber(liquidity._hex), BigNumber(liquidityX._hex)]
 }
 
-async function getLimOrder(poolAddr, pt) {
-    const iZiSwapPool = await ethers.getContractFactory("iZiSwapPool");
-    pool = await iZiSwapPool.attach(poolAddr);
-    [sellingX, accEarnX, sellingY, accEarnY, earnX, earnY] = await pool.limitOrderData(pt);
-    return [
-        BigNumber(sellingX._hex),
-        BigNumber(accEarnX._hex),
-        BigNumber(sellingY._hex),
-        BigNumber(accEarnY._hex),
-        BigNumber(earnX._hex),
-        BigNumber(earnY._hex)
-    ]
-}
+
 async function getStatusVal(poolAddr, pt) {
     const iZiSwapPool = await ethers.getContractFactory("iZiSwapPool");
     pool = await iZiSwapPool.attach(poolAddr);
@@ -158,7 +147,7 @@ function amountAddFee(amount) {
 }
 
 async function checkLimOrder(eSellingX, eAccEarnX, eSellingY, eAccEarnY, eEarnX, eEarnY, poolAddr, pt) {
-    [sellingX, accEarnX, sellingY, accEarnY, earnX, earnY] = await getLimOrder(poolAddr, pt);
+    const {sellingX, accEarnX, sellingY, accEarnY, earnX, earnY} = await getLimOrder(poolAddr, pt);
     expect(sellingX.toFixed(0)).to.equal(eSellingX.toFixed(0));
     expect(accEarnX.toFixed(0)).to.equal(eAccEarnX.toFixed(0));
     expect(sellingY.toFixed(0)).to.equal(eSellingY.toFixed(0));
