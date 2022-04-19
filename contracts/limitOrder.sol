@@ -125,8 +125,8 @@ contract LimitOrderModule {
     /// @return actualAssignY actual amount of tokenY marked
     function assignLimOrderEarnY(
         int24 point,
-        uint256 assignY
-    ) external returns (uint256 actualAssignY) {
+        uint128 assignY
+    ) external returns (uint128 actualAssignY) {
         actualAssignY = assignY;
         UserEarn.Data storage ue = userEarnY.get(msg.sender, point);
         if (actualAssignY > ue.earn) {
@@ -142,8 +142,8 @@ contract LimitOrderModule {
     /// @return actualAssignX actual amount of tokenX marked
     function assignLimOrderEarnX(
         int24 point,
-        uint256 assignX
-    ) external returns (uint256 actualAssignX) {
+        uint128 assignX
+    ) external returns (uint128 actualAssignX) {
         actualAssignX = assignX;
         UserEarn.Data storage ue = userEarnX.get(msg.sender, point);
         if (actualAssignX > ue.earn) {
@@ -220,7 +220,7 @@ contract LimitOrderModule {
         int24 point,
         uint128 amountX,
         bytes calldata data
-    ) external returns (uint128 orderX, uint256 acquireY) {
+    ) external returns (uint128 orderX, uint128 acquireY) {
         
         require(point % pointDelta == 0, "PD");
         require(point >= state.currentPoint, "PG");
@@ -235,8 +235,8 @@ contract LimitOrderModule {
         acquireY = 0;
         uint160 sqrtPrice_96 = LogPowMath.getSqrtPrice(point);
         
-        uint256 currY = pointOrder.sellingY;
-        uint256 currX = pointOrder.sellingX;
+        uint128 currY = pointOrder.sellingY;
+        uint128 currX = pointOrder.sellingX;
         if (currY > 0) {
             uint128 costX;
             (costX, acquireY) = SwapMathX2Y.x2YAtPrice(amountX, sqrtPrice_96, currY);
@@ -295,7 +295,7 @@ contract LimitOrderModule {
         int24 point,
         uint128 amountY,
         bytes calldata data
-    ) external returns (uint128 orderY, uint256 acquireX) {
+    ) external returns (uint128 orderY, uint128 acquireX) {
         
         require(point % pointDelta == 0, "PD");
         require(point <= state.currentPoint, "PL");
@@ -308,8 +308,8 @@ contract LimitOrderModule {
         orderY = amountY;
         acquireX = 0;
         uint160 sqrtPrice_96 = LogPowMath.getSqrtPrice(point);
-        uint256 currY = pointOrder.sellingY;
-        uint256 currX = pointOrder.sellingX;
+        uint128 currY = pointOrder.sellingY;
+        uint128 currX = pointOrder.sellingX;
         if (currX > 0) {
             uint128 costY;
             (costY, acquireX) = SwapMathY2X.y2XAtPrice(amountY, sqrtPrice_96, currX);
@@ -363,8 +363,8 @@ contract LimitOrderModule {
     /// @return actualCollectDec actual amount of decresed selling token collected
     /// Returns actualCollectEarn actual amount of earned token collected
     function collectLimOrder(
-        address recipient, int24 point, uint256 collectDec, uint256 collectEarn, bool isEarnY
-    ) external returns(uint256 actualCollectDec, uint256 actualCollectEarn) {
+        address recipient, int24 point, uint128 collectDec, uint128 collectEarn, bool isEarnY
+    ) external returns(uint128 actualCollectDec, uint128 actualCollectEarn) {
         UserEarn.Data storage ue = isEarnY? userEarnY.get(msg.sender, point) : userEarnX.get(msg.sender, point);
         actualCollectDec = collectDec;
         if (actualCollectDec > ue.sellingDec) {

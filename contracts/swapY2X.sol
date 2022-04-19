@@ -177,8 +177,8 @@ contract SwapY2XModule {
                 if (amountNoFee > 0) {
                     // clear limit order first
                     LimitOrder.Data storage od = limitOrderData[st.currentPoint];
-                    uint256 currX = od.sellingX;
-                    (uint128 costY, uint256 acquireX) = SwapMathY2X.y2XAtPrice(
+                    uint128 currX = od.sellingX;
+                    (uint128 costY, uint128 acquireX) = SwapMathY2X.y2XAtPrice(
                         amountNoFee, st.sqrtPrice_96, currX
                     );
                     if (acquireX < currX || costY >= amountNoFee) {
@@ -351,8 +351,8 @@ contract SwapY2XModule {
             if (cache.currentOrderOrEndPoint & 2 > 0) {
                 // clear limit order first
                 LimitOrder.Data storage od = limitOrderData[st.currentPoint];
-                uint256 currX = od.sellingX;
-                (uint256 costY, uint128 acquireX) = SwapMathY2XDesire.y2XAtPrice(
+                uint128 currX = od.sellingX;
+                (uint128 costY, uint128 acquireX) = SwapMathY2XDesire.y2XAtPrice(
                     desireX, st.sqrtPrice_96, currX
                 );
                 if (acquireX >= desireX) {

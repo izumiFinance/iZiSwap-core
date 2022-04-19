@@ -119,10 +119,10 @@ interface IiZiSwapPool {
         view
         returns (
             uint256 lastAccEarn,
-            uint256 sellingRemain,
-            uint256 sellingDec,
-            uint256 earn,
-            uint256 earnAssign
+            uint128 sellingRemain,
+            uint128 sellingDec,
+            uint128 earn,
+            uint128 earnAssign
         );
     
     /// @notice return the information about a user's limit order (sell tokenX and earn tokenY)
@@ -137,10 +137,10 @@ interface IiZiSwapPool {
         view
         returns (
             uint256 lastAccEarn,
-            uint256 sellingRemain,
-            uint256 sellingDec,
-            uint256 earn,
-            uint256 earnAssign
+            uint128 sellingRemain,
+            uint128 sellingDec,
+            uint128 earn,
+            uint128 earnAssign
         );
     
     /// @notice mark a given amount of tokenY in a limitorder(sellx and earn y) as assigned
@@ -149,8 +149,8 @@ interface IiZiSwapPool {
     /// @return actualAssignY actual amount of tokenY marked
     function assignLimOrderEarnY(
         int24 point,
-        uint256 assignY
-    ) external returns(uint256 actualAssignY);
+        uint128 assignY
+    ) external returns(uint128 actualAssignY);
     
     /// @notice mark a given amount of tokenX in a limitorder(selly and earn x) as assigned
     /// @param point point (log Price) of seller's limit order,be sure to be times of pointDelta
@@ -158,8 +158,8 @@ interface IiZiSwapPool {
     /// @return actualAssignX actual amount of tokenX marked
     function assignLimOrderEarnX(
         int24 point,
-        uint256 assignX
-    ) external returns(uint256 actualAssignX);
+        uint128 assignX
+    ) external returns(uint128 actualAssignX);
 
     /// @notice decrease limitorder of selling X
     /// @param point point of seller's limit order, be sure to be times of pointDelta
@@ -191,7 +191,7 @@ interface IiZiSwapPool {
         int24 point,
         uint128 amountX,
         bytes calldata data
-    ) external returns (uint128 orderX, uint256 acquireY);
+    ) external returns (uint128 orderX, uint128 acquireY);
 
     /// @notice add a limit order (selling y) in the pool
     /// @param recipient owner of the limit order
@@ -205,7 +205,7 @@ interface IiZiSwapPool {
         int24 point,
         uint128 amountY,
         bytes calldata data
-    ) external returns (uint128 orderY, uint256 acquireX);
+    ) external returns (uint128 orderY, uint128 acquireX);
 
     /// @notice collect earned or decreased token from limit order
     /// @param recipient address to benefit
@@ -216,8 +216,8 @@ interface IiZiSwapPool {
     /// @return actualCollectDec actual amount of decresed selling token collected
     /// @return actualCollectEarn actual amount of earned token collected
     function collectLimOrder(
-        address recipient, int24 point, uint256 collectDec, uint256 collectEarn, bool isEarnY
-    ) external returns(uint256 actualCollectDec, uint256 actualCollectEarn);
+        address recipient, int24 point, uint128 collectDec, uint128 collectEarn, bool isEarnY
+    ) external returns(uint128 actualCollectDec, uint128 actualCollectEarn);
 
     /// @notice add liquidity to the pool
     /// @param recipient Newly created liquidity will belong to this address
@@ -233,7 +233,7 @@ interface IiZiSwapPool {
         int24 rightPt,
         uint128 liquidDelta,
         bytes calldata data
-    ) external returns (uint128 amountX, uint128 amountY);
+    ) external returns (uint256 amountX, uint256 amountY);
 
     /// @notice decrease a given amount of liquidity from msg.sender's liquidities
     /// @param leftPt left endpoint of the liquidity
@@ -347,20 +347,20 @@ interface IiZiSwapPool {
     /// @notice limitOrder info on a given point
     /// @param point the given point 
     /// @return sellingX total amount of tokenX selling on the point
-    /// @return accEarnX total amount of earned tokenX(via selling tokenY) by all users at this point as of the last swap
-    /// @return sellingY total amount of tokenYselling on the point
-    /// @return accEarnY total amount of earned tokenY(via selling tokenX) by all users at this point as of the last swap
-    /// @return earnX total amount of unclaimed earned tokenX
     /// @return earnY total amount of unclaimed earned tokenY
+    /// @return accEarnY total amount of earned tokenY(via selling tokenX) by all users at this point as of the last swap
+    /// @return sellingY total amount of tokenYselling on the point
+    /// @return earnX total amount of unclaimed earned tokenX
+    /// @return accEarnX total amount of earned tokenX(via selling tokenY) by all users at this point as of the last swap
     function limitOrderData(int24 point)
         external view
         returns(
-            uint256 sellingX,
-            uint256 accEarnX,
-            uint256 sellingY,
+            uint128 sellingX,
+            uint128 earnY,
             uint256 accEarnY,
-            uint256 earnX,
-            uint256 earnY
+            uint128 sellingY,
+            uint128 earnX,
+            uint256 accEarnX
         );
     
     /// @notice query infomation about a point whether has limit order and whether as an liquidity's endpoint

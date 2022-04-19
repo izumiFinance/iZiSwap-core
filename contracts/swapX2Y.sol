@@ -167,8 +167,8 @@ contract SwapX2YModule {
                 uint128 amountNoFee = uint128(uint256(amount) * (1e6 - fee) / 1e6);
                 if (amountNoFee > 0) {
                     LimitOrder.Data storage od = limitOrderData[st.currentPoint];
-                    uint256 currY = od.sellingY;
-                    (uint128 costX, uint256 acquireY) = SwapMathX2Y.x2YAtPrice(
+                    uint128 currY = od.sellingY;
+                    (uint128 costX, uint128 acquireY) = SwapMathX2Y.x2YAtPrice(
                         amountNoFee, st.sqrtPrice_96, currY
                     );
                     if (acquireY < currY || costX >= amountNoFee) {
@@ -372,8 +372,8 @@ contract SwapX2YModule {
             // clear limit order first
             if (cache.currentOrderOrEndpt & 2 > 0) {
                 LimitOrder.Data storage od = limitOrderData[st.currentPoint];
-                uint256 currY = od.sellingY;
-                (uint256 costX, uint256 acquireY) = SwapMathX2YDesire.x2YAtPrice(
+                uint128 currY = od.sellingY;
+                (uint128 costX, uint128 acquireY) = SwapMathX2YDesire.x2YAtPrice(
                     desireY, st.sqrtPrice_96, currY
                 );
                 if (acquireY >= desireY) {
@@ -382,7 +382,7 @@ contract SwapX2YModule {
 
                 uint256 feeAmount = MulDivMath.mulDivCeil(costX, fee, 1e6 - fee);
                 totalFeeXCharged += feeAmount;
-                desireY = (desireY <= acquireY) ? 0 : desireY - uint128(acquireY);
+                desireY = (desireY <= acquireY) ? 0 : desireY - acquireY;
                 amountX += (costX + feeAmount);
                 amountY += acquireY;
                 currY -= acquireY;

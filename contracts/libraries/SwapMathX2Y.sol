@@ -29,10 +29,10 @@ library SwapMathX2Y {
     function x2YAtPrice(
         uint128 amountX,
         uint160 sqrtPrice_96,
-        uint256 currY
-    ) internal pure returns (uint128 costX, uint256 acquireY) {
+        uint128 currY
+    ) internal pure returns (uint128 costX, uint128 acquireY) {
         uint256 l = MulDivMath.mulDivFloor(amountX, sqrtPrice_96, TwoPower.Pow96);
-        acquireY = MulDivMath.mulDivFloor(l, sqrtPrice_96, TwoPower.Pow96);
+        acquireY = uint128(MulDivMath.mulDivFloor(l, sqrtPrice_96, TwoPower.Pow96));
         if (acquireY > currY) {
             acquireY = currY;
         }
@@ -56,7 +56,7 @@ library SwapMathX2Y {
         uint160 sqrtPrice_96,
         uint128 liquidity,
         uint128 liquidityX
-    ) internal view returns (uint128 costX, uint256 acquireY, uint128 newLiquidityX) {
+    ) internal pure returns (uint128 costX, uint256 acquireY, uint128 newLiquidityX) {
         uint256 liquidityY = uint256(liquidity - liquidityX);
         uint256 maxTransformLiquidityX = MulDivMath.mulDivFloor(amountX, sqrtPrice_96, TwoPower.Pow96);
         // transformLiquidityX <= floor(amountX * sqrtPrice_96 / TwoPower.Pow96)

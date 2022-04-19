@@ -12,14 +12,14 @@ library UserEarn {
         // with same direction (sell x or sell y) as of the last update(add/dec)
         uint256 lastAccEarn;
         // remaing amount of token on sale in this limit order
-        uint256 sellingRemain;
+        uint128 sellingRemain;
         // uncollected decreased token
-        uint256 sellingDec;
+        uint128 sellingDec;
         // unassigned earned token
         // earned token before collected need to be assigned
-        uint256 earn;
+        uint128 earn;
         // assigned but uncollected earned token
-        uint256 earnAssign;
+        uint128 earnAssign;
     }
     
     function get(
@@ -34,9 +34,9 @@ library UserEarn {
         UserEarn.Data storage self,
         uint256 currAccEarn,
         uint160 sqrtPrice_96,
-        uint256 totalEarn,
+        uint128 totalEarn,
         bool isEarnY
-    ) internal returns (uint256 totalEarnRemain) {
+    ) internal returns (uint128 totalEarnRemain) {
         Data memory data = self;
         uint256 earn = currAccEarn - data.lastAccEarn;
         if (earn > totalEarn) {
@@ -60,8 +60,8 @@ library UserEarn {
                 earn = MulDivMath.mulDivFloor(l, TwoPower.Pow96, sqrtPrice_96);
             }
         }
-        data.earn += earn;
-        data.sellingRemain -= sold;
+        data.earn += uint128(earn);
+        data.sellingRemain -= uint128(sold);
         self.lastAccEarn = currAccEarn;
         if (earn > 0) {
             self.earn = data.earn;
@@ -69,7 +69,7 @@ library UserEarn {
         if (sold > 0) {
             self.sellingRemain = data.sellingRemain;
         }
-        totalEarnRemain = totalEarn - earn;
+        totalEarnRemain = totalEarn - uint128(earn);
     }
 
     function add(
@@ -77,9 +77,9 @@ library UserEarn {
         uint128 delta,
         uint256 currAccEarn,
         uint160 sqrtPrice_96,
-        uint256 totalEarn,
+        uint128 totalEarn,
         bool isEarnY
-    ) internal returns(uint256 totalEarnRemain) {
+    ) internal returns(uint128 totalEarnRemain) {
         totalEarnRemain = update(self, currAccEarn, sqrtPrice_96, totalEarn, isEarnY);
         self.sellingRemain = self.sellingRemain + delta;
     }
@@ -89,9 +89,9 @@ library UserEarn {
         uint128 delta,
         uint256 currAccEarn,
         uint160 sqrtPrice_96,
-        uint256 totalEarn,
+        uint128 totalEarn,
         bool isEarnY
-    ) internal returns(uint128 actualDelta, uint256 totalEarnRemain) {
+    ) internal returns(uint128 actualDelta, uint128 totalEarnRemain) {
         totalEarnRemain = update(self, currAccEarn, sqrtPrice_96, totalEarn, isEarnY);
         actualDelta = delta;
         if (actualDelta > self.sellingRemain) {

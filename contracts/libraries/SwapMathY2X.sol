@@ -30,10 +30,10 @@ library SwapMathY2X {
     function y2XAtPrice(
         uint128 amountY,
         uint160 sqrtPrice_96,
-        uint256 currX
-    ) internal pure returns (uint128 costY, uint256 acquireX) {
+        uint128 currX
+    ) internal pure returns (uint128 costY, uint128 acquireX) {
         uint256 l = MulDivMath.mulDivFloor(amountY, TwoPower.Pow96, sqrtPrice_96);
-        acquireX = MulDivMath.mulDivFloor(l, TwoPower.Pow96, sqrtPrice_96);
+        acquireX = uint128(MulDivMath.mulDivFloor(l, TwoPower.Pow96, sqrtPrice_96));
         if (acquireX > currX) {
             acquireX = currX;
         }

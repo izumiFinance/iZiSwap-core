@@ -175,14 +175,14 @@ contract iZiSwapPool is IiZiSwapPool {
     /// @return actualAssignY actual amount of tokenY marked
     function assignLimOrderEarnY(
         int24 point,
-        uint256 assignY
-    ) external override noDelegateCall lock returns (uint256 actualAssignY) {
+        uint128 assignY
+    ) external override noDelegateCall lock returns (uint128 actualAssignY) {
         
         (bool success, bytes memory d) = limitOrderModule.delegatecall(
-            abi.encodeWithSignature("assignLimOrderEarnY(int24,uint256)", point, assignY)
+            abi.encodeWithSignature("assignLimOrderEarnY(int24,uint128)", point, assignY)
         );
         if (success) {
-            actualAssignY = abi.decode(d, (uint256));
+            actualAssignY = abi.decode(d, (uint128));
         } else {
             revertDCData(d);
         }
@@ -194,14 +194,14 @@ contract iZiSwapPool is IiZiSwapPool {
     /// @return actualAssignX actual amount of tokenX marked
     function assignLimOrderEarnX(
         int24 point,
-        uint256 assignX
-    ) external override noDelegateCall lock returns (uint256 actualAssignX) {
+        uint128 assignX
+    ) external override noDelegateCall lock returns (uint128 actualAssignX) {
         
         (bool success, bytes memory d) = limitOrderModule.delegatecall(
-            abi.encodeWithSignature("assignLimOrderEarnX(int24,uint256)", point, assignX)
+            abi.encodeWithSignature("assignLimOrderEarnX(int24,uint128)", point, assignX)
         );
         if (success) {
-            actualAssignX = abi.decode(d, (uint256));
+            actualAssignX = abi.decode(d, (uint128));
         } else {
             revertDCData(d);
         }
@@ -261,13 +261,13 @@ contract iZiSwapPool is IiZiSwapPool {
         int24 point,
         uint128 amountX,
         bytes calldata data
-    ) external override noDelegateCall lock returns (uint128 orderX, uint256 acquireY) {
+    ) external override noDelegateCall lock returns (uint128 orderX, uint128 acquireY) {
         
         (bool success, bytes memory d) = limitOrderModule.delegatecall(
             abi.encodeWithSignature("addLimOrderWithX(address,int24,uint128,bytes)", recipient, point, amountX, data)
         );
         if (success) {
-            (orderX, acquireY) = abi.decode(d, (uint128, uint256));
+            (orderX, acquireY) = abi.decode(d, (uint128, uint128));
             emit AddLimitOrder(orderX, point, true);
         } else {
             revertDCData(d);
@@ -287,13 +287,13 @@ contract iZiSwapPool is IiZiSwapPool {
         int24 point,
         uint128 amountY,
         bytes calldata data
-    ) external override noDelegateCall lock returns (uint128 orderY, uint256 acquireX) {
+    ) external override noDelegateCall lock returns (uint128 orderY, uint128 acquireX) {
         
         (bool success, bytes memory d) = limitOrderModule.delegatecall(
             abi.encodeWithSignature("addLimOrderWithY(address,int24,uint128,bytes)", recipient, point, amountY, data)
         );
         if (success) {
-            (orderY, acquireX) = abi.decode(d, (uint128, uint256));
+            (orderY, acquireX) = abi.decode(d, (uint128, uint128));
             emit AddLimitOrder(orderY, point, false);
         } else {
             revertDCData(d);
@@ -310,13 +310,13 @@ contract iZiSwapPool is IiZiSwapPool {
     /// @return actualCollectDec actual amount of decresed selling token collected
     /// Returns actualCollectEarn actual amount of earned token collected
     function collectLimOrder(
-        address recipient, int24 point, uint256 collectDec, uint256 collectEarn, bool isEarnY
-    ) external override noDelegateCall lock returns(uint256 actualCollectDec, uint256 actualCollectEarn) {
+        address recipient, int24 point, uint128 collectDec, uint128 collectEarn, bool isEarnY
+    ) external override noDelegateCall lock returns(uint128 actualCollectDec, uint128 actualCollectEarn) {
         (bool success, bytes memory d) = limitOrderModule.delegatecall(
-            abi.encodeWithSignature("collectLimOrder(address,int24,uint256,uint256,bool)", recipient, point, collectDec, collectEarn, isEarnY)
+            abi.encodeWithSignature("collectLimOrder(address,int24,uint128,uint128,bool)", recipient, point, collectDec, collectEarn, isEarnY)
         );
         if (success) {
-            (actualCollectDec, actualCollectEarn) = abi.decode(d, (uint256, uint256));
+            (actualCollectDec, actualCollectEarn) = abi.decode(d, (uint128, uint128));
         } else {
             revertDCData(d);
         }
@@ -336,12 +336,12 @@ contract iZiSwapPool is IiZiSwapPool {
         int24 rightPt,
         uint128 liquidDelta,
         bytes calldata data
-    ) external override noDelegateCall lock returns (uint128 amountX, uint128 amountY) {
+    ) external override noDelegateCall lock returns (uint256 amountX, uint256 amountY) {
         (bool success, bytes memory d) = mintModule.delegatecall(
             abi.encodeWithSignature("mint(address,int24,int24,uint128,bytes)", recipient, leftPt, rightPt,liquidDelta,data)
         );
         if (success) {
-            (amountX, amountY) = abi.decode(d, (uint128, uint128));
+            (amountX, amountY) = abi.decode(d, (uint256, uint256));
             emit Mint(msg.sender, recipient, leftPt, rightPt, liquidDelta, amountX, amountY);
         } else {
             revertDCData(d);

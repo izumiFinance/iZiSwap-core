@@ -29,14 +29,14 @@ library SwapMathY2XDesire {
     function y2XAtPrice(
         uint128 desireX,
         uint160 sqrtPrice_96,
-        uint256 currX
-    ) internal pure returns (uint256 costY, uint128 acquireX) {
+        uint128 currX
+    ) internal pure returns (uint128 costY, uint128 acquireX) {
         acquireX = desireX;
         if (acquireX > currX) {
             acquireX = uint128(currX);
         }
         uint256 l = MulDivMath.mulDivCeil(acquireX, sqrtPrice_96, TwoPower.Pow96);
-        costY = MulDivMath.mulDivCeil(l, sqrtPrice_96, TwoPower.Pow96);
+        costY = uint128(MulDivMath.mulDivCeil(l, sqrtPrice_96, TwoPower.Pow96));
     }
 
     function y2XAtPriceLiquidity(

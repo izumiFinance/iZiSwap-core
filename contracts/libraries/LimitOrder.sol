@@ -3,11 +3,11 @@ pragma solidity ^0.8.4;
 
 library LimitOrder {
     struct Data {
-        uint256 sellingX;
-        uint256 accEarnX;
-        uint256 sellingY;
+        uint128 sellingX;
+        uint128 earnY;
         uint256 accEarnY;
-        uint256 earnX;
-        uint256 earnY;
+        uint128 sellingY;
+        uint128 earnX;
+        uint256 accEarnX;
     }
 }
