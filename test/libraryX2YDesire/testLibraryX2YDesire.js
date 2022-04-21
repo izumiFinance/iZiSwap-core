@@ -977,7 +977,58 @@ describe("swap", function () {
         expect(state2.liquidity).to.equal('50000');
         expect(state2.liquidityX).to.equal(expectResAtCp.liquidityX);
     });
-    
+    it("4.2 leftPt = cp, startHasY, !startHasX, result lx = l, acquireY < desireY", async function () {
+
+
+        const leftPt = 1000;
+
+        await addLiquidity(testMint, miner1, tokenX, tokenY, 3000, -1250, leftPt, '30000');
+        await addLiquidity(testMint, miner2, tokenX, tokenY, 3000, leftPt, 3150, '90000');
+
+        const cp = 1000;
+        await testSwap.connect(trader2).swapY2X(tokenX.address, tokenY.address, 3000, '10000000000000000000000', cp);
+        const costYAtCp = l2y('60000', cp, '1.0001', true);
+        const costYAtCpWithFee = amountAddFee(costYAtCp);
+        const {costY, acquireX, liquidityX} = y2xAtLiquidity(cp, '1.0001', costYAtCp, '90000', '90000')
+        
+        await testSwap.connect(trader2).swapY2X(tokenX.address, tokenY.address, 3000, costYAtCpWithFee, cp + 1);
+        const state = await getState(pool);
+        console.log(state.currentPoint);
+        console.log(state.liquidity);
+        console.log(state.liquidityX);
+
+        expect(state.currentPoint).to.equal(String(cp));
+        expect(state.liquidity).to.equal('90000');
+        expect(state.liquidityX).to.equal('30000');
+
+        const costXAt1000 = l2x('60000', cp, '1.0001', true);
+        const acquireYAt1000 = l2y('60000', cp, '1.0001', false);
+
+        const costX_621_1000 = xInRange('30000', 621, 1000, '1.0001', true);
+        const acquireY_621_1000 = yInRange('30000', 621, 1000, '1.0001', false);
+
+        const desireYAt620 = l2y('21000', 620, '1.0001', true);
+        const expectResAt620 = x2yAtLiquidityDesire(620, '1.0001', desireYAt620, '30000', '0')
+        console.log('expectResAt620: ', expectResAt620)
+
+        const costXWithFee = stringAdd(amountAddFee(costXAt1000), amountAddFee(getSum([costX_621_1000, expectResAt620.costX])))        
+
+        const acquireYAt620 = expectResAt620.acquireY;
+
+        const acquireY = getSum([acquireYAt1000, acquireY_621_1000, acquireYAt620])
+        const desireY = getSum([acquireYAt1000, acquireY_621_1000, desireYAt620])
+
+        // const expectResAtCp = x2yAtLiquidity(cp, '1.0001', costXAt2911, '50000', '20000');
+
+        const swapResAtCp = await swapX2YDesireY(testSwap, trader, tokenX, tokenY, 3000, desireY, -3000);
+        expect(swapResAtCp.costX).to.equal(costXWithFee);
+        expect(swapResAtCp.acquireY).to.equal(acquireY);
+
+        const state2 = await getState(pool);
+        expect(state2.currentPoint).to.equal('620');
+        expect(state2.liquidity).to.equal('30000');
+        expect(state2.liquidityX).to.equal(expectResAt620.liquidityX);
+    });
     
     it("5.1 leftPt = cp, startHasY, !startHasX, result lx < l", async function () {
 
@@ -1054,7 +1105,7 @@ describe("swap", function () {
         expect(state2.liquidityX).to.equal('50000');
     });
 
-    it("5.3 leftPt = cp, startHasY, !startHasX, result lx = l, acquireY > desireY", async function () {
+    it("5.3 leftPt = cp, startHasY, !startHasX, result lx = l, acquireY < desireY", async function () {
 
         const leftPt = 1000;
 
