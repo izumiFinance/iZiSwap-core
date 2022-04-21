@@ -2,7 +2,7 @@ const { expect } = require("chai");
 const { ethers } = require("hardhat");
 
 const BigNumber = require('bignumber.js');
-const { getLimOrder} = require('./funcs.js');
+const { getLimOrder, getFeeCharge} = require('./funcs.js');
 
 async function getToken() {
 
@@ -197,11 +197,7 @@ async function getPoolParts() {
       limitOrderModule: limitOrderModule.address,
     };
   }
-function getFee(amount) {
-    const originFee = ceil(amount.times(3).div(997));
-    const charged = floor(originFee.times(20).div(100));
-    return originFee.minus(charged);
-}
+  
 async function burn(poolAddr, miner, pl, pr, liquidDelta) {
     const iZiSwapPool = await ethers.getContractFactory("iZiSwapPool");
     pool = await iZiSwapPool.attach(poolAddr);
@@ -237,6 +233,12 @@ function feeScale2Fee(feeScale, liquidity) {
     const fee_128 = feeScale.times(liquidity);
     return bigIntDiv(fee_128, BigNumber(2).pow(128));
 }
+
+function getFee(amount) {
+    const originFee = ceil(amount.times(3).div(997));
+    const charged = getFeeCharge(originFee);
+    return originFee.minus(charged);
+}
 describe("swap", function () {
   it("swap with limorder x2y range complex", async function () {
     const [signer, miner1, miner2, miner3, seller0, seller1, trader, trader2, receiver] = await ethers.getSigners();
@@ -247,6 +249,7 @@ describe("swap", function () {
 
     const factory = await iZiSwapFactory.deploy(receiver.address, swapX2YModule, swapY2XModule, mintModule, limitOrderModule);
     await factory.deployed();
+    await factory.enableFeeAmount(3000, 50);
 
     [tokenX, tokenY] = await getToken();
     txAddr = tokenX.address.toLowerCase();

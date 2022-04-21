@@ -30,6 +30,7 @@ function getAcquiredFee(amount, chargePercent = 50) {
 function getFeeCharge(fee, chargePercent = 50) {
     return floor(BigNumber(fee).times(chargePercent).div('100'));
 }
+
 module.exports ={
     getLimOrder,
     getAcquiredFee,

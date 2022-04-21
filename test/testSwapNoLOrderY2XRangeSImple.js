@@ -163,6 +163,7 @@ describe("swap", function () {
     const factory = await iZiSwapFactory.deploy(receiver.address, swapX2YModule, swapY2XModule, mintModule, limitOrderModule);
     await factory.deployed();
 
+    await factory.enableFeeAmount(3000, 50);
     [tokenX, tokenY] = await getToken();
     txAddr = tokenX.address.toLowerCase();
     tyAddr = tokenY.address.toLowerCase();

@@ -154,6 +154,7 @@ describe("LimOrder SellY Offset SellX", function () {
         const factory = await iZiSwapFactory.deploy(receiver.address, swapX2YModule, swapY2XModule, mintModule, limitOrderModule);
         await factory.deployed();
         console.log("factory addr: " + factory.address);
+        await factory.enableFeeAmount(3000, 50);
         [tokenX, tokenY] = await getToken();
         txAddr = tokenX.address.toLowerCase();
         tyAddr = tokenY.address.toLowerCase();

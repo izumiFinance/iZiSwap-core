@@ -2,6 +2,7 @@ const { expect } = require("chai");
 const { ethers } = require("hardhat");
 
 const BigNumber = require('bignumber.js');
+const {getAcquiredFee} = require('./funcs');
 
 async function getToken() {
 
@@ -150,6 +151,7 @@ describe("LimOrder SellX earn", function () {
         const iZiSwapFactory = await ethers.getContractFactory("iZiSwapFactory");
         const factory = await iZiSwapFactory.deploy(receiver.address, swapX2YModule, swapY2XModule, mintModule, limitOrderModule);
         await factory.deployed();
+        await factory.enableFeeAmount(3000, 50);
         console.log("factory addr: " + factory.address);
         [tokenX, tokenY] = await getToken();
         txAddr = tokenX.address.toLowerCase();

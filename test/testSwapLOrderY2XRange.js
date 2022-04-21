@@ -2,7 +2,7 @@ const { expect } = require("chai");
 const { ethers } = require("hardhat");
 
 const BigNumber = require('bignumber.js');
-const { getLimOrder} = require('./funcs.js');
+const { getLimOrder, getFeeCharge} = require('./funcs.js');
 
 async function getToken() {
 
@@ -157,7 +157,7 @@ function amountAddFee(amount) {
 }
 function getFee(amount) {
     const originFee = ceil(amount.times(3).div(997));
-    const charged = floor(originFee.times(20).div(100));
+    const charged = getFeeCharge(originFee);
     return originFee.minus(charged);
 }
 function bigIntDiv(a, b) {
@@ -237,6 +237,7 @@ describe("swap", function () {
 
     const factory = await iZiSwapFactory.deploy(receiver.address, swapX2YModule, swapY2XModule, mintModule, limitOrderModule);
     await factory.deployed();
+    await factory.enableFeeAmount(3000, 50);
 
     [tokenX, tokenY] = await getToken();
     txAddr = tokenX.address.toLowerCase();
