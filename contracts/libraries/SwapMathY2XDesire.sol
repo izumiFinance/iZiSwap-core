@@ -43,7 +43,7 @@ library SwapMathY2XDesire {
         uint128 desireX,
         uint160 sqrtPrice_96,
         uint128 liquidityX
-    ) internal view returns (uint256 costY, uint128 acquireX, uint128 newLiquidityX) {
+    ) internal pure returns (uint256 costY, uint128 acquireX, uint128 newLiquidityX) {
         uint256 maxTransformLiquidityY = MulDivMath.mulDivCeil(desireX, sqrtPrice_96, TwoPower.Pow96);
         uint128 transformLiquidityY = uint128((maxTransformLiquidityY > liquidityX) ? liquidityX : maxTransformLiquidityY);
         costY = MulDivMath.mulDivCeil(transformLiquidityY, sqrtPrice_96, TwoPower.Pow96);
@@ -102,14 +102,14 @@ library SwapMathY2XDesire {
 
         ret.locPt = MaxMinMath.max(rg.leftPt, ret.locPt);
         ret.locPt = MaxMinMath.min(rg.rightPt - 1, ret.locPt);
+        ret.sqrtLoc_96 = LogPowMath.getSqrtPrice(ret.locPt);
 
         if (ret.locPt == rg.leftPt) {
-            ret.sqrtLoc_96 = rg.sqrtPriceL_96;
+            // ret.sqrtLoc_96 = rg.sqrtPriceL_96;
             ret.acquireX = 0;
             ret.costY = 0;
             return ret;
         }
-        ret.sqrtLoc_96 = LogPowMath.getSqrtPrice(ret.locPt);
         ret.completeLiquidity = false;
         ret.acquireX = MaxMinMath.min(uint128(AmountMath.getAmountX(
             rg.liquidity,
@@ -143,7 +143,7 @@ library SwapMathY2XDesire {
         int24 rightPt,
         uint160 sqrtRate_96,
         uint128 desireX
-    ) internal view returns (
+    ) internal pure returns (
         RangeRetState memory retState
     ) {
         retState.costY = 0;
@@ -167,6 +167,7 @@ library SwapMathY2XDesire {
                     retState.finalPt = currentState.currentPoint;
                     // get fixed sqrt price to reduce accumulated error
                     retState.sqrtFinalPrice_96 = LogPowMath.getSqrtPrice(rightPt);
+                    return retState;
                 }
                 // sqrt(price) + sqrt(price) * (1.0001 - 1) = 
                 // sqrt(price) * 1.0001
@@ -199,11 +200,11 @@ library SwapMathY2XDesire {
         } else {
             uint256 locCostY;
             uint128 locAcquireX;
-            if (startHasY && ret.locPt == currentState.currentPoint) {
-                // get fixed sqrt price to reduce accumulated error
-                // because ret.sqrtLoc_96 is computed from sqrtStartPrice * sqrt(1.0001)
-                ret.sqrtLoc_96 = LogPowMath.getSqrtPrice(ret.locPt);
-            }
+            // if (startHasY && ret.locPt == currentState.currentPoint) {
+            //     // get fixed sqrt price to reduce accumulated error
+            //     // because ret.sqrtLoc_96 is computed from sqrtStartPrice * sqrt(1.0001)
+            //     ret.sqrtLoc_96 = LogPowMath.getSqrtPrice(ret.locPt);
+            // }
             (locCostY, locAcquireX, retState.liquidityX) = y2XAtPriceLiquidity(desireX, ret.sqrtLoc_96, currentState.liquidity);
             retState.costY += locCostY;
             retState.acquireX += locAcquireX;

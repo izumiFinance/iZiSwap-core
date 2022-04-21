@@ -98,13 +98,12 @@ library SwapMathY2X {
             ret.locPt = MaxMinMath.min(rg.rightPt - 1, ret.locPt);
 
             ret.completeLiquidity = false;
+            ret.sqrtLoc_96 = LogPowMath.getSqrtPrice(ret.locPt);
             if (ret.locPt == rg.leftPt) {
                 ret.costY = 0;
                 ret.acquireX = 0;
-                ret.sqrtLoc_96 = rg.sqrtPriceL_96;
                 return ret;
             }
-            ret.sqrtLoc_96 = LogPowMath.getSqrtPrice(ret.locPt);
             
             ret.costY = MaxMinMath.min(uint128(AmountMath.getAmountY(
                 rg.liquidity,
@@ -207,11 +206,11 @@ library SwapMathY2X {
             // trade at locPt
             uint128 locCostY;
             uint256 locAcquireX;
-            if (startHasY && ret.locPt == currentState.currentPoint) {
-                // get fixed sqrt price to reduce accumulated error
-                // because ret.sqrtLoc_96 is computed from sqrtStartPrice * sqrt(1.0001)
-                ret.sqrtLoc_96 = LogPowMath.getSqrtPrice(ret.locPt);
-            }
+            // if (startHasY && ret.locPt == currentState.currentPoint) {
+            //     // get fixed sqrt price to reduce accumulated error
+            //     // because ret.sqrtLoc_96 is computed from sqrtStartPrice * sqrt(1.0001)
+            //     ret.sqrtLoc_96 = LogPowMath.getSqrtPrice(ret.locPt);
+            // }
             (locCostY, locAcquireX, retState.liquidityX) = y2XAtPriceLiquidity(amountY, ret.sqrtLoc_96, currentState.liquidity);
             
             retState.costY += locCostY;
