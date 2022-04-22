@@ -593,7 +593,7 @@ describe("swap", function () {
         const costYAtCpWithFee = amountAddFee(costYAtCp);
         const costYAtRightPt = l2y('15000', rightPt, '1.0001', true);
         const costYAtRightPtWithFee = amountAddFee(costYAtRightPt);
-        const expectResAtRightPt = y2xAtLiquidity(rightPt, '1.0001', costYAtCp, '50000', '0');
+        const expectResAtRightPt = y2xAtLiquidity(rightPt, '1.0001', costYAtRightPt, '50000', '50000');
 
         const swapResAtCp = await swapY2X(testSwap, trader, tokenX, tokenY, 3000, getSum([costYAtCpWithFee, costYAtRightPtWithFee]), rightPt + 1);
         expect(swapResAtCp.costY).to.equal(getSum([costYAtCpWithFee, costYAtRightPtWithFee]));
