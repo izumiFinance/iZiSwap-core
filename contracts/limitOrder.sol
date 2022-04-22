@@ -237,14 +237,17 @@ contract LimitOrderModule {
         
         uint128 currY = pointOrder.sellingY;
         uint128 currX = pointOrder.sellingX;
+        uint128 costOffsetX = 0;
         if (currY > 0) {
-            uint128 costX;
-            (costX, acquireY) = SwapMathX2Y.x2YAtPrice(amountX, sqrtPrice_96, currY);
-            orderX -= costX;
+            (costOffsetX, acquireY) = SwapMathX2Y.x2YAtPrice(amountX, sqrtPrice_96, currY);
+            orderX -= costOffsetX;
             currY -= acquireY;
-            pointOrder.accEarnX = pointOrder.accEarnX + costX;
-            pointOrder.earnX = pointOrder.earnX + costX;
+            pointOrder.accEarnX = pointOrder.accEarnX + costOffsetX;
+            pointOrder.earnX = pointOrder.earnX + costOffsetX;
             pointOrder.sellingY = currY;
+            if (currY > 0) {
+                orderX = 0;
+            }
         }
         if (orderX > 0) {
             currX += orderX;
@@ -258,12 +261,11 @@ contract LimitOrderModule {
         // update statusval and bitmap
         if (currX == 0 && currY == 0) {
             int24 val = orderOrEndpoint.getOrderOrEndptVal(point, pointDelta);
-            if (val & 2 != 0) {
-                int24 newVal = val & 1;
-                orderOrEndpoint.setOrderOrEndptVal(point, pointDelta, newVal);
-                if (newVal == 0) {
-                    pointBitmap.setZero(point, pointDelta);
-                }
+            // val & 2 != 0, because currX == 0, but amountX > 0
+            int24 newVal = val & 1;
+            orderOrEndpoint.setOrderOrEndptVal(point, pointDelta, newVal);
+            if (newVal == 0) {
+                pointBitmap.setZero(point, pointDelta);
             }
         } else {
             int24 val = orderOrEndpoint.getOrderOrEndptVal(point, pointDelta);
@@ -275,11 +277,12 @@ contract LimitOrderModule {
                 }
             }
         }
+        require(orderX + costOffsetX > 0, 'p>0');
 
         // trader pay x
         uint256 bx = balanceX();
-        IiZiSwapAddLimOrderCallback(msg.sender).payCallback(amountX, 0, data);
-        require(balanceX() >= bx + amountX, "XE");
+        IiZiSwapAddLimOrderCallback(msg.sender).payCallback(orderX + costOffsetX, 0, data);
+        require(balanceX() >= bx + orderX + costOffsetX, "XE");
         
     }
     
@@ -310,14 +313,17 @@ contract LimitOrderModule {
         uint160 sqrtPrice_96 = LogPowMath.getSqrtPrice(point);
         uint128 currY = pointOrder.sellingY;
         uint128 currX = pointOrder.sellingX;
+        uint128 costOffsetY = 0;
         if (currX > 0) {
-            uint128 costY;
-            (costY, acquireX) = SwapMathY2X.y2XAtPrice(amountY, sqrtPrice_96, currX);
-            orderY -= costY;
+            (costOffsetY, acquireX) = SwapMathY2X.y2XAtPrice(amountY, sqrtPrice_96, currX);
+            orderY -= costOffsetY;
             currX -= acquireX;
-            pointOrder.accEarnY = pointOrder.accEarnY + costY;
-            pointOrder.earnY = pointOrder.earnY + costY;
+            pointOrder.accEarnY = pointOrder.accEarnY + costOffsetY;
+            pointOrder.earnY = pointOrder.earnY + costOffsetY;
             pointOrder.sellingX = currX;
+            if (currX > 0) {
+                orderY = 0;
+            }
         }
         if (orderY > 0) {
             currY += orderY;
@@ -330,12 +336,11 @@ contract LimitOrderModule {
         // update statusval and bitmap
         if (currX == 0 && currY == 0) {
             int24 val = orderOrEndpoint.getOrderOrEndptVal(point, pointDelta);
-            if (val & 2 != 0) {
-                int24 newVal = val & 1;
-                orderOrEndpoint.setOrderOrEndptVal(point, pointDelta, newVal);
-                if (newVal == 0) {
-                    pointBitmap.setZero(point, pointDelta);
-                }
+            // val & 2 != 0, because currY == 0, but amountY > 0
+            int24 newVal = val & 1;
+            orderOrEndpoint.setOrderOrEndptVal(point, pointDelta, newVal);
+            if (newVal == 0) {
+                pointBitmap.setZero(point, pointDelta);
             }
         } else {
             int24 val = orderOrEndpoint.getOrderOrEndptVal(point, pointDelta);
@@ -348,10 +353,12 @@ contract LimitOrderModule {
             }
         }
 
+        require(orderY + costOffsetY > 0, 'p>0');
+
         // trader pay y
         uint256 by = balanceY();
-        IiZiSwapAddLimOrderCallback(msg.sender).payCallback(0, amountY, data);
-        require(balanceY() >= by + amountY, "YE");
+        IiZiSwapAddLimOrderCallback(msg.sender).payCallback(0, orderY + costOffsetY, data);
+        require(balanceY() >= by + orderY + costOffsetY, "YE");
     }
 
     /// @notice collect earned or decreased token from limit order
