@@ -1,5 +1,6 @@
 const { ethers } = require("hardhat");
 const BigNumber = require('bignumber.js');
+const { expect, use } = require("chai");
 
 function stringMinus(a, b) {
     return BigNumber(a).minus(b).toFixed(0);
@@ -74,6 +75,16 @@ async function getLimOrder(poolAddr, pt) {
         earnX: BigNumber(earnX._hex),
         earnY: BigNumber(earnY._hex)
     }
+}
+
+async function checkLimOrder(eSellingX, eAccEarnX, eSellingY, eAccEarnY, eEarnX, eEarnY, poolAddr, pt) {
+    const {sellingX, accEarnX, sellingY, accEarnY, earnX, earnY} = await getLimOrder(poolAddr, pt);
+    expect(sellingX.toFixed(0)).to.equal(eSellingX);
+    expect(accEarnX.toFixed(0)).to.equal(eAccEarnX);
+    expect(sellingY.toFixed(0)).to.equal(eSellingY);
+    expect(accEarnY.toFixed(0)).to.equal(eAccEarnY);
+    expect(earnX.toFixed(0)).to.equal(eEarnX);
+    expect(earnY.toFixed(0)).to.equal(eEarnY);
 }
 
 function floor(a) {
@@ -182,6 +193,20 @@ function l2y(liquidity, sqrtPrice_96, up) {
     }
 }
 
+  
+async function getState(pool) {
+    const {sqrtPrice_96, currentPoint, liquidity, liquidityX} = await pool.state();
+    return {
+        sqrtPrice_96: sqrtPrice_96.toString(),
+        currentPoint: currentPoint.toString(),
+        liquidity: liquidity.toString(),
+        liquidityX: liquidityX.toString()
+    }
+}
+
+async function addLiquidity(testMint, miner, tokenX, tokenY, fee, pl, pr, liquidity) {
+    await testMint.connect(miner).mint(tokenX.address, tokenY.address, fee, pl, pr, liquidity);
+}
 module.exports ={
     getPoolParts,
     getLimOrder,
@@ -196,5 +221,8 @@ module.exports ={
     acquiredFeeLiquidity,
     amountAddFee,
     l2x,
-    l2y
+    l2y,
+    getState,
+    addLiquidity,
+    checkLimOrder,
 }
