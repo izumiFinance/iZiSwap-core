@@ -2,6 +2,7 @@ const { expect } = require("chai");
 const { ethers } = require("hardhat");
 
 const BigNumber = require('bignumber.js');
+const {getPoolParts} = require("./funcs.js");
 
 async function getToken() {
 
@@ -108,41 +109,18 @@ function ceil(b) {
   return BigNumber(b.toFixed(0, 2));
 }
 
-async function getPoolParts() {
-  const SwapX2YModuleFactory = await ethers.getContractFactory("SwapX2YModule");
-  const swapX2YModule = await SwapX2YModuleFactory.deploy();
-  await swapX2YModule.deployed();
-  
-  const SwapY2XModuleFactory = await ethers.getContractFactory("SwapY2XModule");
-  const swapY2XModule = await SwapY2XModuleFactory.deploy();
-  await swapY2XModule.deployed();
-
-  const MintModuleFactory = await ethers.getContractFactory('MintModule');
-  const mintModule = await MintModuleFactory.deploy();
-  await mintModule.deployed();
-
-  const LimitOrderModuleFactory = await ethers.getContractFactory('LimitOrderModule');
-  const limitOrderModule = await LimitOrderModuleFactory.deploy();
-  await limitOrderModule.deployed();
-  return {
-    swapX2YModule: swapX2YModule.address,
-    swapY2XModule: swapY2XModule.address,
-    mintModule: mintModule.address,
-    limitOrderModule: limitOrderModule.address,
-  };
-}
 describe("Mint", function () {
   it("check miner deposit", async function () {
     const [signer, miner1, miner2, miner3, receiver] = await ethers.getSigners();
 
     console.log("balance: " + signer.getBalance());
 
-    const {swapX2YModule, swapY2XModule, mintModule, limitOrderModule} = await getPoolParts();
+    const {swapX2YModule, swapY2XModule, liquidityModule, limitOrderModule} = await getPoolParts();
 
     // deploy a factory
     const iZiSwapFactory = await ethers.getContractFactory("iZiSwapFactory");
 
-    const factory = await iZiSwapFactory.deploy(receiver.address, swapX2YModule, swapY2XModule, mintModule, limitOrderModule);
+    const factory = await iZiSwapFactory.deploy(receiver.address, swapX2YModule, swapY2XModule, liquidityModule, limitOrderModule);
     await factory.deployed();
     await factory.enableFeeAmount(3000, 50);
 

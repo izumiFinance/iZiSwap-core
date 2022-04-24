@@ -1,32 +1,11 @@
 const { ethers } = require("hardhat");
+const { getPoolParts } = require("./funcs.js");
 
-async function getPoolParts() {
-  const SwapX2YModuleFactory = await ethers.getContractFactory("SwapX2YModule");
-  const swapX2YModule = await SwapX2YModuleFactory.deploy();
-  await swapX2YModule.deployed();
-  
-  const SwapY2XModuleFactory = await ethers.getContractFactory("SwapY2XModule");
-  const swapY2XModule = await SwapY2XModuleFactory.deploy();
-  await swapY2XModule.deployed();
 
-  const MintModuleFactory = await ethers.getContractFactory('MintModule');
-  const mintModule = await MintModuleFactory.deploy();
-  await mintModule.deployed();
-
-  const LimitOrderModuleFactory = await ethers.getContractFactory('LimitOrderModule');
-  const limitOrderModule = await LimitOrderModuleFactory.deploy();
-  await limitOrderModule.deployed();
-  return {
-    swapX2YModule: swapX2YModule.address,
-    swapY2XModule: swapY2XModule.address,
-    mintModule: mintModule.address,
-    limitOrderModule: limitOrderModule.address,
-  };
-}
 async function main() {
     const [deployer] = await ethers.getSigners();
     console.log(deployer.address);
-    const {swapX2YModule, swapY2XModule, mintModule, limitOrderModule} = await getPoolParts();
+    const {swapX2YModule, swapY2XModule, liquidityModule, limitOrderModule} = await getPoolParts();
 
     // deploy a factory
     const iZiSwapFactory = await ethers.getContractFactory("iZiSwapFactory");
@@ -35,10 +14,10 @@ async function main() {
 
     console.log('swapX2YModule: ', swapX2YModule)
     console.log('swapY2XModule: ', swapY2XModule)
-    console.log('mintModule: ', mintModule)
+    console.log('liquidityModule: ', liquidityModule)
     console.log('limitOrderModule: ', limitOrderModule)
 
-    const factory = await iZiSwapFactory.deploy(receiverAddress, swapX2YModule, swapY2XModule, mintModule, limitOrderModule);
+    const factory = await iZiSwapFactory.deploy(receiverAddress, swapX2YModule, swapY2XModule, liquidityModule, limitOrderModule);
     await factory.deployed();
 
     console.log("factory addr: " + factory.address);

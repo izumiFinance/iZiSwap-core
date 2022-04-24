@@ -25,8 +25,8 @@ interface IiZiSwapFactory {
     function swapY2XModule() external returns (address);
 
     /// @notice module to support mint/burn/collect function of pool
-    /// @return mintModule address
-    function mintModule() external returns (address);
+    /// @return liquidityModule address
+    function liquidityModule() external returns (address);
 
     /// @notice address of module for user to manage limit orders
     /// @return limitOrderModule address

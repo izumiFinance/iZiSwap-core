@@ -99,7 +99,7 @@ contract iZiSwapPool is IiZiSwapPool {
 
     address private swapModuleX2Y;
     address private swapModuleY2X;
-    address private mintModule;
+    address private liquidityModule;
     address private limitOrderModule;
 
     /// @notice percent to charge from miner's fee
@@ -143,7 +143,7 @@ contract iZiSwapPool is IiZiSwapPool {
         factory = _factory;
         swapModuleX2Y = IiZiSwapFactory(_factory).swapX2YModule();
         swapModuleY2X = IiZiSwapFactory(_factory).swapY2XModule();
-        mintModule = IiZiSwapFactory(_factory).mintModule();
+        liquidityModule = IiZiSwapFactory(_factory).liquidityModule();
         limitOrderModule = IiZiSwapFactory(_factory).limitOrderModule();
 
         console.log("swapX2Y: ", swapModuleX2Y);
@@ -337,7 +337,7 @@ contract iZiSwapPool is IiZiSwapPool {
         uint128 liquidDelta,
         bytes calldata data
     ) external override noDelegateCall lock returns (uint256 amountX, uint256 amountY) {
-        (bool success, bytes memory d) = mintModule.delegatecall(
+        (bool success, bytes memory d) = liquidityModule.delegatecall(
             abi.encodeWithSignature("mint(address,int24,int24,uint128,bytes)", recipient, leftPt, rightPt,liquidDelta,data)
         );
         if (success) {
@@ -359,7 +359,7 @@ contract iZiSwapPool is IiZiSwapPool {
         int24 rightPt,
         uint128 liquidDelta
     ) external override noDelegateCall lock returns (uint256 amountX, uint256 amountY) {
-        (bool success, bytes memory d) = mintModule.delegatecall(
+        (bool success, bytes memory d) = liquidityModule.delegatecall(
             abi.encodeWithSignature("burn(int24,int24,uint128)", leftPt, rightPt, liquidDelta)
         );
         if (success) {
@@ -370,7 +370,7 @@ contract iZiSwapPool is IiZiSwapPool {
         }
     }
 
-    /// @notice Collects tokens (fee or refunded after burn) from a liquidity
+    /// @notice collect tokens (fee or refunded after burn) from a liquidity
     /// @param recipient The address which should receive the collected tokens
     /// @param leftPt left endpoint of the liquidity
     /// @param rightPt right endpoint of the liquidity
@@ -385,7 +385,7 @@ contract iZiSwapPool is IiZiSwapPool {
         uint256 amountXLim,
         uint256 amountYLim
     ) external override noDelegateCall lock returns (uint256 actualAmountX, uint256 actualAmountY) {
-        (bool success, bytes memory d) = mintModule.delegatecall(
+        (bool success, bytes memory d) = liquidityModule.delegatecall(
             abi.encodeWithSignature("collect(address,int24,int24,uint256,uint256)", recipient, leftPt, rightPt, amountXLim, amountYLim)
         );
         if (success) {
@@ -428,7 +428,7 @@ contract iZiSwapPool is IiZiSwapPool {
         }
     }
 
-    /// @notice Swap tokenY for tokenX， given max amount of tokenY user willing to pay
+    /// @notice swap tokenY for tokenX， given max amount of tokenY user willing to pay
     /// @param recipient The address to receive tokenX
     /// @param amount The max amount of tokenY user willing to pay
     /// @param highPt the highest point(price) of x/y during swap
@@ -453,7 +453,7 @@ contract iZiSwapPool is IiZiSwapPool {
         }
     }
 
-    /// @notice Swap tokenY for tokenX， given amount of tokenX user desires
+    /// @notice swap tokenY for tokenX， given amount of tokenX user desires
     /// @param recipient The address to receive tokenX
     /// @param desireX The amount of tokenX user desires
     /// @param highPt the highest point(price) of x/y during swap
@@ -478,7 +478,7 @@ contract iZiSwapPool is IiZiSwapPool {
         }
     }
 
-    /// @notice Swap tokenX for tokenY， given max amount of tokenX user willing to pay
+    /// @notice swap tokenX for tokenY， given max amount of tokenX user willing to pay
     /// @param recipient The address to receive tokenY
     /// @param amount The max amount of tokenX user willing to pay
     /// @param lowPt the lowest point(price) of x/y during swap
@@ -503,7 +503,7 @@ contract iZiSwapPool is IiZiSwapPool {
         }
     }
 
-    /// @notice Swap tokenX for tokenY， given amount of tokenY user desires
+    /// @notice swap tokenX for tokenY， given amount of tokenY user desires
     /// @param recipient The address to receive tokenY
     /// @param desireY The amount of tokenY user desires
     /// @param lowPt the lowest point(price) of x/y during swap
@@ -527,7 +527,7 @@ contract iZiSwapPool is IiZiSwapPool {
         }
     }
 
-    /// @notice Returns the interpolation value of  cumulative point and liquidity at some target timestamps (block.timestamp - secondsAgo[i])
+    /// @notice returns the interpolation value of  cumulative point and liquidity at some target timestamps (block.timestamp - secondsAgo[i])
     /// @dev if you call this method with secondsAgos = [3600, 0]. the average point of this pool during recent hour is 
     /// (pointCumulatives[1] - pointCumulatives[0]) / 3600
     /// @param secondsAgos describe the target timestamp , targetTimestimp[i] = block.timestamp - secondsAgo[i]

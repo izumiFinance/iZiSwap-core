@@ -99,7 +99,7 @@ contract LimitOrderModule {
 
     address private swapModuleX2Y;
     address private swapModuleY2X;
-    address private mintModule;
+    address private liqudityModule;
 
     /// @notice percent to charge from miner's fee
     uint24 public immutable feeChargePercent = 20;

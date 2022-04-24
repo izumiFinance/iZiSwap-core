@@ -5,7 +5,7 @@ const BigNumber = require('bignumber.js');
 const { tree } = require("fp-ts/lib/Tree");
 const { gets } = require("fp-ts/lib/StateT");
 
-const {getFeeCharge} = require('../funcs');
+const {getFeeCharge, getPoolParts} = require('../funcs');
 
 var tokenX;
 var tokenY;
@@ -304,29 +304,6 @@ async function burnAndGetFeeScale(pool, testMint, tokenX, tokenY, miner, leftPt,
     return {deltaScaleX, deltaScaleY};
 }
 
-async function getPoolParts() {
-    const SwapX2YModuleFactory = await ethers.getContractFactory("SwapX2YModule");
-    const swapX2YModule = await SwapX2YModuleFactory.deploy();
-    await swapX2YModule.deployed();
-    
-    const SwapY2XModuleFactory = await ethers.getContractFactory("SwapY2XModule");
-    const swapY2XModule = await SwapY2XModuleFactory.deploy();
-    await swapY2XModule.deployed();
-  
-    const MintModuleFactory = await ethers.getContractFactory('MintModule');
-    const mintModule = await MintModuleFactory.deploy();
-    await mintModule.deployed();
-  
-    const LimitOrderModuleFactory = await ethers.getContractFactory('LimitOrderModule');
-    const limitOrderModule = await LimitOrderModuleFactory.deploy();
-    await limitOrderModule.deployed();
-    return {
-      swapX2YModule: swapX2YModule.address,
-      swapY2XModule: swapY2XModule.address,
-      mintModule: mintModule.address,
-      limitOrderModule: limitOrderModule.address,
-    };
-  }
 describe("swap", function () {
     var signer, miner1, miner2, trader, seller, receiver;
     var poolAddr;
@@ -340,11 +317,11 @@ describe("swap", function () {
     beforeEach(async function() {
         [signer, miner1, miner2, miner3, trader, seller, receiver] = await ethers.getSigners();
 
-        const {swapX2YModule, swapY2XModule, mintModule, limitOrderModule} = await getPoolParts();
+        const {swapX2YModule, swapY2XModule, liquidityModule, limitOrderModule} = await getPoolParts();
         // deploy a factory
         const iZiSwapFactory = await ethers.getContractFactory("iZiSwapFactory");
 
-        const factory = await iZiSwapFactory.deploy(receiver.address, swapX2YModule, swapY2XModule, mintModule, limitOrderModule);
+        const factory = await iZiSwapFactory.deploy(receiver.address, swapX2YModule, swapY2XModule, liquidityModule, limitOrderModule);
         await factory.deployed();
 
         await factory.enableFeeAmount(3000, 50);

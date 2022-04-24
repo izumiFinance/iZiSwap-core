@@ -38,6 +38,30 @@ function stringLess(a, b) {
     return BigNumber(a).lt(b);
 }
 
+async function getPoolParts() {
+    const SwapX2YModuleFactory = await ethers.getContractFactory("SwapX2YModule");
+    const swapX2YModule = await SwapX2YModuleFactory.deploy();
+    await swapX2YModule.deployed();
+    
+    const SwapY2XModuleFactory = await ethers.getContractFactory("SwapY2XModule");
+    const swapY2XModule = await SwapY2XModuleFactory.deploy();
+    await swapY2XModule.deployed();
+  
+    const LiquidityModuleFactory = await ethers.getContractFactory('LiquidityModule');
+    const liquidityModule = await LiquidityModuleFactory.deploy();
+    await liquidityModule.deployed();
+  
+    const LimitOrderModuleFactory = await ethers.getContractFactory('LimitOrderModule');
+    const limitOrderModule = await LimitOrderModuleFactory.deploy();
+    await limitOrderModule.deployed();
+    return {
+      swapX2YModule: swapX2YModule.address,
+      swapY2XModule: swapY2XModule.address,
+      liquidityModule: liquidityModule.address,
+      limitOrderModule: limitOrderModule.address,
+    };
+  }
+
 async function getLimOrder(poolAddr, pt) {
     const iZiSwapPool = await ethers.getContractFactory("iZiSwapPool");
     pool = await iZiSwapPool.attach(poolAddr);
@@ -159,6 +183,7 @@ function l2y(liquidity, sqrtPrice_96, up) {
 }
 
 module.exports ={
+    getPoolParts,
     getLimOrder,
     getAcquiredFee,
     getFeeCharge,

@@ -22,7 +22,7 @@ import './interfaces/IiZiSwapCallback.sol';
 
 import 'hardhat/console.sol';
 
-contract MintModule {
+contract LiquidityModule {
 
     using Liquidity for mapping(bytes32 =>Liquidity.Data);
     using Liquidity for Liquidity.Data;
@@ -99,7 +99,7 @@ contract MintModule {
 
     address private swapModuleX2Y;
     address private swapModuleY2X;
-    address private mintModule;
+    address private liquidityModule;
 
     /// @notice percent to charge from miner's fee
     uint24 public immutable feeChargePercent = 20;
