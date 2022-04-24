@@ -583,6 +583,33 @@ contract iZiSwapPool is IiZiSwapPool {
         }
     }
 
+    /// @notice return a snapshot infomation of Limit Order in [leftPoint, rightPoint)
+    /// @param leftPoint left endpoint of range, should be times of pointDelta
+    /// @param rightPoint right endpoint of range, should be times of pointDelta
+    /// @return limitOrders an array of Limit Orders for points in the range
+    ///    note 1. this function may cost a HUGE amount of gas, be careful to call
+    function limitOrderSnapshot(int24 leftPoint, int24 rightPoint) external override view returns(LimitOrderStruct[] memory limitOrders) {
+        require(leftPoint < rightPoint, "L<R");
+        require(leftPoint >= leftMostPt, "LO");
+        require(rightPoint <= rightMostPt, "RO");
+        require(leftPoint % pointDelta == 0, "LD0");
+        require(rightPoint % pointDelta == 0, "RD0");
+        uint256 len = uint256(int256((rightPoint - leftPoint) / pointDelta));
+        limitOrders = new LimitOrderStruct[](len);
+        uint256 idx = 0;
+        for (int24 i = leftPoint; i < rightPoint; i += pointDelta) {
+            limitOrders[idx] = LimitOrderStruct({
+                sellingX: limitOrderData[i].sellingX,
+                earnY: limitOrderData[i].earnY,
+                accEarnY: limitOrderData[i].accEarnY,
+                sellingY: limitOrderData[i].sellingY,
+                earnX: limitOrderData[i].earnX,
+                accEarnX: limitOrderData[i].accEarnX
+            });
+            idx ++;
+        }
+    }
+
     /// @notice collect charged fee, only factory's chargeReceiver can call
     function collectFeeCharged() external override noDelegateCall lock {
         require(msg.sender == IiZiSwapFactory(factory).chargeReceiver(), "NR");

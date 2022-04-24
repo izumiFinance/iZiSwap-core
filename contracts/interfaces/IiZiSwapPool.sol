@@ -446,6 +446,22 @@ interface IiZiSwapPool {
     ///    note 3. this function may cost a ENORMOUS amount of gas, be careful to call
     function liquiditySnapshot(int24 leftPoint, int24 rightPoint) external view returns(int128[] memory deltaLiquidities);
 
+    struct LimitOrderStruct {
+        uint128 sellingX;
+        uint128 earnY;
+        uint256 accEarnY;
+        uint128 sellingY;
+        uint128 earnX;
+        uint256 accEarnX;
+    }
+
+    /// @notice return a snapshot infomation of Limit Order in [leftPoint, rightPoint)
+    /// @param leftPoint left endpoint of range, should be times of pointDelta
+    /// @param rightPoint right endpoint of range, should be times of pointDelta
+    /// @return limitOrders an array of Limit Orders for points in the range
+    ///    note 1. this function may cost a HUGE amount of gas, be careful to call
+    function limitOrderSnapshot(int24 leftPoint, int24 rightPoint) external view returns(LimitOrderStruct[] memory limitOrders); 
+
     /// @notice amount of charged fee on tokenX
     function totalFeeXCharged() external view returns(uint256);
 
