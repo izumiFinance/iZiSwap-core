@@ -163,6 +163,15 @@ function getCostYFromXAt(sqrtPrice_96, acquireX) {
     return costY;
 }
 
+function getCostXFromYAt(sqrtPrice_96, acquireY) {
+    const q96 = BigNumber(2).pow(96).toFixed(0);
+
+    const liquidity = stringDivCeil(stringMul(acquireY, q96), sqrtPrice_96);
+    const costX = stringDivCeil(stringMul(liquidity, q96), sqrtPrice_96);
+
+    return costX;
+}
+
 function acquiredFeeLiquidity(amount, feeTier=3000, chargePercent=50) {
 
     const fee = stringDivCeil(stringMul(amount, feeTier), stringMinus(1e6, feeTier));
@@ -218,6 +227,7 @@ module.exports ={
     yInRange,
     y2xAt,
     getCostYFromXAt,
+    getCostXFromYAt,
     acquiredFeeLiquidity,
     amountAddFee,
     l2x,
