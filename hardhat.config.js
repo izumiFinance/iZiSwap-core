@@ -14,7 +14,7 @@ module.exports = {
         settings: {
           optimizer: {
             enabled: true,
-            runs: 20
+            runs: 10
           }
         }
       },
@@ -29,6 +29,12 @@ module.exports = {
       accounts: [sk],
       // gas: 90000000,
       gasPrice: 100000000000,
+    },
+    bscTest: {
+      url: 'https://data-seed-prebsc-1-s1.binance.org:8545/',
+      accounts: [sk],
+      // gas: 90000000,
+      gasPrice: 10000000000,
     },
   }
 };
