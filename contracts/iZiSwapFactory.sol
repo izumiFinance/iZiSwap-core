@@ -4,6 +4,8 @@ pragma solidity ^0.8.4;
 import './interfaces/IiZiSwapFactory.sol';
 import './iZiSwapPool.sol';
 
+import "hardhat/console.sol";
+
 contract iZiSwapFactory is IiZiSwapFactory {
 
     /// @notice owner of factory
@@ -86,7 +88,8 @@ contract iZiSwapFactory is IiZiSwapFactory {
         }
         require(pool[tokenX][tokenY][fee] == address(0));
         int24 pointDelta = fee2pointDelta[fee];
-        require(pointDelta > 0);
+
+        require(pointDelta > 0, 'pd');
         // now creating
         bytes32 salt = keccak256(abi.encode(tokenX, tokenY, fee));
         
@@ -98,6 +101,7 @@ contract iZiSwapFactory is IiZiSwapFactory {
             currentPoint,
             pointDelta
         ));
+
         pool[tokenX][tokenY][fee] = addr;
         pool[tokenY][tokenX][fee] = addr;
         emit NewPool(tokenX, tokenY, fee, uint24(pointDelta), addr);

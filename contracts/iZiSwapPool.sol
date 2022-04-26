@@ -619,7 +619,6 @@ contract iZiSwapPool is IiZiSwapPool {
         totalFeeYCharged = 0;
     }
 
-
     function flash(
         address recipient,
         uint256 amountX,
