@@ -3,7 +3,7 @@ pragma solidity ^0.8.4;
 
 import '../libraries/LogPowMath.sol';
 
-contract LogPowMathTest {
+contract TestLogPowMath {
     function getSqrtPrice(int24 point) external pure returns (uint160) {
         return LogPowMath.getSqrtPrice(point);
     }

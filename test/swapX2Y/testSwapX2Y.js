@@ -244,8 +244,8 @@ describe("swap", function () {
         await factory.newPool(txAddr, tyAddr, 3000, 3000);
         poolAddr = await factory.pool(txAddr, tyAddr, 3000);
 
-        const LogPowMathTest = await ethers.getContractFactory('LogPowMathTest');
-        logPowMath = await LogPowMathTest.deploy();
+        const TestLogPowMath = await ethers.getContractFactory('TestLogPowMath');
+        logPowMath = await TestLogPowMath.deploy();
 
         await tokenX.mint(miner1.address, '1000000000000000000000000000000');
         await tokenY.mint(miner1.address, '1000000000000000000000000000000');
