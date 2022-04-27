@@ -35,6 +35,7 @@ contract iZiSwapFactory is IiZiSwapFactory {
     /// @notice address of module for user to manage limit orders
     address public override limitOrderModule;
 
+    /// @notice address of module to support flash loan
     address public override flashModule;
 
     /// @notice construct the factory
