@@ -32,6 +32,8 @@ interface IiZiSwapFactory {
     /// @return limitOrderModule address
     function limitOrderModule() external returns (address);
 
+    /// @notice address of module for flash loan
+    /// @return flashModule address
     function flashModule() external returns (address);
 
     /// @notice Enables a fee amount with the given pointDelta
