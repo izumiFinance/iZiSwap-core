@@ -13,7 +13,7 @@ async function main() {
 
     const [deployer] = await ethers.getSigners();
     console.log(deployer.address);
-    const {swapX2YModule, swapY2XModule, liquidityModule, limitOrderModule} = await getPoolParts();
+    const {swapX2YModule, swapY2XModule, liquidityModule, limitOrderModule, flashModule} = await getPoolParts();
 
     // deploy a factory
     const iZiSwapFactory = await ethers.getContractFactory("iZiSwapFactory");
@@ -22,8 +22,9 @@ async function main() {
     console.log('swapY2XModule: ', swapY2XModule)
     console.log('liquidityModule: ', liquidityModule)
     console.log('limitOrderModule: ', limitOrderModule)
+    console.log('flashModule: ', flashModule);
 
-    const factory = await iZiSwapFactory.deploy(para.receiver, swapX2YModule, swapY2XModule, liquidityModule, limitOrderModule);
+    const factory = await iZiSwapFactory.deploy(para.receiver, swapX2YModule, swapY2XModule, liquidityModule, limitOrderModule, flashModule);
     await factory.deployed();
 
     console.log("factory addr: " + factory.address);
