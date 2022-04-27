@@ -633,7 +633,7 @@ contract iZiSwapPool is IiZiSwapPool {
         );
         if (success) {
             (uint256 actualAmountX, uint256 actualAmountY, uint256 paidX, uint256 paidY) = abi.decode(d, (uint256, uint256, uint256, uint256));
-            emit Flash(msg.sender, recipient, amountX, amountY, paidX, paidY);
+            emit Flash(msg.sender, recipient, actualAmountX, actualAmountY, paidX, paidY);
         } else {
             revertDCData(d);
         }
