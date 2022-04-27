@@ -115,12 +115,11 @@ describe("Mint", function () {
 
     console.log("balance: " + signer.getBalance());
 
-    const {swapX2YModule, swapY2XModule, liquidityModule, limitOrderModule} = await getPoolParts();
-
+    const {swapX2YModule, swapY2XModule, liquidityModule, limitOrderModule, flashModule} = await getPoolParts();
     // deploy a factory
     const iZiSwapFactory = await ethers.getContractFactory("iZiSwapFactory");
 
-    const factory = await iZiSwapFactory.deploy(receiver.address, swapX2YModule, swapY2XModule, liquidityModule, limitOrderModule);
+    const factory = await iZiSwapFactory.deploy(receiver.address, swapX2YModule, swapY2XModule, liquidityModule, limitOrderModule, flashModule);
     await factory.deployed();
     await factory.enableFeeAmount(3000, 50);
 

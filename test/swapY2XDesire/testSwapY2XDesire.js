@@ -225,11 +225,11 @@ describe("swap", function () {
     beforeEach(async function() {
         [signer, miner1, miner2, miner3, miner4, trader, seller1, seller2, receiver] = await ethers.getSigners();
 
-        const {swapX2YModule, swapY2XModule, liquidityModule, limitOrderModule} = await getPoolParts();
+        const {swapX2YModule, swapY2XModule, liquidityModule, limitOrderModule, flashModule} = await getPoolParts();
         // deploy a factory
         const iZiSwapFactory = await ethers.getContractFactory("iZiSwapFactory");
 
-        const factory = await iZiSwapFactory.deploy(receiver.address, swapX2YModule, swapY2XModule, liquidityModule, limitOrderModule);
+        const factory = await iZiSwapFactory.deploy(receiver.address, swapX2YModule, swapY2XModule, liquidityModule, limitOrderModule, flashModule);
         await factory.deployed();
         await factory.enableFeeAmount(3000, 50);
 
@@ -299,270 +299,270 @@ describe("swap", function () {
 
     });
     
-    // it("start with 1.3.3, end with 1.0", async function () {
+    it("start with 1.3.3, end with 1.0", async function () {
 
-    //     this.timeout(1000000);
-    //        await addLiquidity(testMint, miner1, tokenX, tokenY, 3000, -12000, -5000, '1000000');
-    //        await addLiquidity(testMint, miner2, tokenX, tokenY, 3000, -8000, 2000, '2000000');
-    //        await addLiquidity(testMint, miner3, tokenX, tokenY, 3000, 50, 10050, '1000000');
-    //        await addLiquidity(testMint, miner4, tokenX, tokenY, 3000, 9000, 12000, '2000000');
-    //        await addLimOrderWithY(tokenX, tokenY, seller1, testAddLimOrder, '100000000000000000000', -11000);
-    //        await addLimOrderWithY(tokenX, tokenY, seller1, testAddLimOrder, '200000000000000000000', -8000);
-    //        await addLimOrderWithX(tokenX, tokenY, seller2, testAddLimOrder, '150000000000000000000', 350);
-    //        await addLimOrderWithX(tokenX, tokenY, seller2, testAddLimOrder, '50000000000000000000', 9000);
-    //        await addLimOrderWithX(tokenX, tokenY, seller2, testAddLimOrder, '80000000000000000000', 10050);
-    //        await addLimOrderWithX(tokenX, tokenY, seller2, testAddLimOrder, '70000000000000000000', 10100);
+        this.timeout(1000000);
+           await addLiquidity(testMint, miner1, tokenX, tokenY, 3000, -12000, -5000, '1000000');
+           await addLiquidity(testMint, miner2, tokenX, tokenY, 3000, -8000, 2000, '2000000');
+           await addLiquidity(testMint, miner3, tokenX, tokenY, 3000, 50, 10050, '1000000');
+           await addLiquidity(testMint, miner4, tokenX, tokenY, 3000, 9000, 12000, '2000000');
+           await addLimOrderWithY(tokenX, tokenY, seller1, testAddLimOrder, '100000000000000000000', -11000);
+           await addLimOrderWithY(tokenX, tokenY, seller1, testAddLimOrder, '200000000000000000000', -8000);
+           await addLimOrderWithX(tokenX, tokenY, seller2, testAddLimOrder, '150000000000000000000', 350);
+           await addLimOrderWithX(tokenX, tokenY, seller2, testAddLimOrder, '50000000000000000000', 9000);
+           await addLimOrderWithX(tokenX, tokenY, seller2, testAddLimOrder, '80000000000000000000', 10050);
+           await addLimOrderWithX(tokenX, tokenY, seller2, testAddLimOrder, '70000000000000000000', 10100);
    
-    //        const costY_M7999_M5000 = yInRange('3000000', -7999, -5000, '1.0001', true);
-    //        const acquireX_M7999_M5000 = xInRange('3000000', -7999, -5000, '1.0001', false);
+           const costY_M7999_M5000 = yInRange('3000000', -7999, -5000, '1.0001', true);
+           const acquireX_M7999_M5000 = xInRange('3000000', -7999, -5000, '1.0001', false);
    
-    //        const costY_M5000_M50 = yInRange('2000000', -5000, -50, '1.0001', true);
-    //        const acquireX_M5000_M50 = xInRange('2000000', -5000, -50, '1.0001', false);
+           const costY_M5000_M50 = yInRange('2000000', -5000, -50, '1.0001', true);
+           const acquireX_M5000_M50 = xInRange('2000000', -5000, -50, '1.0001', false);
    
-    //        const costY_M50_50 = yInRange('2000000', -50, 50, '1.0001', true);
-    //        const acquireX_M50_50 = xInRange('2000000', -50, 50, '1.0001', false);
+           const costY_M50_50 = yInRange('2000000', -50, 50, '1.0001', true);
+           const acquireX_M50_50 = xInRange('2000000', -50, 50, '1.0001', false);
    
-    //        const costY_50_350 = yInRange('3000000', 50, 350, '1.0001', true);
-    //        const acquireX_50_350 = xInRange('3000000', 50, 350, '1.0001', false);
+           const costY_50_350 = yInRange('3000000', 50, 350, '1.0001', true);
+           const acquireX_50_350 = xInRange('3000000', 50, 350, '1.0001', false);
    
-    //        const costY_350_2000 = yInRange('3000000', 350, 2000, '1.0001', true);
-    //        const acquireX_350_2000 = xInRange('3000000', 350, 2000, '1.0001', false);
+           const costY_350_2000 = yInRange('3000000', 350, 2000, '1.0001', true);
+           const acquireX_350_2000 = xInRange('3000000', 350, 2000, '1.0001', false);
    
-    //        const costY_2000_9000 = yInRange('1000000', 2000, 9000, '1.0001', true);
-    //        const acquireX_2000_9000 = xInRange('1000000', 2000, 9000, '1.0001', false);
+           const costY_2000_9000 = yInRange('1000000', 2000, 9000, '1.0001', true);
+           const acquireX_2000_9000 = xInRange('1000000', 2000, 9000, '1.0001', false);
    
-    //        const costY_9000_10050 = yInRange('3000000', 9000, 10050, '1.0001', true);
-    //        const acquireX_9000_10050 = xInRange('3000000', 9000, 10050, '1.0001', false);
+           const costY_9000_10050 = yInRange('3000000', 9000, 10050, '1.0001', true);
+           const acquireX_9000_10050 = xInRange('3000000', 9000, 10050, '1.0001', false);
    
-    //        const costY_10050_10100 = yInRange('2000000', 10050, 10100, '1.0001', true);
-    //        const acquireX_10050_10100 = xInRange('2000000', 10050, 10100, '1.0001', false);
+           const costY_10050_10100 = yInRange('2000000', 10050, 10100, '1.0001', true);
+           const acquireX_10050_10100 = xInRange('2000000', 10050, 10100, '1.0001', false);
    
-    //        const costYAt350 = getCostYFromXAt((await logPowMath.getSqrtPrice(350)).toString(), '150000000000000000000');
-    //        const acquireXAt350 = '150000000000000000000';
+           const costYAt350 = getCostYFromXAt((await logPowMath.getSqrtPrice(350)).toString(), '150000000000000000000');
+           const acquireXAt350 = '150000000000000000000';
    
-    //        const costYAt9000 = getCostYFromXAt((await logPowMath.getSqrtPrice(9000)).toString(), '50000000000000000000');
-    //        const acquireXAt9000 = '50000000000000000000';
+           const costYAt9000 = getCostYFromXAt((await logPowMath.getSqrtPrice(9000)).toString(), '50000000000000000000');
+           const acquireXAt9000 = '50000000000000000000';
    
-    //        const costYAt10050 = getCostYFromXAt((await logPowMath.getSqrtPrice(10050)).toString(), '80000000000000000000');
-    //        const acquireXAt10050 = '80000000000000000000';
+           const costYAt10050 = getCostYFromXAt((await logPowMath.getSqrtPrice(10050)).toString(), '80000000000000000000');
+           const acquireXAt10050 = '80000000000000000000';
    
-    //        // const costYAt10100 = getCostYFromXAt(10100, '1.0001', '70000000000000000000');
-    //        // const acquireXAt10100 = '70000000000000000000';
+           // const costYAt10100 = getCostYFromXAt(10100, '1.0001', '70000000000000000000');
+           // const acquireXAt10100 = '70000000000000000000';
    
-    //        const costY_M7999_M5000_WithFee = amountAddFee(costY_M7999_M5000);
-    //        const costY_M5000_M50_WithFee = amountAddFee(costY_M5000_M50);
-    //        const costY_M50_50_WithFee = amountAddFee(costY_M50_50);
-    //        const costY_50_350_WithFee = amountAddFee(costY_50_350);
-    //        const costY_350_2000_WithFee = amountAddFee(costY_350_2000);
-    //        const costY_2000_9000_WithFee = amountAddFee(costY_2000_9000);
-    //        const costY_9000_10050_WithFee = amountAddFee(costY_9000_10050);
-    //        const costY_10050_10100_WithFee = amountAddFee(costY_10050_10100);
-    //        const costYAt350_WithFee = amountAddFee(costYAt350);
-    //        const costYAt9000_WithFee = amountAddFee(costYAt9000);
-    //        const costYAt10050_WithFee = amountAddFee(costYAt10050);
-    //        // const costYAt10100_WithFee = amountAddFee(costYAt10100);
+           const costY_M7999_M5000_WithFee = amountAddFee(costY_M7999_M5000);
+           const costY_M5000_M50_WithFee = amountAddFee(costY_M5000_M50);
+           const costY_M50_50_WithFee = amountAddFee(costY_M50_50);
+           const costY_50_350_WithFee = amountAddFee(costY_50_350);
+           const costY_350_2000_WithFee = amountAddFee(costY_350_2000);
+           const costY_2000_9000_WithFee = amountAddFee(costY_2000_9000);
+           const costY_9000_10050_WithFee = amountAddFee(costY_9000_10050);
+           const costY_10050_10100_WithFee = amountAddFee(costY_10050_10100);
+           const costYAt350_WithFee = amountAddFee(costYAt350);
+           const costYAt9000_WithFee = amountAddFee(costYAt9000);
+           const costYAt10050_WithFee = amountAddFee(costYAt10050);
+           // const costYAt10100_WithFee = amountAddFee(costYAt10100);
    
-    //        const costYExpect1 = getSum([
-    //            costY_M7999_M5000_WithFee, 
-    //            costY_M5000_M50_WithFee,
-    //            costY_M50_50_WithFee,
-    //            costY_50_350_WithFee,
-    //            costY_350_2000_WithFee,
-    //            costY_2000_9000_WithFee,
-    //            costY_9000_10050_WithFee,
-    //            costY_10050_10100_WithFee,
-    //            costYAt350_WithFee,
-    //            costYAt9000_WithFee,
-    //            costYAt10050_WithFee,
-    //            // costYAt10100_WithFee
-    //        ]);
+           const costYExpect1 = getSum([
+               costY_M7999_M5000_WithFee, 
+               costY_M5000_M50_WithFee,
+               costY_M50_50_WithFee,
+               costY_50_350_WithFee,
+               costY_350_2000_WithFee,
+               costY_2000_9000_WithFee,
+               costY_9000_10050_WithFee,
+               costY_10050_10100_WithFee,
+               costYAt350_WithFee,
+               costYAt9000_WithFee,
+               costYAt10050_WithFee,
+               // costYAt10100_WithFee
+           ]);
    
-    //        const acquireXExpect1 = getSum([
-    //            acquireX_M7999_M5000, 
-    //            acquireX_M5000_M50,
-    //            acquireX_M50_50,
-    //            acquireX_50_350,
-    //            acquireX_350_2000,
-    //            acquireX_2000_9000,
-    //            acquireX_9000_10050,
-    //            acquireX_10050_10100,
-    //            acquireXAt350,
-    //            acquireXAt9000,
-    //            acquireXAt10050,
-    //            // acquireXAt10100,
-    //        ]);
+           const acquireXExpect1 = getSum([
+               acquireX_M7999_M5000, 
+               acquireX_M5000_M50,
+               acquireX_M50_50,
+               acquireX_50_350,
+               acquireX_350_2000,
+               acquireX_2000_9000,
+               acquireX_9000_10050,
+               acquireX_10050_10100,
+               acquireXAt350,
+               acquireXAt9000,
+               acquireXAt10050,
+               // acquireXAt10100,
+           ]);
    
-    //        const {acquireX: acquireX1, costY: costY1} = await swapY2XDesireX(testSwap, trader, tokenX, tokenY, 3000, acquireXExpect1, 15000);
+           const {acquireX: acquireX1, costY: costY1} = await swapY2XDesireX(testSwap, trader, tokenX, tokenY, 3000, acquireXExpect1, 15000);
            
-    //        console.log('costYAt350: ', costYAt350)
-    //        expect(costY1).to.equal(costYExpect1);
-    //        expect(acquireX1).to.equal(acquireXExpect1);
+           console.log('costYAt350: ', costYAt350)
+           expect(costY1).to.equal(costYExpect1);
+           expect(acquireX1).to.equal(acquireXExpect1);
    
-    //        console.log('costYExpect1: ', costYExpect1);
+           console.log('costYExpect1: ', costYExpect1);
    
-    //        console.log('costY1: ', costY1);
-    //        console.log('acquireXExpect1: ', acquireXExpect1);
-    //        console.log('acquireX1: ', acquireX1);
-    //    });
+           console.log('costY1: ', costY1);
+           console.log('acquireXExpect1: ', acquireXExpect1);
+           console.log('acquireX1: ', acquireX1);
+       });
 
 
-    // it("start with 1.3.4 and 3.0, end with 2.0", async function () {
+    it("start with 1.3.4 and 3.0, end with 2.0", async function () {
 
-    //     this.timeout(1000000);
-    //        await addLiquidity(testMint, miner1, tokenX, tokenY, 3000, 50, 2000, '2000000');
-    //        await addLiquidity(testMint, miner2, tokenX, tokenY, 3000, 9000, 12000, '2000000');
-    //        await addLiquidity(testMint, miner3, tokenX, tokenY, 3000, 10100, 12000, '1000000');
+        this.timeout(1000000);
+           await addLiquidity(testMint, miner1, tokenX, tokenY, 3000, 50, 2000, '2000000');
+           await addLiquidity(testMint, miner2, tokenX, tokenY, 3000, 9000, 12000, '2000000');
+           await addLiquidity(testMint, miner3, tokenX, tokenY, 3000, 10100, 12000, '1000000');
 
-    //        await addLimOrderWithY(tokenX, tokenY, seller1, testAddLimOrder, '200000000000000000000', -8000);
-    //        await addLimOrderWithX(tokenX, tokenY, seller2, testAddLimOrder, '150000000000000000000', 350);
+           await addLimOrderWithY(tokenX, tokenY, seller1, testAddLimOrder, '200000000000000000000', -8000);
+           await addLimOrderWithX(tokenX, tokenY, seller2, testAddLimOrder, '150000000000000000000', 350);
            
-    //        const costY_50_350 = yInRange('2000000', 50, 350, '1.0001', true);
-    //        const acquireX_50_350 = xInRange('2000000', 50, 350, '1.0001', false);
+           const costY_50_350 = yInRange('2000000', 50, 350, '1.0001', true);
+           const acquireX_50_350 = xInRange('2000000', 50, 350, '1.0001', false);
    
-    //        const costY_350_2000 = yInRange('2000000', 350, 2000, '1.0001', true);
-    //        const acquireX_350_2000 = xInRange('2000000', 350, 2000, '1.0001', false);
+           const costY_350_2000 = yInRange('2000000', 350, 2000, '1.0001', true);
+           const acquireX_350_2000 = xInRange('2000000', 350, 2000, '1.0001', false);
 
-    //        const costY_9000_10100 = yInRange('2000000', 9000, 10100, '1.0001', true);
-    //        const acquireX_9000_10100 = xInRange('2000000', 9000, 10100, '1.0001', false);
+           const costY_9000_10100 = yInRange('2000000', 9000, 10100, '1.0001', true);
+           const acquireX_9000_10100 = xInRange('2000000', 9000, 10100, '1.0001', false);
 
-    //        const costYAt350 = getCostYFromXAt((await logPowMath.getSqrtPrice(350)).toString(), '150000000000000000000');
-    //        const acquireXAt350 = '150000000000000000000';
+           const costYAt350 = getCostYFromXAt((await logPowMath.getSqrtPrice(350)).toString(), '150000000000000000000');
+           const acquireXAt350 = '150000000000000000000';
    
    
-    //        // const costYAt10100 = getCostYFromXAt(10100, '1.0001', '70000000000000000000');
-    //        // const acquireXAt10100 = '70000000000000000000';
+           // const costYAt10100 = getCostYFromXAt(10100, '1.0001', '70000000000000000000');
+           // const acquireXAt10100 = '70000000000000000000';
    
-    //        const costY_50_350_WithFee = amountAddFee(costY_50_350);
-    //        const costY_350_2000_WithFee = amountAddFee(costY_350_2000);
-    //        const costY_9000_10100_WithFee = amountAddFee(costY_9000_10100);
+           const costY_50_350_WithFee = amountAddFee(costY_50_350);
+           const costY_350_2000_WithFee = amountAddFee(costY_350_2000);
+           const costY_9000_10100_WithFee = amountAddFee(costY_9000_10100);
            
-    //        const costYAt350_WithFee = amountAddFee(costYAt350);
-    //        // const costYAt10100_WithFee = amountAddFee(costYAt10100);
+           const costYAt350_WithFee = amountAddFee(costYAt350);
+           // const costYAt10100_WithFee = amountAddFee(costYAt10100);
    
-    //        const costYExpect1 = getSum([
-    //            costY_50_350_WithFee,
-    //            costY_350_2000_WithFee,
-    //            costY_9000_10100_WithFee,
-    //            costYAt350_WithFee,
-    //            // costYAt10100_WithFee
-    //        ]);
+           const costYExpect1 = getSum([
+               costY_50_350_WithFee,
+               costY_350_2000_WithFee,
+               costY_9000_10100_WithFee,
+               costYAt350_WithFee,
+               // costYAt10100_WithFee
+           ]);
    
-    //        const acquireXExpect1 = getSum([
-    //            acquireX_50_350,
-    //            acquireX_350_2000,
-    //            acquireX_9000_10100,
-    //            acquireXAt350,
-    //            // acquireXAt10100,
-    //        ]);
+           const acquireXExpect1 = getSum([
+               acquireX_50_350,
+               acquireX_350_2000,
+               acquireX_9000_10100,
+               acquireXAt350,
+               // acquireXAt10100,
+           ]);
       
-    //        const {acquireX: acquireX1, costY: costY1} = await swapY2XDesireX(testSwap, trader, tokenX, tokenY, 3000, acquireXExpect1, 15000);
+           const {acquireX: acquireX1, costY: costY1} = await swapY2XDesireX(testSwap, trader, tokenX, tokenY, 3000, acquireXExpect1, 15000);
            
-    //        expect(costY1).to.equal(costYExpect1);
-    //        expect(acquireX1).to.equal(acquireXExpect1);
+           expect(costY1).to.equal(costYExpect1);
+           expect(acquireX1).to.equal(acquireXExpect1);
    
-    //    });
+       });
 
 
-    // it("end with 2.2.1, 2.2.2, 2.2.3, and 2.2.4", async function () {
+    it("end with 2.2.1, 2.2.2, 2.2.3, and 2.2.4", async function () {
 
-    //     this.timeout(1000000);
-    //     await addLiquidity(testMint, miner1, tokenX, tokenY, 3000, -9650, 1050, '1000000');
-    //     await addLiquidity(testMint, miner2, tokenX, tokenY, 3000, 1050, 2200, '2000000');
-    //     await addLiquidity(testMint, miner3, tokenX, tokenY, 3000, 2350, 2950, '1000000');
-    //     await addLiquidity(testMint, miner4, tokenX, tokenY, 3000, 2600, 3000, '1000000');
+        this.timeout(1000000);
+        await addLiquidity(testMint, miner1, tokenX, tokenY, 3000, -9650, 1050, '1000000');
+        await addLiquidity(testMint, miner2, tokenX, tokenY, 3000, 1050, 2200, '2000000');
+        await addLiquidity(testMint, miner3, tokenX, tokenY, 3000, 2350, 2950, '1000000');
+        await addLiquidity(testMint, miner4, tokenX, tokenY, 3000, 2600, 3000, '1000000');
 
-    //     await addLimOrderWithX(tokenX, tokenY, seller1, testAddLimOrder, '200000000000000000000', 2100);
-    //     await addLimOrderWithX(tokenX, tokenY, seller2, testAddLimOrder, '150000000000000000000', 2600);
+        await addLimOrderWithX(tokenX, tokenY, seller1, testAddLimOrder, '200000000000000000000', 2100);
+        await addLimOrderWithX(tokenX, tokenY, seller2, testAddLimOrder, '150000000000000000000', 2600);
 
-    //     // -8000 ~1000
-    //     const costY_M7999_M50 = yInRange('1000000', -7999, -50, '1.0001', true);
-    //     const acquireX_M7999_M50 = xInRange('1000000', -7999, -50, '1.0001', false);
-    //     const costY_M50_1000 = yInRange('1000000', -50, 1000, '1.0001', true);
-    //     const acquireX_M50_1000 = xInRange('1000000', -50, 1000, '1.0001', false);
+        // -8000 ~1000
+        const costY_M7999_M50 = yInRange('1000000', -7999, -50, '1.0001', true);
+        const acquireX_M7999_M50 = xInRange('1000000', -7999, -50, '1.0001', false);
+        const costY_M50_1000 = yInRange('1000000', -50, 1000, '1.0001', true);
+        const acquireX_M50_1000 = xInRange('1000000', -50, 1000, '1.0001', false);
 
-    //     // 1000 ~ 1050
-    //     const costY_1000_1050 = yInRange('1000000', 1000, 1050, '1.0001', true);
-    //     const acquireX_1000_1050 = xInRange('1000000', 1000, 1050, '1.0001', false);
+        // 1000 ~ 1050
+        const costY_1000_1050 = yInRange('1000000', 1000, 1050, '1.0001', true);
+        const acquireX_1000_1050 = xInRange('1000000', 1000, 1050, '1.0001', false);
 
-    //     // 1050 ~ 2100
-    //     const costY_1050_2100 = yInRange('2000000', 1050, 2100, '1.0001', true);
-    //     const acquireX_1050_2100 = xInRange('2000000', 1050, 2100, '1.0001', false);
+        // 1050 ~ 2100
+        const costY_1050_2100 = yInRange('2000000', 1050, 2100, '1.0001', true);
+        const acquireX_1050_2100 = xInRange('2000000', 1050, 2100, '1.0001', false);
 
-    //     // 2100 ~ 2200
-    //     const costY_2100_2200 = yInRange('2000000', 2100, 2200, '1.0001', true);
-    //     const acquireX_2100_2200 = xInRange('2000000', 2100, 2200, '1.0001', false);
+        // 2100 ~ 2200
+        const costY_2100_2200 = yInRange('2000000', 2100, 2200, '1.0001', true);
+        const acquireX_2100_2200 = xInRange('2000000', 2100, 2200, '1.0001', false);
 
-    //     // 2350 ~ 2600
-    //     const costY_2350_2600 = yInRange('1000000', 2350, 2600, '1.0001', true);
-    //     const acquireX_2350_2600 = xInRange('1000000', 2350, 2600, '1.0001', false);
+        // 2350 ~ 2600
+        const costY_2350_2600 = yInRange('1000000', 2350, 2600, '1.0001', true);
+        const acquireX_2350_2600 = xInRange('1000000', 2350, 2600, '1.0001', false);
 
-    //     // 2600 ~ 2950
-    //     const costY_2600_2950 = yInRange('2000000', 2600, 2950, '1.0001', true);
-    //     const acquireX_2600_2950 = xInRange('2000000', 2600, 2950, '1.0001', false);
+        // 2600 ~ 2950
+        const costY_2600_2950 = yInRange('2000000', 2600, 2950, '1.0001', true);
+        const acquireX_2600_2950 = xInRange('2000000', 2600, 2950, '1.0001', false);
 
-    //     const costYAt2100 = getCostYFromXAt((await logPowMath.getSqrtPrice(2100)).toString(), '200000000000000000000');
-    //     const acquireXAt2100 = '200000000000000000000';
+        const costYAt2100 = getCostYFromXAt((await logPowMath.getSqrtPrice(2100)).toString(), '200000000000000000000');
+        const acquireXAt2100 = '200000000000000000000';
     
-    //     const costYAt2600 = getCostYFromXAt((await logPowMath.getSqrtPrice(2600)).toString(), '150000000000000000000');
-    //     const acquireXAt2600 = '150000000000000000000';
+        const costYAt2600 = getCostYFromXAt((await logPowMath.getSqrtPrice(2600)).toString(), '150000000000000000000');
+        const acquireXAt2600 = '150000000000000000000';
 
 
-    //     const costY_M7999_M50_WithFee = amountAddFee(costY_M7999_M50);
-    //     const costY_M50_1000_WithFee = amountAddFee(costY_M50_1000);
-    //     const costY_1000_1050_WithFee = amountAddFee(costY_1000_1050);
-    //     const costY_1050_2100_WithFee = amountAddFee(costY_1050_2100);
-    //     const costY_2100_2200_WithFee = amountAddFee(costY_2100_2200);
-    //     const costY_2350_2600_WithFee = amountAddFee(costY_2350_2600);
-    //     const costY_2600_2950_WithFee = amountAddFee(costY_2600_2950);
+        const costY_M7999_M50_WithFee = amountAddFee(costY_M7999_M50);
+        const costY_M50_1000_WithFee = amountAddFee(costY_M50_1000);
+        const costY_1000_1050_WithFee = amountAddFee(costY_1000_1050);
+        const costY_1050_2100_WithFee = amountAddFee(costY_1050_2100);
+        const costY_2100_2200_WithFee = amountAddFee(costY_2100_2200);
+        const costY_2350_2600_WithFee = amountAddFee(costY_2350_2600);
+        const costY_2600_2950_WithFee = amountAddFee(costY_2600_2950);
 
-    //     const costYAt2100_WithFee = amountAddFee(costYAt2100);
-    //     const costYAt2600_WithFee = amountAddFee(costYAt2600);
+        const costYAt2100_WithFee = amountAddFee(costYAt2100);
+        const costYAt2600_WithFee = amountAddFee(costYAt2600);
 
-    //     console.log('costY_M7999_M50: ', costY_M7999_M50)
-    //     console.log('costY_M50_1000: ', costY_M50_1000)
+        console.log('costY_M7999_M50: ', costY_M7999_M50)
+        console.log('costY_M50_1000: ', costY_M50_1000)
 
-    //     // -8000 ~1000
-    //     const {acquireX: acquireX1, costY: costY1} = await swapY2XDesireX(testSwap, trader, tokenX, tokenY, 3000, getSum([
-    //         acquireX_M7999_M50, acquireX_M7999_M50
-    //     ]), 1000);
+        // -8000 ~1000
+        const {acquireX: acquireX1, costY: costY1} = await swapY2XDesireX(testSwap, trader, tokenX, tokenY, 3000, getSum([
+            acquireX_M7999_M50, acquireX_M7999_M50
+        ]), 1000);
         
-    //     expect(costY1).to.equal(getSum([costY_M7999_M50_WithFee, costY_M50_1000_WithFee]));
-    //     expect(acquireX1).to.equal(getSum([acquireX_M7999_M50, acquireX_M50_1000]));
+        expect(costY1).to.equal(getSum([costY_M7999_M50_WithFee, costY_M50_1000_WithFee]));
+        expect(acquireX1).to.equal(getSum([acquireX_M7999_M50, acquireX_M50_1000]));
 
-    //     // 1000 ~ 2100
-    //     const {acquireX: acquireX2, costY: costY2} = await swapY2XDesireX(testSwap, trader, tokenX, tokenY, 3000, getSum([
-    //         acquireX_1000_1050, acquireX_1050_2100
-    //     ]), 100000);
+        // 1000 ~ 2100
+        const {acquireX: acquireX2, costY: costY2} = await swapY2XDesireX(testSwap, trader, tokenX, tokenY, 3000, getSum([
+            acquireX_1000_1050, acquireX_1050_2100
+        ]), 100000);
         
-    //     expect(costY2).to.equal(getSum([costY_1000_1050_WithFee, costY_1050_2100_WithFee]));
-    //     expect(acquireX2).to.equal(getSum([acquireX_1000_1050, acquireX_1050_2100]));
+        expect(costY2).to.equal(getSum([costY_1000_1050_WithFee, costY_1050_2100_WithFee]));
+        expect(acquireX2).to.equal(getSum([acquireX_1000_1050, acquireX_1050_2100]));
 
-    //     // 2100 ~ 2200
-    //     const {acquireX: acquireX3, costY: costY3} = await swapY2XDesireX(testSwap, trader, tokenX, tokenY, 3000, getSum([
-    //         acquireX_2100_2200, acquireXAt2100
-    //     ]), 100000);
+        // 2100 ~ 2200
+        const {acquireX: acquireX3, costY: costY3} = await swapY2XDesireX(testSwap, trader, tokenX, tokenY, 3000, getSum([
+            acquireX_2100_2200, acquireXAt2100
+        ]), 100000);
         
-    //     expect(costY3).to.equal(getSum([costY_2100_2200_WithFee, costYAt2100_WithFee]));
-    //     expect(acquireX3).to.equal(getSum([acquireX_2100_2200, acquireXAt2100]));
+        expect(costY3).to.equal(getSum([costY_2100_2200_WithFee, costYAt2100_WithFee]));
+        expect(acquireX3).to.equal(getSum([acquireX_2100_2200, acquireXAt2100]));
 
 
-    //     // 2200 ~ 2600
-    //     const {acquireX: acquireX4, costY: costY4} = await swapY2XDesireX(testSwap, trader, tokenX, tokenY, 3000, getSum([
-    //         acquireX_2350_2600
-    //     ]), 100000);
+        // 2200 ~ 2600
+        const {acquireX: acquireX4, costY: costY4} = await swapY2XDesireX(testSwap, trader, tokenX, tokenY, 3000, getSum([
+            acquireX_2350_2600
+        ]), 100000);
         
-    //     expect(costY4).to.equal(getSum([costY_2350_2600_WithFee]));
-    //     expect(acquireX4).to.equal(getSum([acquireX_2350_2600]));
+        expect(costY4).to.equal(getSum([costY_2350_2600_WithFee]));
+        expect(acquireX4).to.equal(getSum([acquireX_2350_2600]));
 
 
-    //     // 2600 ~ 2950
-    //     const {acquireX: acquireX5, costY: costY5} = await swapY2XDesireX(testSwap, trader, tokenX, tokenY, 3000, getSum([
-    //         acquireX_2600_2950, acquireXAt2600
-    //     ]), 100000);
+        // 2600 ~ 2950
+        const {acquireX: acquireX5, costY: costY5} = await swapY2XDesireX(testSwap, trader, tokenX, tokenY, 3000, getSum([
+            acquireX_2600_2950, acquireXAt2600
+        ]), 100000);
         
-    //     expect(costY5).to.equal(getSum([costY_2600_2950_WithFee, costYAt2600_WithFee]));
-    //     expect(acquireX5).to.equal(getSum([acquireX_2600_2950, acquireXAt2600]));
-    // });
+        expect(costY5).to.equal(getSum([costY_2600_2950_WithFee, costYAt2600_WithFee]));
+        expect(acquireX5).to.equal(getSum([acquireX_2600_2950, acquireXAt2600]));
+    });
 
     it("end with 1.2.1 1.2.2 1.1", async function () {
 
