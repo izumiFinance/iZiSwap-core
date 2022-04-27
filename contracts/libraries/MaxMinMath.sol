@@ -23,4 +23,11 @@ library MaxMinMath {
         }
         return b;
     }
+
+    function min256(uint256 a, uint256 b) internal pure returns (uint256) {
+        if (a < b) {
+            return a;
+        }
+        return b;
+    }
 }

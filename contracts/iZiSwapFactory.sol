@@ -35,12 +35,15 @@ contract iZiSwapFactory is IiZiSwapFactory {
     /// @notice address of module for user to manage limit orders
     address public override limitOrderModule;
 
+    address public override flashModule;
+
     /// @notice construct the factory
     /// @param _swapX2YModule swap module to support swapX2Y(DesireY)
     /// @param _swapY2XModule swap module to support swapY2X(DesireX)
     /// @param _liquidityModule liquidity module to support mint/burn/collect
     /// @param _limitOrderModule module for user to manage limit orders
-    constructor(address _chargeReceiver, address _swapX2YModule, address _swapY2XModule, address _liquidityModule, address _limitOrderModule) {
+    /// @param _flashModule module for user to flash
+    constructor(address _chargeReceiver, address _swapX2YModule, address _swapY2XModule, address _liquidityModule, address _limitOrderModule, address _flashModule) {
         only_addr_ = address(this);
         owner = msg.sender;
         fee2pointDelta[100] = 1;
@@ -52,6 +55,7 @@ contract iZiSwapFactory is IiZiSwapFactory {
         liquidityModule = _liquidityModule;
         chargeReceiver = _chargeReceiver;
         limitOrderModule = _limitOrderModule;
+        flashModule = _flashModule;
     }
 
     modifier noDelegateCall() {

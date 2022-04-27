@@ -32,6 +32,8 @@ interface IiZiSwapFactory {
     /// @return limitOrderModule address
     function limitOrderModule() external returns (address);
 
+    function flashModule() external returns (address);
+
     /// @notice Enables a fee amount with the given pointDelta
     /// @dev Fee amounts may never be removed once enabled
     /// @param fee fee amount (3000 means 0.3%)

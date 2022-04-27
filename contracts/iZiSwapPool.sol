@@ -101,6 +101,7 @@ contract iZiSwapPool is IiZiSwapPool {
     address private swapModuleY2X;
     address private liquidityModule;
     address private limitOrderModule;
+    address private flashModule;
 
     /// @notice percent to charge from miner's fee
     uint24 public immutable override feeChargePercent = 50;
@@ -145,6 +146,7 @@ contract iZiSwapPool is IiZiSwapPool {
         swapModuleY2X = IiZiSwapFactory(_factory).swapY2XModule();
         liquidityModule = IiZiSwapFactory(_factory).liquidityModule();
         limitOrderModule = IiZiSwapFactory(_factory).limitOrderModule();
+        flashModule = IiZiSwapFactory(_factory).flashModule();
 
         console.log("swapX2Y: ", swapModuleX2Y);
         console.log("swapY2X: ", swapModuleY2X);
@@ -625,39 +627,15 @@ contract iZiSwapPool is IiZiSwapPool {
         uint256 amountY,
         bytes calldata data
     ) external override lock noDelegateCall {
-        uint128 currentLiquidity = state.liquidity;
-        require(currentLiquidity > 0, 'L');
-
-        uint256 feeX = MulDivMath.mulDivCeil(amountX, fee, 1e6);
-        uint256 feeY = MulDivMath.mulDivCeil(amountY, fee, 1e6);
-        uint256 balanceXBefore = balanceX();
-        uint256 balanceYBefore = balanceY();
-
-        if (amountX > 0) TokenTransfer.transferToken(tokenX, recipient, amountX);
-        if (amountY > 0) TokenTransfer.transferToken(tokenY, recipient, amountY);
-
-        IiZiSwapFlashCallback(msg.sender).flashCallback(feeX, feeY, data);
-        uint256 balanceXAfter = balanceX();
-        uint256 balanceYAfter = balanceY();
-
-        require(balanceXBefore + feeX <= balanceXAfter, 'FX');
-        require(balanceXBefore + feeY <= balanceYAfter, 'FY');
-
-        // sub is safe because we know balanceAfter is gt balanceBefore by at least fee
-        uint256 paidX = balanceXAfter - balanceXBefore;
-        uint256 paidY = balanceYAfter - balanceYBefore;
-
-        if (paidX > 0) {
-            uint256 chargedFeeAmount = paidX * feeChargePercent / 100;
-            totalFeeXCharged += chargedFeeAmount;
-            feeScaleX_128 = feeScaleX_128 + MulDivMath.mulDivFloor(paidX - chargedFeeAmount, TwoPower.Pow128, currentLiquidity);
+        (bool success, bytes memory d) = flashModule.delegatecall(
+            abi.encodeWithSignature("flash(address,uint256,uint256,bytes)", 
+            recipient, amountX, amountY, data)
+        );
+        if (success) {
+            (uint256 actualAmountX, uint256 actualAmountY, uint256 paidX, uint256 paidY) = abi.decode(d, (uint256, uint256, uint256, uint256));
+            emit Flash(msg.sender, recipient, amountX, amountY, paidX, paidY);
+        } else {
+            revertDCData(d);
         }
-        if (paidY > 0) {
-            uint256 chargedFeeAmount = paidY * feeChargePercent / 100;
-            totalFeeYCharged += chargedFeeAmount;
-            feeScaleY_128 = feeScaleY_128 + MulDivMath.mulDivFloor(paidY - chargedFeeAmount, TwoPower.Pow128, currentLiquidity);
-        }
-
-        emit Flash(msg.sender, recipient, amountX, amountY, paidX, paidY);
     }
 }
