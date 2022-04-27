@@ -55,11 +55,16 @@ async function getPoolParts() {
     const LimitOrderModuleFactory = await ethers.getContractFactory('LimitOrderModule');
     const limitOrderModule = await LimitOrderModuleFactory.deploy();
     await limitOrderModule.deployed();
+
+    const FlashModuleFactory = await ethers.getContractFactory('FlashModule');
+    const flashModule = await FlashModuleFactory.deploy();
+    await flashModule.deployed();
     return {
       swapX2YModule: swapX2YModule.address,
       swapY2XModule: swapY2XModule.address,
       liquidityModule: liquidityModule.address,
       limitOrderModule: limitOrderModule.address,
+      flashModule: flashModule.address,
     };
   }
 

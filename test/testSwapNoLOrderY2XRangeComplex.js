@@ -150,11 +150,11 @@ describe("swap", function () {
   it("swap no limorder y2x range complex", async function () {
     const [signer, miner1, miner2, miner3, trader, trader2, receiver] = await ethers.getSigners();
 
-    const {swapX2YModule, swapY2XModule, liquidityModule, limitOrderModule} = await getPoolParts();
+    const {swapX2YModule, swapY2XModule, liquidityModule, limitOrderModule, flashModule} = await getPoolParts();
     // deploy a factory
     const iZiSwapFactory = await ethers.getContractFactory("iZiSwapFactory");
 
-    const factory = await iZiSwapFactory.deploy(receiver.address, swapX2YModule, swapY2XModule, liquidityModule, limitOrderModule);
+    const factory = await iZiSwapFactory.deploy(receiver.address, swapX2YModule, swapY2XModule, liquidityModule, limitOrderModule, flashModule);
     await factory.deployed();
 
     await factory.enableFeeAmount(3000, 50);
