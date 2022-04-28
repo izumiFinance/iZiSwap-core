@@ -51,10 +51,8 @@ contract iZiSwapPool is IiZiSwapPool {
 
     /// @notice address of tokenX
     address public tokenX;
-
     /// @notice address of tokenY
     address public tokenY;
-
     /// @notice fee amount of this swap pool, 3000 means 0.3%
     uint24 public fee;
 
@@ -95,7 +93,7 @@ contract iZiSwapPool is IiZiSwapPool {
     uint256 public override totalFeeXCharged;
     uint256 public override totalFeeYCharged;
 
-    address private  original;
+    address private original;
 
     address private swapModuleX2Y;
     address private swapModuleY2X;
