@@ -13,13 +13,15 @@ import './libraries/SwapMathY2X.sol';
 import './libraries/SwapMathX2Y.sol';
 import './libraries/SwapMathY2XDesire.sol';
 import './libraries/SwapMathX2YDesire.sol';
-import './libraries/UserEarn.sol';
 import './libraries/TokenTransfer.sol';
+import './libraries/UserEarn.sol';
 import './libraries/State.sol';
 import './libraries/Oracle.sol';
 import './libraries/OrderOrEndpoint.sol';
 import './libraries/MaxMinMath.sol';
 import './interfaces/IiZiSwapCallback.sol';
+import './libraries/SwapCache.sol';
+
 import 'hardhat/console.sol';
 
 contract SwapY2XModule {
@@ -104,18 +106,6 @@ contract SwapY2XModule {
     /// @notice percent to charge from miner's fee
     uint24 public immutable feeChargePercent = 50;
 
-    struct SwapCache {
-        uint256 currFeeScaleX_128;
-        uint256 currFeeScaleY_128;
-        bool finished;
-        uint160 _sqrtRate_96;
-        int24 pointDelta;
-        int24 currentOrderOrEndPoint;
-        int24 startPoint;
-        uint128 startLiquidity;
-        uint32 timestamp;
-    }
-
     // delta cannot be int128.min and it can be proofed that
     // liquidDelta of any one point will not be int128.min
     function liquidityAddDelta(uint128 l, int128 delta) private pure returns (uint128 nl) {
@@ -166,13 +156,13 @@ contract SwapY2XModule {
         cache.finished = false;
         cache._sqrtRate_96 = sqrtRate_96;
         cache.pointDelta = pointDelta;
-        cache.currentOrderOrEndPoint = orderOrEndpoint.getOrderOrEndptVal(st.currentPoint, cache.pointDelta);
+        cache.currentOrderOrEndpt = orderOrEndpoint.getOrderOrEndptVal(st.currentPoint, cache.pointDelta);
         cache.startPoint = st.currentPoint;
         cache.startLiquidity = st.liquidity;
         cache.timestamp = uint32(block.number);
         while (st.currentPoint < highPt && !cache.finished) {
 
-            if (cache.currentOrderOrEndPoint & 2 > 0) {
+            if (cache.currentOrderOrEndpt & 2 > 0) {
                 uint128 amountNoFee = uint128(uint256(amount) * (1e6 - fee) / 1e6);
                 if (amountNoFee > 0) {
                     // clear limit order first
@@ -203,7 +193,7 @@ contract SwapY2XModule {
                     od.earnY += costY;
                     od.accEarnY += costY;
                     if (od.sellingY == 0 && currX == 0) {
-                        int24 newVal = cache.currentOrderOrEndPoint & 1;
+                        int24 newVal = cache.currentOrderOrEndpt & 1;
                         orderOrEndpoint.setOrderOrEndptVal(st.currentPoint, cache.pointDelta, newVal);
                         if (newVal == 0) {
                             pointBitmap.setZero(st.currentPoint, cache.pointDelta);
@@ -239,7 +229,7 @@ contract SwapY2XModule {
                     st.liquidity = liquidityAddDelta(st.liquidity, liquidDelta);
                     st.liquidityX = st.liquidity;
                 }
-                cache.currentOrderOrEndPoint = nextVal;
+                cache.currentOrderOrEndpt = nextVal;
             } else {
                 // amount > 0
                 uint128 amountNoFee = uint128(uint256(amount) * (1e6 - fee) / 1e6);
@@ -286,10 +276,10 @@ contract SwapY2XModule {
                     st.liquidityX = st.liquidity;
                 }
                 if (st.currentPoint == nextPoint) {
-                    cache.currentOrderOrEndPoint = nextVal;
+                    cache.currentOrderOrEndpt = nextVal;
                 } else {
                     // not necessary, because finished must be true
-                    cache.currentOrderOrEndPoint = 0;
+                    cache.currentOrderOrEndpt = 0;
                 }
             }
         }
@@ -343,12 +333,12 @@ contract SwapY2XModule {
         cache.finished = false;
         cache._sqrtRate_96 = sqrtRate_96;
         cache.pointDelta = pointDelta;
-        cache.currentOrderOrEndPoint = orderOrEndpoint.getOrderOrEndptVal(st.currentPoint, cache.pointDelta);
+        cache.currentOrderOrEndpt = orderOrEndpoint.getOrderOrEndptVal(st.currentPoint, cache.pointDelta);
         cache.startPoint = st.currentPoint;
         cache.startLiquidity = st.liquidity;
         cache.timestamp = uint32(block.number);
         while (st.currentPoint < highPt && !cache.finished) {
-            if (cache.currentOrderOrEndPoint & 2 > 0) {
+            if (cache.currentOrderOrEndpt & 2 > 0) {
                 // clear limit order first
                 LimitOrder.Data storage od = limitOrderData[st.currentPoint];
                 uint128 currX = od.sellingX;
@@ -368,7 +358,7 @@ contract SwapY2XModule {
                 od.earnY += costY;
                 od.accEarnY += costY;
                 if (od.sellingY == 0 && currX == 0) {
-                    int24 newVal = cache.currentOrderOrEndPoint & 1;
+                    int24 newVal = cache.currentOrderOrEndpt & 1;
                     orderOrEndpoint.setOrderOrEndptVal(st.currentPoint, cache.pointDelta, newVal);
                     if (newVal == 0) {
                         pointBitmap.setZero(st.currentPoint, cache.pointDelta);
@@ -399,7 +389,7 @@ contract SwapY2XModule {
                     st.liquidity = liquidityAddDelta(st.liquidity, liquidDelta);
                     st.liquidityX = st.liquidity;
                 }
-                cache.currentOrderOrEndPoint = nextVal;
+                cache.currentOrderOrEndpt = nextVal;
             } else {
                 // desireX > 0
                 if (desireX > 0) {
@@ -434,10 +424,10 @@ contract SwapY2XModule {
                     st.liquidityX = st.liquidity;
                 }
                 if (st.currentPoint == nextPoint) {
-                    cache.currentOrderOrEndPoint = nextVal;
+                    cache.currentOrderOrEndpt = nextVal;
                 } else {
                     // not necessary, because finished must be true
-                    cache.currentOrderOrEndPoint = 0;
+                    cache.currentOrderOrEndpt = 0;
                 }
             }
         }

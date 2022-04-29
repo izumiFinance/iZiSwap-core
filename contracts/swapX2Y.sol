@@ -16,12 +16,11 @@ import './libraries/SwapMathX2YDesire.sol';
 import './libraries/TokenTransfer.sol';
 import './libraries/UserEarn.sol';
 import './libraries/State.sol';
-import './libraries/SwapCache.sol';
 import './libraries/Oracle.sol';
 import './libraries/OrderOrEndpoint.sol';
 import './libraries/MaxMinMath.sol';
-
 import './interfaces/IiZiSwapCallback.sol';
+import './libraries/SwapCache.sol';
 
 import 'hardhat/console.sol';
 
@@ -352,7 +351,6 @@ contract SwapX2YModule {
         int24 lowPt,
         bytes calldata data
     ) external returns (uint256 amountX, uint256 amountY) {
-        // todo we will consider -amount of desired y later
         require(desireY > 0, "AP");
         lowPt = MaxMinMath.max(lowPt, leftMostPt);
         amountX = 0;

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.4;
 
 import '../interfaces/IiZiSwapPool.sol';
@@ -23,7 +24,7 @@ contract TestQuoter is IiZiSwapCallback {
         uint256 x,
         uint256 y,
         bytes calldata data
-    ) external override {
+    ) external override view {
         SwapCallbackData memory dt = abi.decode(data, (SwapCallbackData));
         require(pool(dt.token0, dt.token1, dt.fee) == msg.sender, "sp");
         
@@ -63,7 +64,7 @@ contract TestQuoter is IiZiSwapCallback {
         uint256 x,
         uint256 y,
         bytes calldata data
-    ) external override {
+    ) external override view {
         SwapCallbackData memory dt = abi.decode(data, (SwapCallbackData));
         require(pool(dt.token0, dt.token1, dt.fee) == msg.sender, "sp");
         

@@ -162,7 +162,7 @@ library SwapMathX2Y {
         int24 leftPt,
         uint160 sqrtRate_96,
         uint128 amountX
-    ) internal view returns (
+    ) internal pure returns (
         RangeRetState memory retState
     ) {
         retState.costX = 0;

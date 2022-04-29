@@ -4,7 +4,7 @@ pragma solidity ^0.8.4;
 import '../libraries/MulDivMath.sol';
 
 contract TestMulDivMath {
-    function getMulDivFloor(uint256 a, uint256 b, uint256 c) external view returns (uint256) {
+    function getMulDivFloor(uint256 a, uint256 b, uint256 c) external pure returns (uint256) {
         return MulDivMath.mulDivFloor(a, b, c);
     }
 
@@ -14,7 +14,7 @@ contract TestMulDivMath {
         return gasBefore - gasleft();
     }
 
-    function getMulDivCeil(uint256 a, uint256 b, uint256 c) external view returns (uint256) {
+    function getMulDivCeil(uint256 a, uint256 b, uint256 c) external pure returns (uint256) {
         return MulDivMath.mulDivCeil(a, b, c);
     }
 
