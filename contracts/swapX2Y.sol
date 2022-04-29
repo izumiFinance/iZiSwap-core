@@ -115,6 +115,7 @@ contract SwapX2YModule {
             nl = l + uint128(delta);
         }
     }
+
     function balanceX() private view returns (uint256) {
         (bool success, bytes memory data) =
             tokenX.staticcall(abi.encodeWithSelector(IERC20Minimal.balanceOf.selector, address(this)));

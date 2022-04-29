@@ -169,6 +169,25 @@ contract iZiSwapPool is IiZiSwapPool {
         state.observationCurrentIndex = 0;
     }
 
+    function revertDCData(bytes memory data) private pure {
+        if (data.length != 64) {
+            if (data.length < 68) revert('dc');
+            assembly {
+                data := add(data, 0x04)
+            }
+            revert(abi.decode(data, (string)));
+        }
+        assembly {
+            data:= add(data, 0x20)
+            let w := mload(data)
+            let t := mload(0x40)
+            mstore(t, w)
+            let w2 := mload(add(data, 0x20))
+            mstore(add(t, 0x20), w2)
+            revert(t, 64)
+        }
+    }
+
     /// @notice mark a given amount of tokenY in a limitorder(sellx and earn y) as assigned
     /// @param point point (log Price) of seller's limit order,be sure to be times of pointDelta
     /// @param assignY max amount of tokenY to mark assigned
@@ -407,25 +426,6 @@ contract iZiSwapPool is IiZiSwapPool {
             tokenY.staticcall(abi.encodeWithSelector(IERC20Minimal.balanceOf.selector, address(this)));
         require(success && data.length >= 32);
         return abi.decode(data, (uint256));
-    }
-
-    function revertDCData(bytes memory data) private pure {
-        if (data.length != 64) {
-            if (data.length < 68) revert('dc');
-            assembly {
-                data := add(data, 0x04)
-            }
-            revert(abi.decode(data, (string)));
-        }
-        assembly {
-            data:= add(data, 0x20)
-            let w := mload(data)
-            let t := mload(0x40)
-            mstore(t, w)
-            let w2 := mload(add(data, 0x20))
-            mstore(add(t, 0x20), w2)
-            revert(t, 64)
-        }
     }
 
     /// @notice swap tokenY for tokenX， given max amount of tokenY user willing to pay
