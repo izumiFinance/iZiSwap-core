@@ -126,7 +126,7 @@ contract FlashModule {
         uint256 amountX,
         uint256 amountY,
         bytes calldata data
-    ) external noDelegateCall lock returns (uint256 actualAmountX, uint256 actualAmountY, uint256 paidX, uint256 paidY) {
+    ) external returns (uint256 actualAmountX, uint256 actualAmountY, uint256 paidX, uint256 paidY) {
         uint128 currentLiquidity = state.liquidity;
         require(currentLiquidity > 0, 'L');
 

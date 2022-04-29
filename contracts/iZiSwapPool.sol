@@ -624,7 +624,7 @@ contract iZiSwapPool is IiZiSwapPool {
         uint256 amountX,
         uint256 amountY,
         bytes calldata data
-    ) external override lock noDelegateCall {
+    ) external override noDelegateCall lock {
         (bool success, bytes memory d) = flashModule.delegatecall(
             abi.encodeWithSignature("flash(address,uint256,uint256,bytes)", 
             recipient, amountX, amountY, data)
