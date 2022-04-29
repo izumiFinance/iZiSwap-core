@@ -102,7 +102,7 @@ contract LiquidityModule {
     address private flashModule;
 
     /// @notice percent to charge from miner's fee
-    uint24 public immutable feeChargePercent = 20;
+    uint24 public immutable feeChargePercent = 50;
 
     // data used when removing liquidity
     struct WithdrawRet {

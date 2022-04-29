@@ -104,7 +104,7 @@ contract FlashModule {
     address private flashModule;
 
     /// @notice percent to charge from miner's fee
-    uint24 public immutable feeChargePercent = 20;
+    uint24 public immutable feeChargePercent = 50;
 
     function balanceX() private view returns (uint256) {
         (bool success, bytes memory data) =
@@ -126,7 +126,7 @@ contract FlashModule {
         uint256 amountX,
         uint256 amountY,
         bytes calldata data
-    ) external returns (uint256 actualAmountX, uint256 actualAmountY, uint256 paidX, uint256 paidY) {
+    ) external noDelegateCall lock returns (uint256 actualAmountX, uint256 actualAmountY, uint256 paidX, uint256 paidY) {
         uint128 currentLiquidity = state.liquidity;
         require(currentLiquidity > 0, 'L');
 
@@ -148,7 +148,6 @@ contract FlashModule {
         require(balanceXBefore + feeX <= balanceXAfter, 'FX');
         require(balanceXBefore + feeY <= balanceYAfter, 'FY');
 
-        // sub is safe because we know balanceAfter is gt balanceBefore by at least fee
         paidX = balanceXAfter - balanceXBefore;
         paidY = balanceYAfter - balanceYBefore;
 
