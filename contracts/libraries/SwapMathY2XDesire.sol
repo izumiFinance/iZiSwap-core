@@ -6,6 +6,7 @@ import './TwoPower.sol';
 import './AmountMath.sol';
 import './State.sol';
 import './MaxMinMath.sol';
+import './Converter.sol';
 import "hardhat/console.sol";
 
 library SwapMathY2XDesire {
@@ -31,12 +32,10 @@ library SwapMathY2XDesire {
         uint160 sqrtPrice_96,
         uint128 currX
     ) internal pure returns (uint128 costY, uint128 acquireX) {
-        acquireX = desireX;
-        if (acquireX > currX) {
-            acquireX = uint128(currX);
-        }
+        acquireX = MaxMinMath.min(desireX, currX);
         uint256 l = MulDivMath.mulDivCeil(acquireX, sqrtPrice_96, TwoPower.Pow96);
-        costY = uint128(MulDivMath.mulDivCeil(l, sqrtPrice_96, TwoPower.Pow96));
+        // costY should <= uint128.max
+        costY = Converter.toUint128(MulDivMath.mulDivCeil(l, sqrtPrice_96, TwoPower.Pow96));
     }
 
     function y2XAtPriceLiquidity(
@@ -45,9 +44,10 @@ library SwapMathY2XDesire {
         uint128 liquidityX
     ) internal pure returns (uint256 costY, uint128 acquireX, uint128 newLiquidityX) {
         uint256 maxTransformLiquidityY = MulDivMath.mulDivCeil(desireX, sqrtPrice_96, TwoPower.Pow96);
-        uint128 transformLiquidityY = uint128((maxTransformLiquidityY > liquidityX) ? liquidityX : maxTransformLiquidityY);
+        // transformLiquidityY <= liquidityX <= uint128.max
+        uint128 transformLiquidityY = uint128(MaxMinMath.min256(maxTransformLiquidityY, liquidityX));
         costY = MulDivMath.mulDivCeil(transformLiquidityY, sqrtPrice_96, TwoPower.Pow96);
-        acquireX = uint128(uint256(transformLiquidityY) * TwoPower.Pow96 / sqrtPrice_96);
+        acquireX = Converter.toUint128(uint256(transformLiquidityY) * TwoPower.Pow96 / sqrtPrice_96);
         newLiquidityX = liquidityX - transformLiquidityY;
     }
 
@@ -76,6 +76,7 @@ library SwapMathY2XDesire {
     ) {
         uint256 maxX = AmountMath.getAmountX(rg.liquidity, rg.leftPt, rg.rightPt, rg.sqrtPriceR_96, rg.sqrtRate_96, false);
         if (maxX <= desireX) {
+            // maxX <= desireX <= uint128.max
             ret.acquireX = uint128(maxX);
             ret.costY = AmountMath.getAmountY(rg.liquidity, rg.sqrtPriceL_96, rg.sqrtPriceR_96, rg.sqrtRate_96, true);
             ret.completeLiquidity = true;
@@ -111,14 +112,15 @@ library SwapMathY2XDesire {
             return ret;
         }
         ret.completeLiquidity = false;
-        ret.acquireX = MaxMinMath.min(uint128(AmountMath.getAmountX(
+        // ret.acquireX <= desireX <= uint128.max
+        ret.acquireX = uint128(MaxMinMath.min256(AmountMath.getAmountX(
             rg.liquidity,
             rg.leftPt,
             ret.locPt,
             ret.sqrtLoc_96,
             rg.sqrtRate_96,
             false
-        )), desireX);
+        ), desireX));
         // if (ret.sqrtLoc_96 < rg.sqrtPriceL_96) {
         //     ret.sqrtLoc_96 = rg.sqrtPriceL_96;
         // }

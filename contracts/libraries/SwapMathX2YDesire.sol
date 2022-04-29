@@ -6,6 +6,7 @@ import './TwoPower.sol';
 import './AmountMath.sol';
 import './State.sol';
 import './MaxMinMath.sol';
+import './Converter.sol';
 import "hardhat/console.sol";
 
 library SwapMathX2YDesire {
@@ -35,7 +36,7 @@ library SwapMathX2YDesire {
             acquireY = currY;
         }
         uint256 l = MulDivMath.mulDivCeil(acquireY, TwoPower.Pow96, sqrtPrice_96);
-        costX = uint128(MulDivMath.mulDivCeil(l, TwoPower.Pow96, sqrtPrice_96));
+        costX = Converter.toUint128(MulDivMath.mulDivCeil(l, TwoPower.Pow96, sqrtPrice_96));
     }
     function mulDivCeil(uint256 a, uint256 b, uint256 c) internal pure returns (uint256) {
         uint256 v = a * b;
@@ -49,13 +50,14 @@ library SwapMathX2YDesire {
         uint160 sqrtPrice_96,
         uint128 liquidity,
         uint128 liquidityX
-    ) internal view returns (uint256 costX, uint128 acquireY, uint128 newLiquidityX) {
-        uint256 liquidityY = uint256(liquidity - liquidityX);
+    ) internal pure returns (uint256 costX, uint128 acquireY, uint128 newLiquidityX) {
+        uint256 liquidityY = liquidity - liquidityX;
         uint256 maxTransformLiquidityX = mulDivCeil(uint256(desireY), TwoPower.Pow96, sqrtPrice_96);
-        uint128 transformLiquidityX = uint128((maxTransformLiquidityX > liquidityY) ? liquidityY : maxTransformLiquidityX);
+        // transformLiquidityX <= liquidityY <= uint128.max
+        uint128 transformLiquidityX = uint128(MaxMinMath.min256(maxTransformLiquidityX, liquidityY));
         costX = mulDivCeil(transformLiquidityX, TwoPower.Pow96, sqrtPrice_96);
-        acquireY = MaxMinMath.min(uint128(transformLiquidityX * sqrtPrice_96 / TwoPower.Pow96), desireY);
-        console.log('acquireY: %d', uint256(acquireY));
+        // acquireY should not > uint128.max
+        acquireY = Converter.toUint128(transformLiquidityX * sqrtPrice_96 / TwoPower.Pow96);
         newLiquidityX = liquidityX + transformLiquidityX;
     }
 
@@ -84,6 +86,7 @@ library SwapMathX2YDesire {
     ) {
         uint256 maxY = AmountMath.getAmountY(rg.liquidity, rg.sqrtPriceL_96, rg.sqrtPriceR_96, rg.sqrtRate_96, false);
         if (maxY <= desireY) {
+            // maxY <= desireY <= uint128.max
             ret.acquireY = uint128(maxY);
             ret.costX = AmountMath.getAmountX(rg.liquidity, rg.leftPt, rg.rightPt, rg.sqrtPriceR_96, rg.sqrtRate_96, true);
             ret.completeLiquidity = true;
@@ -119,7 +122,9 @@ library SwapMathX2YDesire {
                 uint256(ret.sqrtLoc_96) +
                 uint256(ret.sqrtLoc_96) * (uint256(rg.sqrtRate_96) - TwoPower.Pow96) / TwoPower.Pow96
             );
-            ret.acquireY = MaxMinMath.min(uint128(AmountMath.getAmountY(rg.liquidity, sqrtLocA1_96, rg.sqrtPriceR_96, rg.sqrtRate_96, false)), desireY);
+            uint256 acquireY256 = AmountMath.getAmountY(rg.liquidity, sqrtLocA1_96, rg.sqrtPriceR_96, rg.sqrtRate_96, false);
+            // ret.acquireY <= desireY <= uint128.max
+            ret.acquireY = uint128(MaxMinMath.min256(acquireY256, desireY));
         }
     }
 
@@ -135,7 +140,7 @@ library SwapMathX2YDesire {
         int24 leftPt,
         uint160 sqrtRate_96,
         uint128 desireY
-    ) internal view returns (
+    ) internal pure returns (
         RangeRetState memory retState
     ) {
         retState.costX = 0;

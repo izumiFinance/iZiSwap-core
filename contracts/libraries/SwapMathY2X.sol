@@ -6,6 +6,7 @@ import './TwoPower.sol';
 import './AmountMath.sol';
 import './State.sol';
 import './MaxMinMath.sol';
+import './Converter.sol';
 import "hardhat/console.sol";
 
 
@@ -33,15 +34,20 @@ library SwapMathY2X {
         uint128 currX
     ) internal pure returns (uint128 costY, uint128 acquireX) {
         uint256 l = MulDivMath.mulDivFloor(amountY, TwoPower.Pow96, sqrtPrice_96);
-        acquireX = uint128(MulDivMath.mulDivFloor(l, TwoPower.Pow96, sqrtPrice_96));
-        if (acquireX > currX) {
-            acquireX = currX;
-        }
+        // acquireX <= currX <= uint128.max
+        acquireX = uint128(MaxMinMath.min256(MulDivMath.mulDivFloor(l, TwoPower.Pow96, sqrtPrice_96), currX));
         l = MulDivMath.mulDivCeil(acquireX, sqrtPrice_96, TwoPower.Pow96);
         uint256 cost = MulDivMath.mulDivCeil(l, sqrtPrice_96, TwoPower.Pow96);
+        // costY = cost <= amountY <= uint128.max
         costY = uint128(cost);
-        // it is believed that costY <= amountY
-        require(costY == cost);
+    }
+
+    function mulDivCeil(uint256 a, uint256 b, uint256 c) internal pure returns (uint256) {
+        uint256 v = a * b;
+        if (v % c == 0) {
+            return v / c;
+        }
+        return v / c + 1;
     }
 
     function y2XAtPriceLiquidity(
@@ -50,8 +56,10 @@ library SwapMathY2X {
         uint128 liquidityX
     ) internal pure returns (uint128 costY, uint256 acquireX, uint128 newLiquidityX) {
         uint256 maxTransformLiquidityY = amountY * TwoPower.Pow96 / sqrtPrice_96;
-        uint128 transformLiquidityY = uint128(maxTransformLiquidityY > uint256(liquidityX) ? liquidityX : maxTransformLiquidityY);
-        costY = uint128(MulDivMath.mulDivCeil(transformLiquidityY, sqrtPrice_96, TwoPower.Pow96));
+        // transformLiquidityY <= liquidityX
+        uint128 transformLiquidityY = uint128(MaxMinMath.min256(maxTransformLiquidityY, liquidityX));
+        // costY <= amountY
+        costY = uint128(mulDivCeil(transformLiquidityY, sqrtPrice_96, TwoPower.Pow96));
         acquireX = uint256(transformLiquidityY) * TwoPower.Pow96 / sqrtPrice_96;
         newLiquidityX = liquidityX - transformLiquidityY;
     }
@@ -80,6 +88,7 @@ library SwapMathY2X {
     ) {
         uint256 maxY = AmountMath.getAmountY(rg.liquidity, rg.sqrtPriceL_96, rg.sqrtPriceR_96, rg.sqrtRate_96, true);
         if (maxY <= amountY) {
+            // ret.costY <= maxY <= uint128.max
             ret.costY = uint128(maxY);
             ret.acquireX = AmountMath.getAmountX(rg.liquidity, rg.leftPt, rg.rightPt, rg.sqrtPriceR_96, rg.sqrtRate_96, false);
             // we complete this liquidity segment
@@ -104,14 +113,16 @@ library SwapMathY2X {
                 ret.acquireX = 0;
                 return ret;
             }
-            
-            ret.costY = MaxMinMath.min(uint128(AmountMath.getAmountY(
+
+            uint256 costY256 = AmountMath.getAmountY(
                 rg.liquidity,
                 rg.sqrtPriceL_96,
                 ret.sqrtLoc_96,
                 rg.sqrtRate_96,
                 true
-            )), amountY);
+            );
+            // ret.costY <= amountY <= uint128.max
+            ret.costY = uint128(MaxMinMath.min256(costY256, amountY));
             // it is believed that costY <= amountY even if 
             // the costY is the upperbound of the result
             // because amountY is not a real and 

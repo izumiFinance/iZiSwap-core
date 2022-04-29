@@ -105,16 +105,6 @@ contract SwapY2XModule {
 
     /// @notice percent to charge from miner's fee
     uint24 public immutable feeChargePercent = 50;
-
-    // delta cannot be int128.min and it can be proofed that
-    // liquidDelta of any one point will not be int128.min
-    function liquidityAddDelta(uint128 l, int128 delta) private pure returns (uint128 nl) {
-        if (delta < 0) {
-            nl = l - uint128(-delta);
-        } else {
-            nl = l + uint128(delta);
-        }
-    }
     
     function balanceX() private view returns (uint256) {
         (bool success, bytes memory data) =
@@ -163,6 +153,7 @@ contract SwapY2XModule {
         while (st.currentPoint < highPt && !cache.finished) {
 
             if (cache.currentOrderOrEndpt & 2 > 0) {
+                // amount <= uint128.max
                 uint128 amountNoFee = uint128(uint256(amount) * (1e6 - fee) / 1e6);
                 if (amountNoFee > 0) {
                     // clear limit order first
@@ -178,6 +169,7 @@ contract SwapY2XModule {
                     if (costY >= amountNoFee) {
                         feeAmount = amount - costY;
                     } else {
+                        // amount <= uint128.max
                         feeAmount = uint128(uint256(costY) * fee / (1e6 - fee));
                         uint256 mod = uint256(costY) * fee % (1e6 - fee);
                         if (mod > 0) {
@@ -226,12 +218,12 @@ contract SwapY2XModule {
                     endPt.passEndpoint(cache.currFeeScaleX_128, cache.currFeeScaleY_128);
                     // we should add delta liquid of nextPoint
                     int128 liquidDelta = endPt.liquidDelta;
-                    st.liquidity = liquidityAddDelta(st.liquidity, liquidDelta);
+                    st.liquidity = Liquidity.liquidityAddDelta(st.liquidity, liquidDelta);
                     st.liquidityX = st.liquidity;
                 }
                 cache.currentOrderOrEndpt = nextVal;
             } else {
-                // amount > 0
+                // amount <= uint128.max
                 uint128 amountNoFee = uint128(uint256(amount) * (1e6 - fee) / 1e6);
                 if (amountNoFee > 0) {
                     SwapMathY2X.RangeRetState memory retState = SwapMathY2X.y2XRange(
@@ -243,6 +235,7 @@ contract SwapY2XModule {
                     if (retState.costY >= amountNoFee) {
                         feeAmount = amount - retState.costY;
                     } else {
+                        // retState.costY <= uint128.max
                         feeAmount = uint128(uint256(retState.costY) * fee / (1e6 - fee));
                         uint256 mod = uint256(retState.costY) * fee % (1e6 - fee);
                         if (mod > 0) {
@@ -271,7 +264,7 @@ contract SwapY2XModule {
                         Point.Data storage endPt = points[nextPoint];
                         // pass next point from left to right
                         endPt.passEndpoint(cache.currFeeScaleX_128, cache.currFeeScaleY_128);
-                        st.liquidity = liquidityAddDelta(st.liquidity, endPt.liquidDelta);
+                        st.liquidity = Liquidity.liquidityAddDelta(st.liquidity, endPt.liquidDelta);
                     }
                     st.liquidityX = st.liquidity;
                 }
@@ -386,7 +379,7 @@ contract SwapY2XModule {
                     endPt.passEndpoint(cache.currFeeScaleX_128, cache.currFeeScaleY_128);
                     // we should add delta liquid of nextPoint
                     int128 liquidDelta = endPt.liquidDelta;
-                    st.liquidity = liquidityAddDelta(st.liquidity, liquidDelta);
+                    st.liquidity = Liquidity.liquidityAddDelta(st.liquidity, liquidDelta);
                     st.liquidityX = st.liquidity;
                 }
                 cache.currentOrderOrEndpt = nextVal;
@@ -419,7 +412,7 @@ contract SwapY2XModule {
                         Point.Data storage endPt = points[nextPoint];
                         // pass next point from left to right
                         endPt.passEndpoint(cache.currFeeScaleX_128, cache.currFeeScaleY_128);
-                        st.liquidity = liquidityAddDelta(st.liquidity, endPt.liquidDelta);
+                        st.liquidity = Liquidity.liquidityAddDelta(st.liquidity, endPt.liquidDelta);
                     }
                     st.liquidityX = st.liquidity;
                 }

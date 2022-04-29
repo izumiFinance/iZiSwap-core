@@ -3,6 +3,8 @@ pragma solidity >=0.7.3;
 
 import './MulDivMath.sol';
 import './TwoPower.sol';
+import './Converter.sol';
+import './MaxMinMath.sol';
 
 library UserEarn {
 
@@ -60,7 +62,18 @@ library UserEarn {
                 earn = MulDivMath.mulDivFloor(l, TwoPower.Pow96, sqrtPrice_96);
             }
         }
+        // sold1 = ceil(ceil(earn1 * Q / P) * Q / P)
+        // if sold1 <= data.sellingRemain, earn = earn1 <= totalEarn, sold=sold1 <= data.sellingRemain
+        // if sold1 > data.sellingRemain, sold = data.sellingRemain
+        //     sold1 - 1 < ceil(ceil(earn1 * Q / P) * Q / P)
+        //  => sold1 - 1 < ceil(earn1 * Q / P) * Q / P
+        //  => floor((sold1 - 1) * P / Q) < ceil(earn1 * Q / P)
+        //  => floor((sold1 - 1) * P / Q) < earn1 * Q / P
+        //  => earn = floor(floor((sold1 - 1) * P / Q) * P / Q) < earn1 <= totalEarn
+
+        // earn <= totalEarn
         data.earn += uint128(earn);
+        // sold <= data.sellingRemain
         data.sellingRemain -= uint128(sold);
         self.lastAccEarn = currAccEarn;
         if (earn > 0) {
@@ -69,6 +82,7 @@ library UserEarn {
         if (sold > 0) {
             self.sellingRemain = data.sellingRemain;
         }
+        // earn <= totalEarn
         totalEarnRemain = totalEarn - uint128(earn);
     }
 
@@ -93,10 +107,7 @@ library UserEarn {
         bool isEarnY
     ) internal returns(uint128 actualDelta, uint128 totalEarnRemain) {
         totalEarnRemain = update(self, currAccEarn, sqrtPrice_96, totalEarn, isEarnY);
-        actualDelta = delta;
-        if (actualDelta > self.sellingRemain) {
-            actualDelta = uint128(self.sellingRemain);
-        }
+        actualDelta = MaxMinMath.min(delta, self.sellingRemain);
         self.sellingRemain = self.sellingRemain - actualDelta;
         self.sellingDec = self.sellingDec + actualDelta;
     }

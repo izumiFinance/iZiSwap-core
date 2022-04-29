@@ -17,6 +17,8 @@ library Liquidity {
     // liquidDelta of any one point will not be int128.min
     function liquidityAddDelta(uint128 l, int128 delta) internal pure returns (uint128 nl) {
         if (delta < 0) {
+            // in the pool, max(liquidity) < 2 ** 127
+            // so, -delta > -2**127, -delta <= int128.max
             nl = l - uint128(-delta);
         } else {
             nl = l + uint128(delta);

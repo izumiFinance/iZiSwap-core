@@ -106,16 +106,6 @@ contract SwapX2YModule {
     /// @notice percent to charge from miner's fee
     uint24 public immutable feeChargePercent = 50;
 
-    // delta cannot be int128.min and it can be proofed that
-    // liquidDelta of any one point will not be int128.min
-    function liquidityAddDelta(uint128 l, int128 delta) private pure returns (uint128 nl) {
-        if (delta < 0) {
-            nl = l - uint128(-delta);
-        } else {
-            nl = l + uint128(delta);
-        }
-    }
-
     function balanceX() private view returns (uint256) {
         (bool success, bytes memory data) =
             tokenX.staticcall(abi.encodeWithSelector(IERC20Minimal.balanceOf.selector, address(this)));
@@ -164,6 +154,7 @@ contract SwapX2YModule {
 
             // step1: fill limit order 
             if (cache.currentOrderOrEndpt & 2 > 0) {
+                // amount <= uint128.max
                 uint128 amountNoFee = uint128(uint256(amount) * (1e6 - fee) / 1e6);
                 if (amountNoFee > 0) {
                     LimitOrder.Data storage od = limitOrderData[st.currentPoint];
@@ -178,6 +169,7 @@ contract SwapX2YModule {
                     if (costX >= amountNoFee) {
                         feeAmount = amount - costX;
                     } else {
+                        // costX <= amountX <= uint128.max
                         feeAmount = uint128(uint256(costX) * fee / (1e6 - fee));
                         uint256 mod = uint256(costX) * fee % (1e6 - fee);
                         if (mod > 0) {
@@ -210,6 +202,7 @@ contract SwapX2YModule {
 
             // step2: clear the liquidity if the currentPoint is an endpoint
             if (cache.currentOrderOrEndpt & 1 > 0) {
+                // amount <= uint128.max
                 uint128 amountNoFee = uint128(uint256(amount) * (1e6 - fee) / 1e6);
                 if (amountNoFee > 0) {
                     if (st.liquidity > 0) {
@@ -224,6 +217,7 @@ contract SwapX2YModule {
                         if (retState.costX >= amountNoFee) {
                             feeAmount = amount - retState.costX;
                         } else {
+                            // retState.costX <= amount <= uint128.max
                             feeAmount = uint128(uint256(retState.costX) * fee / (1e6 - fee));
                             uint256 mod = uint256(retState.costX) * fee % (1e6 - fee);
                             if (mod > 0) {
@@ -244,7 +238,7 @@ contract SwapX2YModule {
                     if (!cache.finished) {
                         Point.Data storage pointdata = points[st.currentPoint];
                         pointdata.passEndpoint(cache.currFeeScaleX_128, cache.currFeeScaleY_128);
-                        st.liquidity = liquidityAddDelta(st.liquidity, - pointdata.liquidDelta);
+                        st.liquidity = Liquidity.liquidityAddDelta(st.liquidity, - pointdata.liquidDelta);
                         st.currentPoint = st.currentPoint - 1;
                         st.sqrtPrice_96 = LogPowMath.getSqrtPrice(st.currentPoint);
                         st.liquidityX = 0;
@@ -271,6 +265,7 @@ contract SwapX2YModule {
                 cache.currentOrderOrEndpt = nextVal;
             } else {
                 // amount > 0
+                // amountNoFee <= amount <= uint128.max
                 uint128 amountNoFee = uint128(uint256(amount) * (1e6 - fee) / 1e6);
                 if (amountNoFee > 0) {
                     SwapMathX2Y.RangeRetState memory retState = SwapMathX2Y.x2YRange(
@@ -281,6 +276,7 @@ contract SwapX2YModule {
                     if (retState.costX >= amountNoFee) {
                         feeAmount = amount - retState.costX;
                     } else {
+                        // feeAmount <= retState.costX <= amount <= uint128.max
                         feeAmount = uint128(uint256(retState.costX) * fee / (1e6 - fee));
                         uint256 mod = uint256(retState.costX) * fee % (1e6 - fee);
                         if (mod > 0) {
@@ -426,7 +422,7 @@ contract SwapX2YModule {
                 if (!cache.finished) {
                     Point.Data storage pointdata = points[st.currentPoint];
                     pointdata.passEndpoint(cache.currFeeScaleX_128, cache.currFeeScaleY_128);
-                    st.liquidity = liquidityAddDelta(st.liquidity, - pointdata.liquidDelta);
+                    st.liquidity = Liquidity.liquidityAddDelta(st.liquidity, - pointdata.liquidDelta);
                     st.currentPoint = st.currentPoint - 1;
                     st.sqrtPrice_96 = LogPowMath.getSqrtPrice(st.currentPoint);
                     st.liquidityX = 0;
