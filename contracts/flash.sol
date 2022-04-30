@@ -121,6 +121,7 @@ contract FlashModule {
     }
 
 
+    /// Delegate call implementation for IiZiSwapPool#flash.
     function flash(
         address recipient,
         uint256 amountX,

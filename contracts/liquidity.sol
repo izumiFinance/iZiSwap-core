@@ -324,14 +324,7 @@ contract LiquidityModule {
         require(withRet.x == amountX, "XOFL");
     }
 
-    /// @notice Add liquidity to the pool
-    /// @param recipient Newly created liquidity will belong to this address
-    /// @param leftPt left endpoint of the liquidity, be sure to be times of pointDelta
-    /// @param rightPt right endpoint of the liquidity, be sure to be times of pointDelta
-    /// @param liquidDelta amount of liquidity to add
-    /// @param data Any data that should be passed through to the callback
-    /// @return amountX The amount of tokenX that was paid for the liquidity. Matches the value in the callback
-    /// @return amountY The amount of tokenY that was paid for the liquidity. Matches the value in the callback
+    /// Delegate call implementation for IiZiSwapPool#mint.
     function mint(
         address recipient,
         int24 leftPt,
@@ -398,15 +391,9 @@ contract LiquidityModule {
         }
         amountX = x;
         amountY = y;
-
     }
 
-    /// @notice Decrease liquidity from msg.sender's liquidities
-    /// @param leftPt left endpoint of the liquidity
-    /// @param rightPt right endpoint of the liquidity
-    /// @param liquidDelta amount of liquidity to burn
-    /// @return amountX The amount of tokenX should be refund after burn
-    /// @return amountY The amount of tokenY should be refund after burn
+    /// Delegate call implementation for IiZiSwapPool#burn.
     function burn(
         int24 leftPt,
         int24 rightPt,
@@ -450,14 +437,7 @@ contract LiquidityModule {
         return (withRet.x, withRet.y);
     }
 
-    /// @notice Collect tokens (fees or refunded tokens after burn) from a liquidity
-    /// @param recipient The address which should receive the collected tokens
-    /// @param leftPt left endpoint of the liquidity
-    /// @param rightPt right endpoint of the liquidity
-    /// @param amountXLim max amount of tokenX the owner wants to collect
-    /// @param amountYLim max amount of tokenY the owner wants to collect
-    /// @return actualAmountX The amount tokenX collected
-    /// @return actualAmountY The amount tokenY collected
+    /// Delegate call implementation for IiZiSwapPool#collect.
     function collect(
         address recipient,
         int24 leftPt,

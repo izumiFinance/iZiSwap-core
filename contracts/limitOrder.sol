@@ -118,11 +118,7 @@ contract LimitOrderModule {
         return abi.decode(data, (uint256));
     }
 
-
-    /// @notice mark a given amount of tokenY in a limitorder(sellx and earn y) as assigned
-    /// @param point point (log Price) of seller's limit order,be sure to be times of pointDelta
-    /// @param assignY max amount of tokenY to mark assigned
-    /// @return actualAssignY actual amount of tokenY marked
+    /// Delegate call implementation for IiZiSwapPool#assignLimOrderEarnY.
     function assignLimOrderEarnY(
         int24 point,
         uint128 assignY
@@ -136,10 +132,7 @@ contract LimitOrderModule {
         ue.earnAssign += actualAssignY;
     }
 
-    /// @notice mark a given amount of tokenX in a limitorder(selly and earn x) as assigned
-    /// @param point point (log Price) of seller's limit order,be sure to be times of pointDelta
-    /// @param assignX max amount of tokenX to mark assigned
-    /// @return actualAssignX actual amount of tokenX marked
+    /// Delegate call implementation for IiZiSwapPool#assignLimOrderEarnX.
     function assignLimOrderEarnX(
         int24 point,
         uint128 assignX
@@ -153,15 +146,11 @@ contract LimitOrderModule {
         ue.earnAssign += actualAssignX;
     }
 
-    /// @notice decrease limitorder of selling X
-    /// @param point point of seller's limit order, be sure to be times of pointDelta
-    /// @param deltaX max amount of tokenX seller wants to decrease
-    /// @return actualDeltaX actual amount of tokenX decreased
+    /// Delegate call implementation for IiZiSwapPool#decLimOrderWithX.
     function decLimOrderWithX(
         int24 point,
         uint128 deltaX
     ) external returns (uint128 actualDeltaX) {
-        
         require(point % pointDelta == 0, "PD");
 
         UserEarn.Data storage ue = userEarnY.get(msg.sender, point);
@@ -180,15 +169,11 @@ contract LimitOrderModule {
 
     }
 
-    /// @notice decrease limitorder of selling Y
-    /// @param point point of seller's limit order, be sure to be times of pointDelta
-    /// @param deltaY max amount of tokenY seller wants to decrease
-    /// @return actualDeltaY actual amount of tokenY decreased
+    /// Delegate call implementation for IiZiSwapPool#decLimOrderWithY.
     function decLimOrderWithY(
         int24 point,
         uint128 deltaY
     ) external returns (uint128 actualDeltaY) {
-        
         require(point % pointDelta == 0, "PD");
 
         UserEarn.Data storage ue = userEarnX.get(msg.sender, point);
@@ -208,25 +193,17 @@ contract LimitOrderModule {
         
     }
 
-    /// @notice add a limit order (selling x) in the pool
-    /// @param recipient owner of the limit order
-    /// @param point point of the order, be sure to be times of pointDelta
-    /// @param amountX amount of tokenX to sell
-    /// @param data Any data that should be passed through to the callback
-    /// @return orderX actual added amount of tokenX
-    /// Returns acquireY amount of tokenY acquired if there is a limit order to sell y before adding
+    /// Delegate call implementation for IiZiSwapPool#allLimOrderWithX.
     function addLimOrderWithX(
         address recipient,
         int24 point,
         uint128 amountX,
         bytes calldata data
     ) external returns (uint128 orderX, uint128 acquireY) {
-        
         require(point % pointDelta == 0, "PD");
         require(point >= state.currentPoint, "PG");
         require(point <= rightMostPt, "HO");
         require(amountX > 0, "XP");
-
         
         // update point order
         LimitOrder.Data storage pointOrder = limitOrderData[point];
@@ -238,6 +215,7 @@ contract LimitOrderModule {
         uint128 currY = pointOrder.sellingY;
         uint128 currX = pointOrder.sellingX;
         uint128 costOffsetX = 0;
+
         if (currY > 0) {
             (costOffsetX, acquireY) = SwapMathX2Y.x2YAtPrice(amountX, sqrtPrice_96, currY);
             orderX -= costOffsetX;
@@ -249,6 +227,7 @@ contract LimitOrderModule {
                 orderX = 0;
             }
         }
+
         if (orderX > 0) {
             currX += orderX;
             pointOrder.sellingX = currX;
@@ -283,23 +262,15 @@ contract LimitOrderModule {
         uint256 bx = balanceX();
         IiZiSwapAddLimOrderCallback(msg.sender).payCallback(orderX + costOffsetX, 0, data);
         require(balanceX() >= bx + orderX + costOffsetX, "XE");
-        
     }
     
-    /// @notice add a limit order (selling y) in the pool
-    /// @param recipient owner of the limit order
-    /// @param point point of the order, be sure to be times of pointDelta
-    /// @param amountY amount of tokenY to sell
-    /// @param data Any data that should be passed through to the callback
-    /// @return orderY actual added amount of tokenY
-    /// Returns acquireX amount of tokenX acquired if there exists a limit order to sell x before adding
+    /// Delegate call implementation for IiZiSwapPool#addLimOrderWithY.
     function addLimOrderWithY(
         address recipient,
         int24 point,
         uint128 amountY,
         bytes calldata data
     ) external returns (uint128 orderY, uint128 acquireX) {
-        
         require(point % pointDelta == 0, "PD");
         require(point <= state.currentPoint, "PL");
         require(point >= leftMostPt, "LO");
@@ -314,6 +285,7 @@ contract LimitOrderModule {
         uint128 currY = pointOrder.sellingY;
         uint128 currX = pointOrder.sellingX;
         uint128 costOffsetY = 0;
+
         if (currX > 0) {
             (costOffsetY, acquireX) = SwapMathY2X.y2XAtPrice(amountY, sqrtPrice_96, currX);
             orderY -= costOffsetY;
@@ -325,10 +297,12 @@ contract LimitOrderModule {
                 orderY = 0;
             }
         }
+
         if (orderY > 0) {
             currY += orderY;
             pointOrder.sellingY = currY;
         }
+
         UserEarn.Data storage ue = userEarnX.get(recipient, point);
         pointOrder.earnX = ue.add(orderY, pointOrder.accEarnX, sqrtPrice_96, pointOrder.earnX, false);
         ue.earnAssign = ue.earnAssign + acquireX;
@@ -361,14 +335,7 @@ contract LimitOrderModule {
         require(balanceY() >= by + orderY + costOffsetY, "YE");
     }
 
-    /// @notice collect earned or decreased token from limit order
-    /// @param recipient address to benefit
-    /// @param point point of limit order, be sure to be times of pointDelta
-    /// @param collectDec max amount of decreased selling token to collect
-    /// @param collectEarn max amount of earned token to collect
-    /// @param isEarnY direction of this limit order, true for sell y, false for sell x
-    /// @return actualCollectDec actual amount of decresed selling token collected
-    /// Returns actualCollectEarn actual amount of earned token collected
+    /// Delegate call implementation for IiZiSwapPool#collectLimOrder.
     function collectLimOrder(
         address recipient, int24 point, uint128 collectDec, uint128 collectEarn, bool isEarnY
     ) external returns(uint128 actualCollectDec, uint128 actualCollectEarn) {
