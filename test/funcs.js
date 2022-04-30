@@ -240,4 +240,10 @@ module.exports ={
     getState,
     addLiquidity,
     checkLimOrder,
+    stringAdd,
+    stringMod,
+    stringMinus,
+    stringMul,
+    stringDivCeil,
+    stringDiv
 }

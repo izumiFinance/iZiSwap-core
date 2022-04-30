@@ -136,7 +136,7 @@ function x2yAtLiquidityDesire(point, rate, desireY, liquidity, liquidityX) {
     const maxLiquidityY = y2l(desireY, point, rate, true);
 
     const transformLiquidityX = stringMin(liquidityY, maxLiquidityY);
-    const acquireY = stringMin(l2y(transformLiquidityX, point, rate, false), desireY);
+    const acquireY = l2y(transformLiquidityX, point, rate, false);
     const costX = l2x(transformLiquidityX, point, rate, true);
     return {acquireY, costX, liquidityX: stringAdd(liquidityX, transformLiquidityX)};
 }
