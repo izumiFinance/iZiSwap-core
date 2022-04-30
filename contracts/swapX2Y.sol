@@ -120,21 +120,15 @@ contract SwapX2YModule {
         return abi.decode(data, (uint256));
     }
 
-    /// @notice Swap tokenX for tokenY， given max amount of tokenX user willing to pay
-    /// @param recipient The address to receive tokenY
-    /// @param amount The max amount of tokenX user willing to pay
-    /// @param lowPt the lowest point(price) of x/y during swap
-    /// @param data Any data to be passed through to the callback
-    /// @return amountX amount of tokenX acquired
-    /// @return amountY amount of tokenY payed
+    /// Delegate call implementation for IiZiSwapPool#swapX2Y.
     function swapX2Y(
         address recipient,
         uint128 amount,
         int24 lowPt,
         bytes calldata data
     ) external returns (uint256 amountX, uint256 amountY) {
-        
         require(amount > 0, "AP");
+
         lowPt = MaxMinMath.max(lowPt, leftMostPt);
         amountX = 0;
         amountY = 0;
@@ -335,13 +329,7 @@ contract SwapX2YModule {
         
     }
     
-    /// @notice Swap tokenX for tokenY， given amount of tokenY user desires
-    /// @param recipient The address to receive tokenY
-    /// @param desireY The amount of tokenY user desires
-    /// @param lowPt the lowest point(price) of x/y during swap
-    /// @param data Any data to be passed through to the callback
-    /// @return amountX amount of tokenX acquired
-    /// @return amountY amount of tokenY payed
+    /// Delegate call implementation for IiZiSwapPool#swapX2YDesireY.
     function swapX2YDesireY(
         address recipient,
         uint128 desireY,
@@ -349,6 +337,7 @@ contract SwapX2YModule {
         bytes calldata data
     ) external returns (uint256 amountX, uint256 amountY) {
         require(desireY > 0, "AP");
+
         lowPt = MaxMinMath.max(lowPt, leftMostPt);
         amountX = 0;
         amountY = 0;

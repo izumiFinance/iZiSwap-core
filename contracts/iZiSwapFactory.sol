@@ -64,10 +64,7 @@ contract iZiSwapFactory is IiZiSwapFactory {
         _;
     }
 
-    /// @notice Enables a fee amount with the given pointDelta
-    /// @dev Fee amounts may never be removed once enabled
-    /// @param fee fee amount (3000 means 0.3%)
-    /// @param pointDelta The spacing between points to be enforced for all pools created with the given fee amount
+    /// @inheritdoc IiZiSwapFactory
     function enableFeeAmount(uint24 fee, uint24 pointDelta) external override noDelegateCall {
         require(msg.sender == owner, "ON");
         require(pointDelta > 0, "P0");
@@ -75,12 +72,7 @@ contract iZiSwapFactory is IiZiSwapFactory {
         fee2pointDelta[fee] = int24(pointDelta);
     }
 
-    /// @notice create a new pool which not exists
-    /// @param tokenX address of tokenX
-    /// @param tokenY address of tokenY
-    /// @param fee fee amount
-    /// @param currentPoint initial point (log 1.0001 of price)
-    /// @return addr address of newly created pool
+    /// @inheritdoc IiZiSwapFactory
     function newPool(
         address tokenX,
         address tokenY,
@@ -112,8 +104,7 @@ contract iZiSwapFactory is IiZiSwapFactory {
         emit NewPool(tokenX, tokenY, fee, uint24(pointDelta), addr);
     }
 
-    /// @notice change charge receiver, only owner of factory can call
-    /// @param _chargeReceiver address of new receiver
+    /// @inheritdoc IiZiSwapFactory
     function modifyChargeReceiver(address _chargeReceiver) external override {
         require(msg.sender == owner, "Not Owner!");
         chargeReceiver = _chargeReceiver;

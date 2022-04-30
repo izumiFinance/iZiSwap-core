@@ -120,21 +120,15 @@ contract SwapY2XModule {
         return abi.decode(data, (uint256));
     }
 
-    /// @notice Swap tokenY for tokenX， given max amount of tokenY user willing to pay
-    /// @param recipient The address to receive tokenX
-    /// @param amount The max amount of tokenY user willing to pay
-    /// @param highPt the highest point(price) of x/y during swap
-    /// @param data Any data to be passed through to the callback
-    /// @return amountX amount of tokenX payed
-    /// @return amountY amount of tokenY acquired
+    /// Delegate call implementation for IiZiSwapPool#swapY2X.
     function swapY2X(
         address recipient,
         uint128 amount,
         int24 highPt,
         bytes calldata data
     ) external returns (uint256 amountX, uint256 amountY) {
-        
         require(amount > 0, "AP");
+
         highPt = MaxMinMath.min(highPt, rightMostPt);
         amountX = 0;
         amountY = 0;
@@ -298,24 +292,17 @@ contract SwapY2XModule {
         uint256 by = balanceY();
         IiZiSwapCallback(msg.sender).swapY2XCallback(amountX, amountY, data);
         require(balanceY() >= by + amountY, "YE");
-        
     }
 
-    /// @notice Swap tokenY for tokenX， given amount of tokenX user desires
-    /// @param recipient The address to receive tokenX
-    /// @param desireX The amount of tokenX user desires
-    /// @param highPt the highest point(price) of x/y during swap
-    /// @param data Any data to be passed through to the callback
-    /// @return amountX amount of tokenX payed
-    /// @return amountY amount of tokenY acquired
+    /// Delegate call implementation for IiZiSwapPool#swapY2XDesireX.
     function swapY2XDesireX(
         address recipient,
         uint128 desireX,
         int24 highPt,
         bytes calldata data
     ) external returns (uint256 amountX, uint256 amountY) {
-        
         require (desireX > 0, "XP");
+
         highPt = MaxMinMath.min(highPt, rightMostPt);
         amountX = 0;
         amountY = 0;
@@ -448,5 +435,4 @@ contract SwapY2XModule {
         require(balanceY() >= by + amountY, "YE");
         
     }
-
 }
