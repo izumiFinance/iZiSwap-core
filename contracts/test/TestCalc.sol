@@ -2,6 +2,8 @@ pragma solidity ^0.8.4;
 
 import 'hardhat/console.sol';
 
+import '../libraries/Liquidity.sol';
+
 contract TestCalc {
     
     function addu256(uint256 a, uint256 b) public pure returns (uint256 c) {
@@ -63,5 +65,17 @@ contract TestCalc {
         while (i < a) {
             values[i] = b;
         }
+    }
+
+    function liquidityAddDelta(uint128 l, int128 delta) public pure returns(uint128 nl) {
+        return Liquidity.liquidityAddDelta(l, delta);
+    }
+    function negative(int128 delta) public pure returns(uint128) {
+        return uint128(-delta);
+    }
+
+    function wordBitIdx(int24 mapPt) public pure returns(int16 wordIdx, uint8 bitIdx) {
+        wordIdx = int16(mapPt >> 8);
+        bitIdx = uint8(uint24(mapPt % 256));
     }
 }
