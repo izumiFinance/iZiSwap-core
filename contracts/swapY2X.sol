@@ -143,7 +143,7 @@ contract SwapY2XModule {
         cache.currentOrderOrEndpt = orderOrEndpoint.getOrderOrEndptVal(st.currentPoint, cache.pointDelta);
         cache.startPoint = st.currentPoint;
         cache.startLiquidity = st.liquidity;
-        cache.timestamp = uint32(block.number);
+        cache.timestamp = uint32(block.timestamp);
         while (st.currentPoint < highPt && !cache.finished) {
 
             if (cache.currentOrderOrEndpt & 2 > 0) {
@@ -315,7 +315,7 @@ contract SwapY2XModule {
         cache.currentOrderOrEndpt = orderOrEndpoint.getOrderOrEndptVal(st.currentPoint, cache.pointDelta);
         cache.startPoint = st.currentPoint;
         cache.startLiquidity = st.liquidity;
-        cache.timestamp = uint32(block.number);
+        cache.timestamp = uint32(block.timestamp);
         while (st.currentPoint < highPt && !cache.finished) {
             if (cache.currentOrderOrEndpt & 2 > 0) {
                 // clear limit order first

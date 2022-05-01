@@ -167,7 +167,7 @@ contract iZiSwapPool is IiZiSwapPool {
 
         sqrtRate_96 = LogPowMath.getSqrtPrice(1);
 
-        (state.observationQueueLen, state.observationNextQueueLen) = observations.init(uint32(block.number));
+        (state.observationQueueLen, state.observationNextQueueLen) = observations.init(uint32(block.timestamp));
         state.observationCurrentIndex = 0;
     }
 
