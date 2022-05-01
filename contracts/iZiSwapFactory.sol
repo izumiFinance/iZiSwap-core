@@ -3,13 +3,11 @@ pragma solidity ^0.8.4;
 
 import './interfaces/IiZiSwapFactory.sol';
 import './iZiSwapPool.sol';
+import "@openzeppelin/contracts/access/Ownable.sol";
 
 import "hardhat/console.sol";
 
-contract iZiSwapFactory is IiZiSwapFactory {
-
-    /// @notice owner of factory
-    address public override owner;
+contract iZiSwapFactory is Ownable, IiZiSwapFactory {
 
     /// @notice charge receiver of all pools in this factory
     address public override chargeReceiver;
@@ -46,7 +44,6 @@ contract iZiSwapFactory is IiZiSwapFactory {
     /// @param _flashModule module for user to flash
     constructor(address _chargeReceiver, address _swapX2YModule, address _swapY2XModule, address _liquidityModule, address _limitOrderModule, address _flashModule) {
         only_addr_ = address(this);
-        owner = msg.sender;
         fee2pointDelta[100] = 1;
         fee2pointDelta[400] = 8;
         fee2pointDelta[2000] = 40;
@@ -65,8 +62,7 @@ contract iZiSwapFactory is IiZiSwapFactory {
     }
 
     /// @inheritdoc IiZiSwapFactory
-    function enableFeeAmount(uint24 fee, uint24 pointDelta) external override noDelegateCall {
-        require(msg.sender == owner, "ON");
+    function enableFeeAmount(uint24 fee, uint24 pointDelta) external override noDelegateCall onlyOwner {
         require(pointDelta > 0, "P0");
         require(fee2pointDelta[fee] == 0, "FD0");
         fee2pointDelta[fee] = int24(pointDelta);
@@ -105,8 +101,7 @@ contract iZiSwapFactory is IiZiSwapFactory {
     }
 
     /// @inheritdoc IiZiSwapFactory
-    function modifyChargeReceiver(address _chargeReceiver) external override {
-        require(msg.sender == owner, "Not Owner!");
+    function modifyChargeReceiver(address _chargeReceiver) external override onlyOwner {
         chargeReceiver = _chargeReceiver;
     }
 }

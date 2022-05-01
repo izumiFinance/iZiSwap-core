@@ -56,10 +56,6 @@ interface IiZiSwapFactory {
         int24 currentPoint
     ) external returns (address);
 
-    /// @notice owner of factory
-    /// @return address owner
-    function owner() external view returns(address);
-
     /// @notice charge receiver of all pools
     /// @return address of charge receiver
     function chargeReceiver() external view returns(address);
