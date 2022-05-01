@@ -461,7 +461,7 @@ contract iZiSwapPool is IiZiSwapPool {
         view
         override
         noDelegateCall
-        returns (int56[] memory pointCumulatives, uint160[] memory secondsPerLiquidityCumulative_128s)
+        returns (int56[] memory accPoints)
     {
         return
             observations.observe(
@@ -469,7 +469,6 @@ contract iZiSwapPool is IiZiSwapPool {
                 secondsAgos,
                 state.currentPoint,
                 state.observationCurrentIndex,
-                state.liquidity,
                 state.observationQueueLen
             );
     }
