@@ -368,6 +368,7 @@ describe("swap", function () {
     });
 
     it("rightPt = currentPoint", async function () {
+        this.timeout(1000000);
 
         const resMiner1 = await addLiquidity(testMint, miner1, tokenX, tokenY, 3000, -2000, 6000, '30000');
 
@@ -400,6 +401,7 @@ describe("swap", function () {
     });
 
     it("rightPt < currentPoint", async function () {
+        this.timeout(1000000);
 
         const resMiner1 = await addLiquidity(testMint, miner1, tokenX, tokenY, 3000, -2000, 6000, '30000');
 
@@ -432,6 +434,8 @@ describe("swap", function () {
     });
 
     it("leftPt > currentPoint", async function () {
+
+        this.timeout(1000000);
         const resMiner1 = await addLiquidity(testMint, miner1, tokenX, tokenY, 3000, -2000, 6000, '30000');
 
         await testSwap.connect(trader).swapY2X(tokenX.address, tokenY.address, 3000, '100000000000000000000000', 7000);
@@ -460,6 +464,8 @@ describe("swap", function () {
     });
 
     it("leftPt = currentPoint, liquidityY at currentPoint is enough", async function () {
+
+        this.timeout(1000000);
         const resMiner1 = await addLiquidity(testMint, miner1, tokenX, tokenY, 3000, -2000, 6000, '30000');
 
         await testSwap.connect(trader).swapY2X(tokenX.address, tokenY.address, 3000, '100000000000000000000000', 7000);
@@ -501,6 +507,8 @@ describe("swap", function () {
     });
 
     it("leftPt < currentPoint, liquidityY at currentPoint is just enough", async function () {
+
+        this.timeout(1000000);
         const resMiner1 = await addLiquidity(testMint, miner1, tokenX, tokenY, 3000, -4000, 6000, '30000');
 
         await testSwap.connect(trader).swapY2X(tokenX.address, tokenY.address, 3000, '100000000000000000000000', 7000);
@@ -545,6 +553,8 @@ describe("swap", function () {
     });
 
     it("leftPt < currentPoint, liquidityY at currentPoint is not enough", async function () {
+
+        this.timeout(1000000);
         const resMiner1 = await addLiquidity(testMint, miner1, tokenX, tokenY, 3000, -4000, 6000, '30000');
 
         await testSwap.connect(trader).swapY2X(tokenX.address, tokenY.address, 3000, '100000000000000000000000', 7000);
@@ -592,6 +602,8 @@ describe("swap", function () {
     });
 
     it("leftPt = currentPoint - 1, liquidityY at currentPoint is not enough", async function () {
+
+        this.timeout(1000000);
         const resMiner1 = await addLiquidity(testMint, miner1, tokenX, tokenY, 3000, -2000, 6000, '30000');
 
         await testSwap.connect(trader).swapY2X(tokenX.address, tokenY.address, 3000, '100000000000000000000000', 7000);
@@ -644,6 +656,8 @@ describe("swap", function () {
     });
 
     it("leftPt < currentPoint, burn add burn", async function () {
+
+        this.timeout(1000000);
         await addLiquidity(testMint, miner1, tokenX, tokenY, 3000, -4000, 6000, '30000');
 
         await testSwap.connect(trader).swapY2X(tokenX.address, tokenY.address, 3000, '100000000000000000000000', 7000);
