@@ -275,7 +275,6 @@ contract SwapY2XModule {
                 st.observationCurrentIndex,
                 cache.timestamp,
                 cache.startPoint,
-                cache.startLiquidity,
                 st.observationQueueLen,
                 st.observationNextQueueLen
             );
@@ -416,7 +415,6 @@ contract SwapY2XModule {
                 st.observationCurrentIndex,
                 cache.timestamp,
                 cache.startPoint,
-                cache.startLiquidity,
                 st.observationQueueLen,
                 st.observationNextQueueLen
             );

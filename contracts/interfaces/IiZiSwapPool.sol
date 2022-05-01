@@ -4,11 +4,11 @@ pragma solidity ^0.8.4;
 interface IiZiSwapPool {
 
     /// @notice Emitted when miner successfully add liquidity (mint)
-    /// @param sender The address that minted the liquidity
-    /// @param owner The owner who will benefit from this liquidity
+    /// @param sender the address that minted the liquidity
+    /// @param owner the owner who will benefit from this liquidity
     /// @param leftPoint left endpoint of the liquidity
     /// @param rightPoint right endpoint of the liquidity
-    /// @param liquidity The amount of liquidity minted to the range [leftPoint, rightPoint)
+    /// @param liquidity the amount of liquidity minted to the range [leftPoint, rightPoint)
     /// @param amountX amount of tokenX deposit
     /// @param amountY amount of tokenY deposit
     event Mint(
@@ -54,12 +54,12 @@ interface IiZiSwapPool {
     );
 
     /// @notice Emitted by the pool for any flashes of tokenX/tokenY
-    /// @param sender The address that initiated the swap call, and that received the callback
-    /// @param recipient The address that received the tokens from flash
-    /// @param amountX The amount of tokenX that was flashed
-    /// @param amountY The amount of tokenY that was flashed
-    /// @param paidX The amount of tokenX paid for the flash, which can exceed the amountX plus the fee
-    /// @param paidY The amount of tokenY paid for the flash, which can exceed the amountY plus the fee
+    /// @param sender the address that initiated the swap call, and that received the callback
+    /// @param recipient the address that received the tokens from flash
+    /// @param amountX the amount of tokenX that was flashed
+    /// @param amountY the amount of tokenY that was flashed
+    /// @param paidX the amount of tokenX paid for the flash, which can exceed the amountX plus the fee
+    /// @param paidY the amount of tokenY paid for the flash, which can exceed the amountY plus the fee
     event Flash(
         address indexed sender,
         address indexed recipient,
@@ -90,8 +90,8 @@ interface IiZiSwapPool {
     );
 
     /// @notice Returns the information about a liquidity by the liquidity's key
-    /// @param key The liquidity's key is a hash of a preimage composed by the miner(owner), pointLeft and pointRight
-    /// @return liquidity The amount of liquidity,
+    /// @param key the liquidity's key is a hash of a preimage composed by the miner(owner), pointLeft and pointRight
+    /// @return liquidity the amount of liquidity,
     /// @return lastFeeScaleX_128 fee growth of tokenX inside the range as of the last mint/burn/collect,
     /// @return lastFeeScaleY_128 fee growth of tokenY inside the range as of the last mint/burn/collect,
     /// @return tokenOwedX the computed amount of tokenX miner can collect as of the last mint/burn/collect,
@@ -183,7 +183,7 @@ interface IiZiSwapPool {
     /// @param recipient owner of the limit order
     /// @param point point of the order, be sure to be times of pointDelta
     /// @param amountX amount of tokenX to sell
-    /// @param data Any data that should be passed through to the callback
+    /// @param data any data that should be passed through to the callback
     /// @return orderX actual added amount of tokenX
     /// @return acquireY amount of tokenY acquired if there is a limit order to sell y before adding
     function addLimOrderWithX(
@@ -197,7 +197,7 @@ interface IiZiSwapPool {
     /// @param recipient owner of the limit order
     /// @param point point of the order, be sure to be times of pointDelta
     /// @param amountY amount of tokenY to sell
-    /// @param data Any data that should be passed through to the callback
+    /// @param data any data that should be passed through to the callback
     /// @return orderY actual added amount of tokenY
     /// @return acquireX amount of tokenX acquired if there exists a limit order to sell x before adding
     function addLimOrderWithY(
@@ -220,11 +220,11 @@ interface IiZiSwapPool {
     ) external returns(uint128 actualCollectDec, uint128 actualCollectEarn);
 
     /// @notice Add liquidity to the pool
-    /// @param recipient Newly created liquidity will belong to this address
+    /// @param recipient newly created liquidity will belong to this address
     /// @param leftPt left endpoint of the liquidity, be sure to be times of pointDelta
     /// @param rightPt right endpoint of the liquidity, be sure to be times of pointDelta
     /// @param liquidDelta amount of liquidity to add
-    /// @param data Any data that should be passed through to the callback
+    /// @param data any data that should be passed through to the callback
     /// @return amountX The amount of tokenX that was paid for the liquidity. Matches the value in the callback
     /// @return amountY The amount of tokenY that was paid for the liquidity. Matches the value in the callback
     function mint(
@@ -248,13 +248,13 @@ interface IiZiSwapPool {
     ) external returns (uint256 amountX, uint256 amountY);
 
     /// @notice Collects tokens (fee or refunded after burn) from a liquidity
-    /// @param recipient The address which should receive the collected tokens
+    /// @param recipient the address which should receive the collected tokens
     /// @param leftPt left endpoint of the liquidity
     /// @param rightPt right endpoint of the liquidity
     /// @param amountXLim max amount of tokenX the owner wants to collect
     /// @param amountYLim max amount of tokenY the owner wants to collect
-    /// @return actualAmountX The amount tokenX collected
-    /// @return actualAmountY The amount tokenY collected
+    /// @return actualAmountX the amount tokenX collected
+    /// @return actualAmountY the amount tokenY collected
     function collect(
         address recipient,
         int24 leftPt,
@@ -264,10 +264,10 @@ interface IiZiSwapPool {
     ) external returns (uint256 actualAmountX, uint256 actualAmountY);
 
     /// @notice Swap tokenY for tokenX， given max amount of tokenY user willing to pay
-    /// @param recipient The address to receive tokenX
-    /// @param amount The max amount of tokenY user willing to pay
+    /// @param recipient the address to receive tokenX
+    /// @param amount the max amount of tokenY user willing to pay
     /// @param highPt the highest point(price) of x/y during swap
-    /// @param data Any data to be passed through to the callback
+    /// @param data any data to be passed through to the callback
     /// @return amountX amount of tokenX payed
     /// @return amountY amount of tokenY acquired
     function swapY2X(
@@ -278,10 +278,10 @@ interface IiZiSwapPool {
     ) external returns (uint256 amountX, uint256 amountY);
     
     /// @notice Swap tokenY for tokenX， given amount of tokenX user desires
-    /// @param recipient The address to receive tokenX
-    /// @param desireX The amount of tokenX user desires
+    /// @param recipient the address to receive tokenX
+    /// @param desireX the amount of tokenX user desires
     /// @param highPt the highest point(price) of x/y during swap
-    /// @param data Any data to be passed through to the callback
+    /// @param data any data to be passed through to the callback
     /// @return amountX amount of tokenX payed
     /// @return amountY amount of tokenY acquired
     function swapY2XDesireX(
@@ -292,10 +292,10 @@ interface IiZiSwapPool {
     ) external returns (uint256 amountX, uint256 amountY);
     
     /// @notice Swap tokenX for tokenY， given max amount of tokenX user willing to pay
-    /// @param recipient The address to receive tokenY
-    /// @param amount The max amount of tokenX user willing to pay
+    /// @param recipient the address to receive tokenY
+    /// @param amount the max amount of tokenX user willing to pay
     /// @param lowPt the lowest point(price) of x/y during swap
-    /// @param data Any data to be passed through to the callback
+    /// @param data any data to be passed through to the callback
     /// @return amountX amount of tokenX acquired
     /// @return amountY amount of tokenY payed
     function swapX2Y(
@@ -306,10 +306,10 @@ interface IiZiSwapPool {
     ) external returns (uint256 amountX, uint256 amountY);
     
     /// @notice Swap tokenX for tokenY， given amount of tokenY user desires
-    /// @param recipient The address to receive tokenY
-    /// @param desireY The amount of tokenY user desires
+    /// @param recipient the address to receive tokenY
+    /// @param desireY the amount of tokenY user desires
     /// @param lowPt the lowest point(price) of x/y during swap
-    /// @param data Any data to be passed through to the callback
+    /// @param data any data to be passed through to the callback
     /// @return amountX amount of tokenX acquired
     /// @return amountY amount of tokenY payed
     function swapX2YDesireY(
@@ -324,10 +324,10 @@ interface IiZiSwapPool {
     
     /// @notice State values of pool
     /// @return sqrtPrice_96 a 96 fixpoing number describe the sqrt value of current price(tokenX/tokenY)
-    /// @return currentPoint The current point of the pool, 1.0001 ^ currentPoint = price
-    /// @return observationCurrentIndex The index of the last oracle observation that was written,
-    /// @return observationQueueLen The current maximum number of observations stored in the pool,
-    /// @return observationNextQueueLen The next maximum number of observations, to be updated when the observation.
+    /// @return currentPoint the current point of the pool, 1.0001 ^ currentPoint = price
+    /// @return observationCurrentIndex the index of the last oracle observation that was written,
+    /// @return observationQueueLen the current maximum number of observations stored in the pool,
+    /// @return observationNextQueueLen the next maximum number of observations, to be updated when the observation.
     /// @return locked whether the pool is locked (only used for checking reentrance)
     /// @return liquidity liquidity on the currentPoint (currX * sqrtPrice + currY / sqrtPrice)
     /// @return liquidityX liquidity of tokenX
@@ -370,17 +370,15 @@ interface IiZiSwapPool {
 
     /// @notice Returns observation data about a specific index
     /// @param index the index of observation array
-    /// @return timestamp The timestamp of the observation,
-    /// @return pointCumulative the point multiplied by seconds elapsed for the life of the pool as of the observation timestamp,
-    /// @return secondsPerLiquidityCumulative_128 the seconds per in range liquidity for the life of the pool as of the observation timestamp,
+    /// @return timestamp the timestamp of the observation,
+    /// @return accPoint the point multiplied by seconds elapsed for the life of the pool as of the observation timestamp,
     /// @return init whether the observation has been initialized and the above values are safe to use
     function observations(uint256 index)
         external
         view
         returns (
             uint32 timestamp,
-            int56 pointCumulative,
-            uint160 secondsPerLiquidityCumulative_128,
+            int56 accPoint,
             bool init
         );
 
@@ -408,15 +406,14 @@ interface IiZiSwapPool {
     /// @notice Returns the integral value of point(time) and integral value of 1/liquidity(time)
     ///     at some target timestamps (block.timestamp - secondsAgo[i])
     /// @dev Reverts if target timestamp is early than oldest observation in the queue
-    /// @dev if you call this method with secondsAgos = [3600, 0]. the average point of this pool during recent hour is 
-    /// (pointCumulatives[1] - pointCumulatives[0]) / 3600
+    /// @dev If you call this method with secondsAgos = [3600, 0]. the average point of this pool during recent hour is 
+    /// (accPoints[1] - accPoints[0]) / 3600
     /// @param secondsAgos describe the target timestamp , targetTimestimp[i] = block.timestamp - secondsAgo[i]
-    /// @return pointCumulatives integral value of point(time) from 0 to each target timestamp
-    /// @return secondsPerLiquidityCumulative_128s integral value of 1/liquidity(time) from 0 to each target timestamp
+    /// @return accPoints integral value of point(time) from 0 to each target timestamp
     function observe(uint32[] calldata secondsAgos)
         external
         view
-        returns (int56[] memory pointCumulatives, uint160[] memory secondsPerLiquidityCumulative_128s);
+        returns (int56[] memory accPoints);
     
     /// @notice Expand max-length of observation queue
     /// @param newNextQueueLen new value of observationNextQueueLen, which should be greater than current observationNextQueueLen
@@ -424,9 +421,9 @@ interface IiZiSwapPool {
 
     /// @notice Borrow tokenX and/or tokenY and pay it back within a block
     /// @dev The caller needs to implement a IiZiSwapPool#flashCallback callback function
-    /// @param recipient The address which will receive the tokenY and/or tokenX
-    /// @param amountX The amount of tokenX to borrow
-    /// @param amountY The amount of tokenY to borrow
+    /// @param recipient the address which will receive the tokenY and/or tokenX
+    /// @param amountX the amount of tokenX to borrow
+    /// @param amountY the amount of tokenY to borrow
     /// @param data Any data to be passed through to the callback
     function flash(
         address recipient,
