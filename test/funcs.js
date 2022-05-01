@@ -209,12 +209,15 @@ function l2y(liquidity, sqrtPrice_96, up) {
 
   
 async function getState(pool) {
-    const {sqrtPrice_96, currentPoint, liquidity, liquidityX} = await pool.state();
+    const {sqrtPrice_96, currentPoint, liquidity, liquidityX, observationCurrentIndex, observationQueueLen, observationNextQueueLen } = await pool.state();
     return {
         sqrtPrice_96: sqrtPrice_96.toString(),
         currentPoint: currentPoint.toString(),
         liquidity: liquidity.toString(),
-        liquidityX: liquidityX.toString()
+        liquidityX: liquidityX.toString(),
+        observationCurrentIndex: observationCurrentIndex.toString(),
+        observationQueueLen: observationQueueLen.toString(),
+        observationNextQueueLen: observationNextQueueLen.toString()
     }
 }
 
