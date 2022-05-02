@@ -408,6 +408,7 @@ contract LiquidityModule {
         State memory currentState = state;
         uint128 liquidity = currentState.liquidity;
         // add a liquidity segment to the pool
+        require(liquidDelta <= uint128(type(int128).max), 'LQ127');
         int256 nlDelta = -int256(uint256(liquidDelta));
         require(int128(nlDelta) == nlDelta, "DO");
         _updateLiquidity(
