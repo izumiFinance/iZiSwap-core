@@ -131,6 +131,7 @@ contract FlashModule {
         uint128 currentLiquidity = state.liquidity;
         require(currentLiquidity > 0, 'L');
 
+        // even the balance if not enough, the full fees are required to pay
         uint256 feeX = MulDivMath.mulDivCeil(amountX, fee, 1e6);
         uint256 feeY = MulDivMath.mulDivCeil(amountY, fee, 1e6);
         uint256 balanceXBefore = balanceX();
@@ -147,7 +148,7 @@ contract FlashModule {
         uint256 balanceYAfter = balanceY();
 
         require(balanceXBefore + feeX <= balanceXAfter, 'FX');
-        require(balanceXBefore + feeY <= balanceYAfter, 'FY');
+        require(balanceYBefore + feeY <= balanceYAfter, 'FY');
 
         paidX = balanceXAfter - balanceXBefore;
         paidY = balanceYAfter - balanceYBefore;

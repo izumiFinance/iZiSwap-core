@@ -123,7 +123,7 @@ contract iZiSwapPool is IiZiSwapPool {
         maxLiquidPt = type(uint128).max / pointNum;
     }
 
-    /// @notice construct a pool
+    /// @notice Construct a pool
     /// @param _factory address of iZiSwapFactory
     /// @param _tokenX address of tokenX
     /// @param _tokenY address of tokenY
