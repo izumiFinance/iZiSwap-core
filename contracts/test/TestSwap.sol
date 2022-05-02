@@ -16,7 +16,10 @@ contract TestSwap is IiZiSwapCallback {
         address token1;
         address payer;
         uint24 fee;
+        bool enoughX;
+        bool enoughY;
     }
+
     address public factory;
     function safeTransferFrom(
         address token,
@@ -42,11 +45,19 @@ contract TestSwap is IiZiSwapCallback {
         if (dt.token0 < dt.token1) {
             // token1 is y, amount of token1 is calculated
             // called from swapY2XDesireX(...)
-            safeTransferFrom(dt.token1, dt.payer, msg.sender, y);
+            if (dt.enoughY) {
+                safeTransferFrom(dt.token1, dt.payer, msg.sender, y);
+            } else {
+                safeTransferFrom(dt.token1, dt.payer, msg.sender, y-1);
+            }
         } else {
             // token0 is y, amount of token0 is input param
             // called from swapY2X(...)
-            safeTransferFrom(dt.token0, dt.payer, msg.sender, y);
+            if (dt.enoughY) {
+                safeTransferFrom(dt.token0, dt.payer, msg.sender, y);
+            } else {
+                safeTransferFrom(dt.token0, dt.payer, msg.sender, y-1);
+            }
         }
     }
 
@@ -60,15 +71,24 @@ contract TestSwap is IiZiSwapCallback {
         if (dt.token0 < dt.token1) {
             // token0 is x, amount of token0 is input param
             // called from swapX2Y(...)
-            safeTransferFrom(dt.token0, dt.payer, msg.sender, x);
+            if (dt.enoughX) {
+                safeTransferFrom(dt.token0, dt.payer, msg.sender, x);
+            } else {
+                safeTransferFrom(dt.token0, dt.payer, msg.sender, x-1);
+            }
         } else {
             // token1 is x, amount of token1 is calculated param
             // called from swapX2YDesireY(...)
-            safeTransferFrom(dt.token1, dt.payer, msg.sender, x);
+            if (dt.enoughX) {
+                safeTransferFrom(dt.token1, dt.payer, msg.sender, x);
+            } else {
+                safeTransferFrom(dt.token1, dt.payer, msg.sender, x-1);
+            }
         }
     }
     
     constructor(address fac) { factory = fac; }
+
     function swapY2X(
         address tokenX,
         address tokenY,
@@ -81,7 +101,23 @@ contract TestSwap is IiZiSwapCallback {
         address payer = msg.sender;
         IiZiSwapPool(poolAddr).swapY2X(
             payer, amount, highPt,
-            abi.encode(SwapCallbackData({token0: tokenY, token1:tokenX, fee: fee, payer: payer}))
+            abi.encode(SwapCallbackData({token0: tokenY, token1:tokenX, fee: fee, payer: payer, enoughX: true, enoughY: true}))
+        );
+    }
+
+    function swapY2XNotPayEnough(
+        address tokenX,
+        address tokenY,
+        uint24 fee,
+        uint128 amount,
+        int24 highPt
+    ) external {
+        require(tokenX < tokenY, "x<y");
+        address poolAddr = pool(tokenX, tokenY, fee);
+        address payer = msg.sender;
+        IiZiSwapPool(poolAddr).swapY2X(
+            payer, amount, highPt,
+            abi.encode(SwapCallbackData({token0: tokenY, token1:tokenX, fee: fee, payer: payer, enoughX: false, enoughY: false}))
         );
     }
     
@@ -97,7 +133,23 @@ contract TestSwap is IiZiSwapCallback {
         address payer = msg.sender;
         IiZiSwapPool(poolAddr).swapY2XDesireX(
             payer, desireX, highPt,
-            abi.encode(SwapCallbackData({token0: tokenX, token1:tokenY, fee: fee, payer: payer}))
+            abi.encode(SwapCallbackData({token0: tokenX, token1:tokenY, fee: fee, payer: payer, enoughX: true, enoughY: true}))
+        );
+    }
+
+    function swapY2XDesireXNotPayEnough(
+        address tokenX,
+        address tokenY,
+        uint24 fee,
+        uint128 desireX,
+        int24 highPt
+    ) external {
+        require(tokenX < tokenY, "x<y");
+        address poolAddr = pool(tokenX, tokenY, fee);
+        address payer = msg.sender;
+        IiZiSwapPool(poolAddr).swapY2XDesireX(
+            payer, desireX, highPt,
+            abi.encode(SwapCallbackData({token0: tokenX, token1:tokenY, fee: fee, payer: payer, enoughX: false, enoughY: false}))
         );
     }
     
@@ -114,7 +166,23 @@ contract TestSwap is IiZiSwapCallback {
         address payer = msg.sender;
         IiZiSwapPool(poolAddr).swapX2Y(
             payer, amount, lowPt,
-            abi.encode(SwapCallbackData({token0: tokenX, token1:tokenY, fee: fee, payer: payer}))
+            abi.encode(SwapCallbackData({token0: tokenX, token1:tokenY, fee: fee, payer: payer, enoughX: true, enoughY: true}))
+        );
+    }
+
+    function swapX2YNotPayEnough(
+        address tokenX,
+        address tokenY,
+        uint24 fee,
+        uint128 amount,
+        int24 lowPt
+    ) external {
+        require(tokenX < tokenY, "x<y");
+        address poolAddr = pool(tokenX, tokenY, fee);
+        address payer = msg.sender;
+        IiZiSwapPool(poolAddr).swapX2Y(
+            payer, amount, lowPt,
+            abi.encode(SwapCallbackData({token0: tokenX, token1:tokenY, fee: fee, payer: payer, enoughX: false, enoughY: false}))
         );
     }
     
@@ -131,7 +199,24 @@ contract TestSwap is IiZiSwapCallback {
         address payer = msg.sender;
         IiZiSwapPool(poolAddr).swapX2YDesireY(
             payer, desireY, highPt,
-            abi.encode(SwapCallbackData({token0: tokenY, token1:tokenX, fee: fee, payer: payer}))
+            abi.encode(SwapCallbackData({token0: tokenY, token1:tokenX, fee: fee, payer: payer, enoughX: true, enoughY: true}))
+        );
+    }
+
+     function swapX2YDesireYNotPayEnough(
+        address tokenX,
+        address tokenY,
+        uint24 fee,
+        uint128 desireY,
+        int24 highPt
+    ) external {
+        require(tokenX < tokenY, "x<y");
+        console.log("curr calling address: %s", address(this));
+        address poolAddr = pool(tokenX, tokenY, fee);
+        address payer = msg.sender;
+        IiZiSwapPool(poolAddr).swapX2YDesireY(
+            payer, desireY, highPt,
+            abi.encode(SwapCallbackData({token0: tokenY, token1:tokenX, fee: fee, payer: payer, enoughX: false, enoughY: false}))
         );
     }
 }

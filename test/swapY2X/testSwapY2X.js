@@ -211,6 +211,18 @@ async function swapY2X(testSwap, trader, tokenX, tokenY, fee, costY, lowPt) {
     }
 }
 
+async function swapY2XNotPayEnough(testSwap, trader, tokenX, tokenY, fee, costY, lowPt) {
+    const traderAmountXBefore = (await tokenX.balanceOf(trader.address)).toString();
+    const traderAmountYBefore = (await tokenY.balanceOf(trader.address)).toString();
+    await testSwap.connect(trader).swapY2XNotPayEnough(tokenX.address, tokenY.address, fee, costY, lowPt);
+    const traderAmountXAfter = (await tokenX.balanceOf(trader.address)).toString();
+    const traderAmountYAfter = (await tokenY.balanceOf(trader.address)).toString();
+    return {
+        acquireX: stringMinus(traderAmountXAfter, traderAmountXBefore),
+        costY: stringMinus(traderAmountYBefore, traderAmountYAfter),
+    }
+}
+
 describe("swap", function () {
     var signer, miner1, miner2, trader, seller, receiver;
     var poolAddr;
@@ -821,4 +833,85 @@ describe("swap", function () {
         expect(state8.liquidityX).to.equal('699999')
         expect(state8.currentPoint).to.equal('3902')
     });
+
+    it("test not pay enough", async function () {
+
+        this.timeout(1000000);
+           await addLiquidity(testMint, miner1, tokenX, tokenY, 3000, 50, 2000, '2000000');
+           await addLiquidity(testMint, miner2, tokenX, tokenY, 3000, 9000, 12000, '2000000');
+           await addLiquidity(testMint, miner3, tokenX, tokenY, 3000, 10100, 12000, '1000000');
+
+           await addLimOrderWithY(tokenX, tokenY, seller1, testAddLimOrder, '200000000000000000000', -8000);
+           await addLimOrderWithX(tokenX, tokenY, seller2, testAddLimOrder, '150000000000000000000', 350);
+           
+           const costY_50_350 = yInRange('2000000', 50, 350, '1.0001', true);
+           const acquireX_50_350 = xInRange('2000000', 50, 350, '1.0001', false);
+   
+           const costY_350_2000 = yInRange('2000000', 350, 2000, '1.0001', true);
+           const acquireX_350_2000 = xInRange('2000000', 350, 2000, '1.0001', false);
+
+           const costY_9000_10100 = yInRange('2000000', 9000, 10100, '1.0001', true);
+           const acquireX_9000_10100 = xInRange('2000000', 9000, 10100, '1.0001', false);
+
+           const costYAt350 = getCostYFromXAt((await logPowMath.getSqrtPrice(350)).toString(), '150000000000000000000');
+           const acquireXAt350 = '150000000000000000000';
+   
+   
+           // const costYAt10100 = getCostYFromXAt(10100, '1.0001', '70000000000000000000');
+           // const acquireXAt10100 = '70000000000000000000';
+   
+           const costY_50_350_WithFee = amountAddFee(costY_50_350);
+           const costY_350_2000_WithFee = amountAddFee(costY_350_2000);
+           const costY_9000_10100_WithFee = amountAddFee(costY_9000_10100);
+           
+           const costYAt350_WithFee = amountAddFee(costYAt350);
+           // const costYAt10100_WithFee = amountAddFee(costYAt10100);
+   
+           const amountY1 = getSum([
+               costY_50_350_WithFee,
+               costY_350_2000_WithFee,
+               costY_9000_10100_WithFee,
+               costYAt350_WithFee,
+               // costYAt10100_WithFee,
+               '1'
+           ]);
+   
+           const costYExpect1 = getSum([
+               costY_50_350_WithFee,
+               costY_350_2000_WithFee,
+               costY_9000_10100_WithFee,
+               costYAt350_WithFee,
+               // costYAt10100_WithFee
+           ]);
+   
+           const acquireXExpect1 = getSum([
+               acquireX_50_350,
+               acquireX_350_2000,
+               acquireX_9000_10100,
+               acquireXAt350,
+               // acquireXAt10100,
+           ]);
+   
+           console.log('amountY1: ', amountY1)
+
+           try {
+                await swapY2XNotPayEnough(testSwap, trader, tokenX, tokenY, 3000, amountY1, 15000);
+           } catch(e) {
+                console.log(e.message);
+                expect(String(e.message).search("YE") !== -1).to.equal(true);
+           }
+   
+           const {acquireX: acquireX1, costY: costY1} = await swapY2X(testSwap, trader, tokenX, tokenY, 3000, amountY1, 15000);
+           
+           console.log('costYAt350: ', costYAt350)
+           expect(costYExpect1).to.equal(costY1);
+           expect(acquireXExpect1).to.equal(acquireX1);
+   
+           console.log('costYExpect1: ', costYExpect1);
+   
+           console.log('costY1: ', costY1);
+           console.log('acquireXExpect1: ', acquireXExpect1);
+           console.log('acquireX1: ', acquireX1);
+       });
+
 });
