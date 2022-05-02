@@ -1,11 +1,10 @@
-const { expect, use } = require("chai");
+const { expect } = require("chai");
 const { ethers } = require("hardhat");
 
 const BigNumber = require('bignumber.js');
 const { tree } = require("fp-ts/lib/Tree");
 
-const {getFeeCharge, getCostXFromYAt, amountAddFee, xInRange, yInRange, getPoolParts, l2x, l2y, getState, addLiquidity, checkLimOrder} = require('../funcs');
-const { decryptJsonWallet } = require("@ethersproject/json-wallets");
+const {getPoolParts, addLiquidity } = require('../funcs');
 var tokenX;
 var tokenY;
 
@@ -34,67 +33,6 @@ async function getToken() {
     return [tokenX, tokenY];
 }
 
-function stringMinus(a, b) {
-    return BigNumber(a).minus(b).toFixed(0);
-}
-
-
-async function swapX2Y(testSwap, trader, tokenX, tokenY, fee, amountX, lowPt) {
-    const traderAmountXBefore = (await tokenX.balanceOf(trader.address)).toString();
-    const traderAmountYBefore = (await tokenY.balanceOf(trader.address)).toString();
-    await testSwap.connect(trader).swapX2Y(tokenX.address, tokenY.address, fee, amountX, lowPt);
-    const traderAmountXAfter = (await tokenX.balanceOf(trader.address)).toString();
-    const traderAmountYAfter = (await tokenY.balanceOf(trader.address)).toString();
-    return {
-        costX: stringMinus(traderAmountXBefore, traderAmountXAfter),
-        acquireY: stringMinus(traderAmountYAfter, traderAmountYBefore),
-    }
-}
-
-async function swapX2YDesireY(testSwap, trader, tokenX, tokenY, fee, desireY, lowPt) {
-    const traderAmountXBefore = (await tokenX.balanceOf(trader.address)).toString();
-    const traderAmountYBefore = (await tokenY.balanceOf(trader.address)).toString();
-    await testSwap.connect(trader).swapX2YDesireY(tokenX.address, tokenY.address, fee, desireY, lowPt);
-    const traderAmountXAfter = (await tokenX.balanceOf(trader.address)).toString();
-    const traderAmountYAfter = (await tokenY.balanceOf(trader.address)).toString();
-    return {
-        costX: stringMinus(traderAmountXBefore, traderAmountXAfter),
-        acquireY: stringMinus(traderAmountYAfter, traderAmountYBefore),
-    }
-}
-
-async function swapY2X(testSwap, trader, tokenX, tokenY, fee, costY, lowPt) {
-    const traderAmountXBefore = (await tokenX.balanceOf(trader.address)).toString();
-    const traderAmountYBefore = (await tokenY.balanceOf(trader.address)).toString();
-    await testSwap.connect(trader).swapY2X(tokenX.address, tokenY.address, fee, costY, lowPt);
-    const traderAmountXAfter = (await tokenX.balanceOf(trader.address)).toString();
-    const traderAmountYAfter = (await tokenY.balanceOf(trader.address)).toString();
-    return {
-        acquireX: stringMinus(traderAmountXAfter, traderAmountXBefore),
-        costY: stringMinus(traderAmountYBefore, traderAmountYAfter),
-    }
-}
-
-async function swapY2XDesireX(testSwap, trader, tokenX, tokenY, fee, desireX, lowPt) {
-    const traderAmountXBefore = (await tokenX.balanceOf(trader.address)).toString();
-    const traderAmountYBefore = (await tokenY.balanceOf(trader.address)).toString();
-    await testSwap.connect(trader).swapY2XDesireX(tokenX.address, tokenY.address, fee, desireX, lowPt);
-    const traderAmountXAfter = (await tokenX.balanceOf(trader.address)).toString();
-    const traderAmountYAfter = (await tokenY.balanceOf(trader.address)).toString();
-    return {
-        acquireX: stringMinus(traderAmountXAfter, traderAmountXBefore),
-        costY: stringMinus(traderAmountYBefore, traderAmountYAfter),
-    }
-}
-
-async function getObservation(pool, id) {
-    const {timestamp, accPoint, init} = await pool.observations(id);
-    return {
-        timestamp,
-        accPoint: new BigNumber(accPoint.toString()),
-        init
-    }
-}
 
 describe("flash", function () {
     var signer, miner1, miner2, trader, seller, receiver;
