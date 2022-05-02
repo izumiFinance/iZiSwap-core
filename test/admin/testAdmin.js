@@ -34,7 +34,7 @@ async function getToken() {
 }
 
 
-describe("flash", function () {
+describe("admin operation", function () {
     var signer, miner1, miner2, trader, seller, receiver;
     var poolAddr;
     var pool;
@@ -46,6 +46,7 @@ describe("flash", function () {
     var expectFeeScaleX, expectFeeScaleX;
     var testAddLimOrder;
     var logPowMath;
+    var factory;
     beforeEach(async function() {
         [signer, miner1, miner2, miner3, miner4, trader, seller1, seller2, receiver] = await ethers.getSigners();
 
@@ -53,7 +54,7 @@ describe("flash", function () {
         // deploy a factory
         const iZiSwapFactory = await ethers.getContractFactory("iZiSwapFactory");
 
-        const factory = await iZiSwapFactory.deploy(receiver.address, swapX2YModule, swapY2XModule, liquidityModule, limitOrderModule, flashModule);
+        factory = await iZiSwapFactory.deploy(receiver.address, swapX2YModule, swapY2XModule, liquidityModule, limitOrderModule, flashModule);
         await factory.deployed();
         await factory.enableFeeAmount(3000, 50);
 
@@ -103,105 +104,63 @@ describe("flash", function () {
     });
     
     it("(1)", async function () {
-        await addLiquidity(testMint, miner1, tokenX, tokenY, 3000, 2000, 4000, '1000000');
-
-        await testFlash.connect(miner2).flash(tokenX.address, tokenY.address, 3000, 1, 1);
-
-        // borrow too token Y, expect fail
-        try {
-            await testFlash.connect(miner2).flash(tokenX.address, tokenY.address, 3000, 1, new BigNumber(10**18).times(10000000).toFixed(0));
-        } catch (e) {
-            console.log(e.message);
-            expect(!String(e.message).search("not borrow enough tokenY")).to.equal(false);
-        }
-
-        // borrow too token X, expect fail
-        try {
-            await testFlash.connect(miner2).flash(tokenX.address, tokenY.address, 3000, new BigNumber(10**18).times(10000000).toFixed(0), 1);
-        } catch (e) {
-            console.log(e.message)
-            expect(!String(e.message).search("not borrow enough tokenX")).to.equal(false);
-        }
-
         await addLiquidity(testMint, miner1, tokenX, tokenY, 3000, 2000, 4000, new BigNumber(10**18).times(10**8).toFixed(0));
-
-        await testFlash.connect(miner2).flash(tokenX.address, tokenY.address, 3000, 1, 2);
-
 
         /// check fees and feeScaled
         const state = await pool.state();
         const feeXBefore1 =  await pool.totalFeeXCharged();
         const feeYBefore1 =  await pool.totalFeeYCharged();
-        const feeScaleX128Before1 = await pool.feeScaleX_128();
-        const feeScaleY128Before1 = await pool.feeScaleY_128();
         const YAmount1 = new BigNumber(10**18).times(1000).toFixed(0);
         await testFlash.connect(miner2).flash(tokenX.address, tokenY.address, 3000, 1, YAmount1);
         const feeXAfter1 =  await pool.totalFeeXCharged();
         const feeYAfter1 =  await pool.totalFeeYCharged();
-        const feeScaleX128After1 = await pool.feeScaleX_128();
-        const feeScaleY128After1 = await pool.feeScaleY_128();
         // X is too small, will have no x fees
         expect(new BigNumber(feeYAfter1.toString()).minus(feeYBefore1.toString()).div(0.0015).toFixed(0)).to.equal(YAmount1);
         expect(new BigNumber(feeXAfter1.toString()).minus(feeXBefore1.toString()).div(0.0015).toFixed(0)).to.equal('0');
-        const deltaFeeScaledY1281 = new BigNumber(feeScaleY128After1.toString()).minus(feeScaleY128Before1.toString());
-        const deltaExpectedY1 = new BigNumber(YAmount1).times(0.0015).times(q128).div(state.liquidity.toString());
-        expect(deltaExpectedY1.toFixed(0,3)).to.equal(deltaFeeScaledY1281.toFixed(0));
-        const deltaFeeScaledX1281 = new BigNumber(feeScaleX128After1.toString()).minus(feeScaleX128Before1.toString());
-        const deltaExpectedX1 = new BigNumber(1).times(q128).div(state.liquidity.toString());
-        expect(deltaExpectedX1.toFixed(0,3)).to.equal(deltaFeeScaledX1281.toFixed(0));
+
+
+        // not fee charger, will fail
+        try {
+            await pool.connect(miner1).collectFeeCharged()
+        } catch (e) {
+            console.log(e.message)
+            expect(String(e.message).search("NR") !== -1).to.equal(true);
+        }
+
+        const balanceXBefore1 = await tokenX.balanceOf(receiver.address);
+        const balanceYBefore1 = await tokenY.balanceOf(receiver.address);
+        await pool.connect(receiver).collectFeeCharged()
+        const balanceXAfter1 = await tokenX.balanceOf(receiver.address);
+        const balanceYAfter1 = await tokenY.balanceOf(receiver.address);
+        expect(new BigNumber(balanceYAfter1.toString()).minus(balanceYBefore1.toString()).toString()).to.equal(feeYAfter1.toString());
+        expect(new BigNumber(balanceXAfter1.toString()).minus(balanceXBefore1.toString()).toString()).to.equal(feeXAfter1.toString());
 
         const feeXBefore2 =  await pool.totalFeeXCharged();
         const feeYBefore2 =  await pool.totalFeeYCharged();
-        const feeScaleX128Before2 = await pool.feeScaleX_128();
-        const feeScaleY128Before2 = await pool.feeScaleY_128();
+        expect(feeXBefore1.toString()).to.equal('0');
+        expect(feeXBefore2.toString()).to.equal('0');
+        const YAmount2 = new BigNumber(10**18).times(1000).toFixed(0);
         const XAmount2 = new BigNumber(10**18).times(1000).toFixed(0);
-        await testFlash.connect(miner2).flash(tokenX.address, tokenY.address, 3000, XAmount2, 1);
+        await testFlash.connect(miner2).flash(tokenX.address, tokenY.address, 3000, XAmount2, YAmount2);
         const feeXAfter2 =  await pool.totalFeeXCharged();
         const feeYAfter2 =  await pool.totalFeeYCharged();
-        const feeScaleX128After2 = await pool.feeScaleX_128();
-        const feeScaleY128After2 = await pool.feeScaleY_128();
-        // Y is too small, will have no y fees
-        expect(new BigNumber(feeYAfter2.toString()).minus(feeYBefore2.toString()).div(0.0015).toFixed(0)).to.equal('0');
-        expect(new BigNumber(feeXAfter2.toString()).minus(feeXBefore2.toString()).div(0.0015).toFixed(0)).to.equal(XAmount2);
-        const deltaFeeScaledY1282 = new BigNumber(feeScaleY128After2.toString()).minus(feeScaleY128Before2.toString());
-        const deltaExpectedY2 = new BigNumber(1).times(q128).div(state.liquidity.toString());
-        expect(deltaExpectedY2.toFixed(0,3)).to.equal(deltaFeeScaledY1282.toFixed(0));
-        const deltaFeeScaledX1282 = new BigNumber(feeScaleX128After2.toString()).minus(feeScaleX128Before2.toString());
-        const deltaExpectedX2 = new BigNumber(XAmount2).times(0.0015).times(q128).div(state.liquidity.toString());
-        expect(deltaExpectedX2.toFixed(0,3)).to.equal(deltaFeeScaledX1282.toFixed(0));
 
-
-        // do not pay back enough X
-        try {
-            await testFlash.connect(miner2).flashNotPayBackEnoughX(tokenX.address, tokenY.address, 3000, 1, 2);
-        } catch (e) {
-            console.log(e.message)
-            expect(String(e.message).search("FX") !== -1).to.equal(true);
-        }
-
-        // do not pay back enough Y
-        try {
-            await testFlash.connect(miner2).flashNotPayBackEnoughY(tokenX.address, tokenY.address, 3000, 1, 2);
-        } catch (e) {
-            console.log(e.message)
-            expect(String(e.message).search("FY") !== -1).to.equal(true);
-        }
-
-         // do not pay back enough X
+         // try to change receiver, will fail
          try {
-            await testFlash.connect(miner2).flashNotPayBackEnoughX(tokenX.address, tokenY.address, 3000, new BigNumber(10**18).times(1000).toFixed(0), 2);
+            await factory.connect(miner1).modifyChargeReceiver(miner1.address);
         } catch (e) {
-            console.log(e.message)
-            expect(String(e.message).search("FX") !== -1).to.equal(true);
+            console.log(e.message);
+            expect(String(e.message).search("Ownable: caller is not the owner") !== -1).to.equal(true);
         }
 
-        // do not pay back enough Y
-        try {
-            await testFlash.connect(miner2).flashNotPayBackEnoughY(tokenX.address, tokenY.address, 3000, 1, new BigNumber(10**18).times(1000).toFixed(0));
-        } catch (e) {
-            console.log(e.message)
-            expect(String(e.message).search("FY") !== -1).to.equal(true);
-        }
+        await factory.connect(signer).modifyChargeReceiver(miner1.address);
+        const balanceXBefore2 = await tokenX.balanceOf(miner1.address);
+        const balanceYBefore2 = await tokenY.balanceOf(miner1.address);
+        await pool.connect(miner1).collectFeeCharged()
+        const balanceXAfter2 = await tokenX.balanceOf(miner1.address);
+        const balanceYAfter2 = await tokenY.balanceOf(miner1.address);
+        expect(new BigNumber(balanceYAfter2.toString()).minus(balanceYBefore2.toString()).toString()).to.equal(feeYAfter2.toString());
+        expect(new BigNumber(balanceXAfter2.toString()).minus(balanceXBefore2.toString()).toString()).to.equal(feeXAfter2.toString());
 
     });
 });
