@@ -179,13 +179,10 @@ library Oracle {
         return findNeighbor(self, timestamp, targetTimestamp, currentIndex, queueLen);
     }
 
-    /// @notice Returns the interpolation value of accumulative point at some target timestamps (block.timestamp - secondsAgo[i])
-    /// @dev Reverts if target timestamp is early than oldest observation in the queue
-    /// @dev If you call this method twice with secondsAgos as 0 and 3600. and corresponding accPoints value are accPoints_3600 and accPoints_0
-    ///     then, the average point of this pool during recent hour is (accPoints_3600 - accPoints_0) / 3600
+    /// @dev Reverts if secondsAgo to large.
     /// @param self the observation circular queue in array form
     /// @param timestamp the current block timestamp
-    /// @param secondsAgo target timestamp is timestamp-secondsAgo
+    /// @param secondsAgo target timestamp is timestamp-secondsAg, 0 to return the current cumulative values.
     /// @param currentPoint the current point of pool
     /// @param currentIndex the index of the last observation in the array
     /// @param queueLen max-length of circular queue
@@ -220,7 +217,7 @@ library Oracle {
             uint56 leftRightTimeDelta = afterNeighbor.timestamp - beforeNeighbor.timestamp;
             uint56 targetTimeDelta = targetTimestamp - beforeNeighbor.timestamp;
             return beforeNeighbor.accPoint  + 
-                (afterNeighbor.accPoint - beforeNeighbor.accPoint / int56(leftRightTimeDelta)) * int56(targetTimeDelta);
+                (afterNeighbor.accPoint - beforeNeighbor.accPoint) / int56(leftRightTimeDelta) * int56(targetTimeDelta);
         }
     }
 

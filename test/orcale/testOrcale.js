@@ -34,170 +34,10 @@ async function getToken() {
     return [tokenX, tokenY];
 }
 
-
-function floor(a) {
-    return BigNumber(a.toFixed(0, 3));
-}
-function ceil(b) {
-    return BigNumber(b.toFixed(0, 2));
-}
-
-function limitCostY(point, rate, amountX, maxAmountX) {
-    const sp = BigNumber(rate).pow(point).sqrt();
-    let liquidity = ceil(BigNumber(amountX).times(sp));
-    const costY = ceil(liquidity.times(sp)).toFixed(0, 3);
-
-    liquidity = floor(BigNumber(costY).div(sp));
-    let acquireX = floor(liquidity.div(sp)).toFixed(0, 3);
-    if (stringLess(maxAmountX, acquireX)) {
-        acquireX = maxAmountX;
-    }
-    return {acquireX, costY};
-}
-
-function getFee(cost, fee) {
-    return ceil(BigNumber(cost).times(fee).div(1e6-fee)).toFixed(0);
-}
-
-function getFeeAcquire(fee) {
-    const feeCharged = getFeeCharge(fee);
-    return stringMinus(fee, feeCharged);
-}
-
-function getFeeAcquireFromCost(cost) {
-    const fee = getFee(cost, '3000');
-    return getFeeAcquire(fee);
-}
-
 function stringMinus(a, b) {
     return BigNumber(a).minus(b).toFixed(0);
 }
 
-function stringMul(a, b) {
-    const mul = BigNumber(a).times(b).toFixed(0);
-    return mul;
-}
-
-function stringDiv(a, b) {
-    let an = BigNumber(a);
-    an = an.minus(an.mod(b));
-    return an.div(b).toFixed(0);
-}
-
-function stringAdd(a, b) {
-    return BigNumber(a).plus(b).toFixed(0);
-}
-
-function stringLess(a, b) {
-    return BigNumber(a).lt(b);
-}
-
-function blockNum2BigNumber(blc) {
-    return BigNumber(blc._hex);
-}
-
-function getFeeOfList(costList, fee) {
-    const feeList = costList.map((c)=>{
-        return getFee(c, fee);
-    });
-    const feeAcquireList = feeList.map((f)=>{
-        return getFeeAcquire(f);
-    });
-    return {feeList, feeAcquireList};
-}
-
-function getSum(amountList) {
-    let res = '0';
-    for (let a of amountList) {
-        res = stringAdd(res, a);
-    }
-    return res;
-}
-
-async function getLiquidity(testMint, miner, tokenX, tokenY, fee, leftPt, rightPt) {
-    const {liquidity, lastFeeScaleX_128, lastFeeScaleY_128} = await testMint.connect(miner).liquidities(tokenX.address, tokenY.address, fee, leftPt, rightPt);
-    return {
-        lastFeeScaleX_128: lastFeeScaleX_128.toString(),
-        lastFeeScaleY_128: lastFeeScaleY_128.toString(),
-    }
-}
-
-async function getDeltaFeeScale(testMint, pool, miner, leftPt, rightPt) {
-
-    const {lastFeeScaleX_128, lastFeeScaleY_128} = await getLiquidity(testMint, miner, tokenX, tokenY, 3000, leftPt, rightPt);
-    await pool.connect(miner).burn(leftPt, rightPt, 0);
-
-    const {lastFeeScaleX_128: newScaleX, lastFeeScaleY_128: newScaleY} = await getLiquidity(testMint, miner, tokenX, tokenY, 3000, leftPt, rightPt);
-
-    const q256 = BigNumber(2).pow(256).toFixed(0);
-
-    const deltaScaleX = stringLess(newScaleX, lastFeeScaleX_128) ? stringMinus(stringAdd(newScaleX, q256), lastFeeScaleX_128) : stringMinus(newScaleX, lastFeeScaleX_128);
-    const deltaScaleY = stringLess(newScaleY, lastFeeScaleY_128) ? stringMinus(stringAdd(newScaleY, q256), lastFeeScaleY_128) : stringMinus(newScaleY, lastFeeScaleY_128);
-
-    return {deltaScaleX, deltaScaleY};
-}
-
-async function getAbsFeeScale(testMint, miner, leftPt, rightPt) {
-    const {lastFeeScaleX_128, lastFeeScaleY_128} = await getLiquidity(testMint, miner, tokenX, tokenY, 3000, leftPt, rightPt);
-    return {lastFeeScaleX_128, lastFeeScaleY_128}
-}
-
-async function getPoint(pool, point) {
-    const {liquidSum, liquidDelta, accFeeXOut_128, accFeeYOut_128, isEndpt} = await pool.points(point);
-    return {
-        liquidSum: liquidSum.toString(),
-        liquidDelta: liquidDelta.toString(),
-        accFeeXOut_128: accFeeXOut_128.toString(),
-        accFeeYOut_128: accFeeYOut_128.toString(),
-        isEndpt
-    };
-}
-
-function feeScaleFromCost(cost, liquidity) {
-    const fee = getFeeAcquireFromCost(cost);
-    const q128 = BigNumber(2).pow(128).toFixed(0);
-    return stringDiv(stringMul(fee, q128), liquidity);
-}
-
-async function addLimOrderWithY(tokenX, tokenY, seller, testAddLimOrder, amountY, point) {
-    await tokenY.transfer(seller.address, amountY);
-    await tokenY.connect(seller).approve(testAddLimOrder.address, amountY);
-    await testAddLimOrder.connect(seller).addLimOrderWithY(
-        tokenX.address, tokenY.address, 3000, point, amountY
-    );
-}
-async function addLimOrderWithX(tokenX, tokenY, seller, testAddLimOrder, amountX, point) {
-    await tokenX.transfer(seller.address, amountX);
-    await tokenX.connect(seller).approve(testAddLimOrder.address, amountX);
-    await testAddLimOrder.connect(seller).addLimOrderWithX(
-        tokenX.address, tokenY.address, 3000, point, amountX
-    );
-}
-
-async function getStatusVal(poolAddr, pt) {
-    const iZiSwapPool = await ethers.getContractFactory("iZiSwapPool");
-    pool = await iZiSwapPool.attach(poolAddr);
-    return await pool.orderOrEndpoint(pt / 50);
-}
-
-async function getBitsFromPool(poolAddr, idx) {
-    const iZiSwapPool = await ethers.getContractFactory("iZiSwapPool");
-    pool = await iZiSwapPool.attach(poolAddr);
-    return (await pool.pointBitmap(idx)).toString();
-}
-
-function getExpectBits(idx, pointList) {
-    const pointLeft = idx * 50 * 256;
-    const pointRight = pointLeft + 50 * 256;
-    let bits = BigNumber(0);
-    for (point of pointList) {
-        if (point >= pointLeft && point < pointRight) {
-            const pos = Math.round((point - pointLeft) / 50);
-            bits = bits.plus(BigNumber(2).pow(pos));
-        }
-    }
-    return bits.toFixed(0, 3);
-}
 
 async function swapX2Y(testSwap, trader, tokenX, tokenY, fee, amountX, lowPt) {
     const traderAmountXBefore = (await tokenX.balanceOf(trader.address)).toString();
@@ -211,10 +51,34 @@ async function swapX2Y(testSwap, trader, tokenX, tokenY, fee, amountX, lowPt) {
     }
 }
 
+async function swapX2YDesireY(testSwap, trader, tokenX, tokenY, fee, desireY, lowPt) {
+    const traderAmountXBefore = (await tokenX.balanceOf(trader.address)).toString();
+    const traderAmountYBefore = (await tokenY.balanceOf(trader.address)).toString();
+    await testSwap.connect(trader).swapX2YDesireY(tokenX.address, tokenY.address, fee, desireY, lowPt);
+    const traderAmountXAfter = (await tokenX.balanceOf(trader.address)).toString();
+    const traderAmountYAfter = (await tokenY.balanceOf(trader.address)).toString();
+    return {
+        costX: stringMinus(traderAmountXBefore, traderAmountXAfter),
+        acquireY: stringMinus(traderAmountYAfter, traderAmountYBefore),
+    }
+}
+
 async function swapY2X(testSwap, trader, tokenX, tokenY, fee, costY, lowPt) {
     const traderAmountXBefore = (await tokenX.balanceOf(trader.address)).toString();
     const traderAmountYBefore = (await tokenY.balanceOf(trader.address)).toString();
     await testSwap.connect(trader).swapY2X(tokenX.address, tokenY.address, fee, costY, lowPt);
+    const traderAmountXAfter = (await tokenX.balanceOf(trader.address)).toString();
+    const traderAmountYAfter = (await tokenY.balanceOf(trader.address)).toString();
+    return {
+        acquireX: stringMinus(traderAmountXAfter, traderAmountXBefore),
+        costY: stringMinus(traderAmountYBefore, traderAmountYAfter),
+    }
+}
+
+async function swapY2XDesireX(testSwap, trader, tokenX, tokenY, fee, desireX, lowPt) {
+    const traderAmountXBefore = (await tokenX.balanceOf(trader.address)).toString();
+    const traderAmountYBefore = (await tokenY.balanceOf(trader.address)).toString();
+    await testSwap.connect(trader).swapY2XDesireX(tokenX.address, tokenY.address, fee, desireX, lowPt);
     const traderAmountXAfter = (await tokenX.balanceOf(trader.address)).toString();
     const traderAmountYAfter = (await tokenY.balanceOf(trader.address)).toString();
     return {
@@ -333,16 +197,16 @@ describe("orcale", function () {
         expect(stateCurrent.currentPoint).to.equal('1899')
         expect(stateCurrent.observationCurrentIndex).to.equal('0')
         const ob0 = await getObservation(pool, 0);
-        console.log(ob0);
+        console.log('ob0 :', ob0.accPoint.toFixed(0) , ' @ ', ob0.timestamp);
 
         const swap1 = await swapX2Y(testSwap, trader, tokenX, tokenY, 3000, new BigNumber(3000 * 10**18).toFixed(0), 1800);
         stateCurrent = await getState(pool);
         expect(stateCurrent.currentPoint).to.equal('1800')
         expect(stateCurrent.observationCurrentIndex).to.equal('0')
         const ob1 = await getObservation(pool, 0);
-        console.log(ob1);
+        console.log('ob1 :', ob1.accPoint.toFixed(0) , ' @ ', ob1.timestamp);
 
-        // expand
+        // expand to 3
         await pool.connect(trader).expandObservationQueue('3');
         stateCurrent = await getState(pool);
         expect(stateCurrent.observationNextQueueLen).to.equal('3')
@@ -352,7 +216,7 @@ describe("orcale", function () {
         expect(stateCurrent.currentPoint).to.equal('1700')
         expect(stateCurrent.observationCurrentIndex).to.equal('1')
         const ob2 = await getObservation(pool, 1);
-        console.log(ob2);
+        console.log('ob2 :', ob2.accPoint.toFixed(0) , ' @ ', ob2.timestamp);
 
         expect(ob2.accPoint.minus(ob1.accPoint).div(ob2.timestamp - ob1.timestamp).toString()).to.equal('1800');
 
@@ -370,42 +234,103 @@ describe("orcale", function () {
         stateCurrent = await getState(pool);
         expect(stateCurrent.currentPoint).to.equal('1400')
         expect(stateCurrent.observationCurrentIndex).to.equal('1')
+        const ob5 = await getObservation(pool, 1);
+        console.log('ob5 :', ob5.accPoint.toFixed(0) , ' @ ', ob5.timestamp);
         
+        await ethers.provider.send('evm_setNextBlockTimestamp', [timestampStart + 2000]);
+
+        // expand to 2, nothing changed
         await pool.connect(trader).expandObservationQueue('2');
         stateCurrent = await getState(pool);
         expect(stateCurrent.observationNextQueueLen).to.equal('3')
+        const blockNum = await ethers.provider.getBlockNumber();
+        const block = await ethers.provider.getBlock(blockNum);
+        const timestamp = block.timestamp;
+        console.log('timestamp + 2000: ', timestamp);
 
-
-        await ethers.provider.send('evm_setNextBlockTimestamp', [timestampStart + 2000]);
-        await pool.connect(trader).expandObservationQueue('2');
-        let blockNum = await ethers.provider.getBlockNumber();
-        let block = await ethers.provider.getBlock(blockNum);
-        let timestamp = block.timestamp;
-        console.log(timestamp);
-
+        // expand to 5
         await pool.connect(trader).expandObservationQueue('5');
         stateCurrent = await getState(pool);
         expect(stateCurrent.observationNextQueueLen).to.equal('5')
 
+        await ethers.provider.send('evm_setNextBlockTimestamp', [timestampStart + 4000]);
         const swap6 = await swapX2Y(testSwap, trader, tokenX, tokenY, 3000, new BigNumber(3000 * 10**18).toFixed(0), 1300);
         stateCurrent = await getState(pool);
         expect(stateCurrent.currentPoint).to.equal('1300')
         expect(stateCurrent.observationCurrentIndex).to.equal('2')
-        const ob6 = await getObservation(pool, 1);
-        console.log(ob6);
+        const ob6 = await getObservation(pool, 2);
+        console.log('ob6 :', ob6.accPoint.toFixed(0) , ' @ ', ob6.timestamp);
+        const blockNum6 = await ethers.provider.getBlockNumber();
+        const block6 = await ethers.provider.getBlock(blockNum6);
+        const timestamp6 = block6.timestamp;
+        console.log('timestamp + 4000: ', timestamp6);
 
-
-        
+        await ethers.provider.send('evm_setNextBlockTimestamp', [timestampStart + 6000]);
         const swap7 = await swapX2Y(testSwap, trader, tokenX, tokenY, 3000, new BigNumber(3000 * 10**18).toFixed(0), 1200);
         stateCurrent = await getState(pool);
         expect(stateCurrent.currentPoint).to.equal('1200')
         expect(stateCurrent.observationCurrentIndex).to.equal('3')
-        const ob7 = await getObservation(pool, 1);
-        console.log(ob7);
+        const ob7 = await getObservation(pool, 3);
+        console.log('ob7 :', ob7.accPoint.toFixed(0) , ' @ ', ob7.timestamp);
+        const blockNum7 = await ethers.provider.getBlockNumber();
+        const block7 = await ethers.provider.getBlock(blockNum7);
+        const timestamp7 = block7.timestamp;
+        console.log('timestamp + 6000: ', timestamp7);
 
+
+        await ethers.provider.send('evm_setNextBlockTimestamp', [timestampStart + 8000]);
         const swap8 = await swapY2X(testSwap, trader, tokenX, tokenY, 3000, new BigNumber(3000 * 10**18).toFixed(0), 1500);
         stateCurrent = await getState(pool);
         expect(stateCurrent.currentPoint).to.equal('1500')
         expect(stateCurrent.observationCurrentIndex).to.equal('4')
+        const ob8 = await getObservation(pool, 4);
+        console.log('ob8 :', ob8.accPoint.toFixed(0) , ' @ ', ob8.timestamp);
+        const blockNum8 = await ethers.provider.getBlockNumber();
+        const block8 = await ethers.provider.getBlock(blockNum8);
+        const timestamp8 = block8.timestamp;
+        console.log('timestamp + 8000: ', timestamp8);
+
+        let accPoints = await pool.observe([7000, 6800, 6500, 6000, 5000, 4000, 2000, 1000, 0]);
+        expect(accPoints[5].toString()).to.equal(ob6.accPoint.toFixed(0))
+        
+        accPoints = await pool.observe([7000, 6000, 6500]);
+        expect(new BigNumber(accPoints[0].toString()).plus(accPoints[1].toString()).div(2).toFixed(0)).to.equal(accPoints[2].toString());
+
+        accPoints = await pool.observe([7000, 6800, 6000]);
+        expect(new BigNumber(accPoints[0].toString()).times(0.8).plus(new BigNumber(accPoints[2].toString()).times(0.2)).toFixed(0)).to.equal(accPoints[1].toString());
+
+        accPoints = await pool.observe([2000, 1000, 0]);
+        expect(new BigNumber(accPoints[0].toString()).plus(accPoints[2].toString()).div(2).toFixed(0)).to.equal(accPoints[1].toString());
+
+
+        await ethers.provider.send('evm_setNextBlockTimestamp', [timestampStart + 10000]);
+        const swap9 = await swapY2XDesireX(testSwap, trader, tokenX, tokenY, 3000, new BigNumber(3000 * 10**18).toFixed(0), 1800);
+        stateCurrent = await getState(pool);
+        expect(stateCurrent.currentPoint).to.equal('1800')
+        expect(stateCurrent.observationCurrentIndex).to.equal('0')
+        const ob9 = await getObservation(pool, 0);
+        console.log('ob9 :', ob9.accPoint.toFixed(0) , ' @ ', ob9.timestamp);
+        const blockNum9 = await ethers.provider.getBlockNumber();
+        const block9 = await ethers.provider.getBlock(blockNum9);
+        const timestamp9 = block9.timestamp;
+        console.log('timestamp + 10000: ', timestamp9);
+
+        await ethers.provider.send('evm_setNextBlockTimestamp', [timestampStart + 12000]);
+        const swap10 = await swapX2YDesireY(testSwap, trader, tokenX, tokenY, 3000, new BigNumber(3000 * 10**18).toFixed(0), 1700);
+        stateCurrent = await getState(pool);
+        expect(stateCurrent.currentPoint).to.equal('1700')
+        expect(stateCurrent.observationCurrentIndex).to.equal('1')
+        const ob10 = await getObservation(pool, 1);
+        console.log('ob10 :', ob10.accPoint.toFixed(0) , ' @ ', ob10.timestamp);
+        const blockNum10 = await ethers.provider.getBlockNumber();
+        const block10 = await ethers.provider.getBlock(blockNum10);
+        const timestamp10 = block10.timestamp;
+        console.log('timestamp + 12000: ', timestamp10);
+
+        accPoints = await pool.observe([0, 1000, 2000]);
+        console.log(accPoints);
+        expect(accPoints[0].toString()).to.equal(ob10.accPoint.toFixed(0))
+        expect(accPoints[2].toString()).to.equal(ob9.accPoint.toFixed(0))
+        expect(new BigNumber(accPoints[0].toString()).plus(accPoints[2].toString()).div(2).toFixed(0)).to.equal(accPoints[1].toString());
     });
 });
