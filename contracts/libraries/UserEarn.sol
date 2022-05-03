@@ -6,6 +6,8 @@ import './TwoPower.sol';
 import './Converter.sol';
 import './MaxMinMath.sol';
 
+import 'hardhat/console.sol';
+
 library UserEarn {
 
     // describe user's earning info for a limit order
