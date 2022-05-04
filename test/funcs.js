@@ -88,7 +88,9 @@ async function checkLimOrder(eSellingX, eAccEarnX, eSellingY, eAccEarnY, eEarnX,
     expect(accEarnX.toFixed(0)).to.equal(eAccEarnX);
     expect(sellingY.toFixed(0)).to.equal(eSellingY);
     expect(accEarnY.toFixed(0)).to.equal(eAccEarnY);
+    if (eEarnX)
     expect(earnX.toFixed(0)).to.equal(eEarnX);
+    if (eEarnY)
     expect(earnY.toFixed(0)).to.equal(eEarnY);
 }
 
@@ -168,11 +170,29 @@ function getCostYFromXAt(sqrtPrice_96, acquireX) {
     return costY;
 }
 
+function getEarnYFromXAt(sqrtPrice_96, soldX) {
+    const q96 = BigNumber(2).pow(96).toFixed(0);
+
+    const liquidity = stringDiv(stringMul(soldX, sqrtPrice_96), q96);
+    const costY = stringDiv(stringMul(liquidity, sqrtPrice_96), q96);
+
+    return costY;
+}
+
 function getCostXFromYAt(sqrtPrice_96, acquireY) {
     const q96 = BigNumber(2).pow(96).toFixed(0);
 
     const liquidity = stringDivCeil(stringMul(acquireY, q96), sqrtPrice_96);
     const costX = stringDivCeil(stringMul(liquidity, q96), sqrtPrice_96);
+
+    return costX;
+}
+
+function getEarnXFromYAt(sqrtPrice_96, costY) {
+    const q96 = BigNumber(2).pow(96).toFixed(0);
+
+    const liquidity = stringDiv(stringMul(costY, q96), sqrtPrice_96);
+    const costX = stringDiv(stringMul(liquidity, q96), sqrtPrice_96);
 
     return costX;
 }
@@ -248,5 +268,7 @@ module.exports ={
     stringMinus,
     stringMul,
     stringDivCeil,
-    stringDiv
+    stringDiv,
+    getEarnYFromXAt,
+    getEarnXFromYAt
 }
