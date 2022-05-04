@@ -110,6 +110,14 @@ function getFeeCharge(fee, chargePercent = 50) {
     return floor(BigNumber(fee).times(chargePercent).div('100'));
 }
 
+function getFeeChargeFromAmount(amount, fee=3000, chargePercent=50) {
+    const originFee = stringDivCeil(stringMul(amount, fee), stringMinus(1e6, fee))
+    return getFeeCharge(originFee, chargePercent);
+}
+function getFeeFromAmount(amount, fee=3000) {
+    return stringDivCeil(stringMul(amount, fee), stringMinus(1e6, fee))
+}
+
 function yInRange(liquidity, pl, pr, rate, up) {
     let amountY = BigNumber("0");
     let price = BigNumber(rate).pow(pl);
@@ -270,5 +278,7 @@ module.exports ={
     stringDivCeil,
     stringDiv,
     getEarnYFromXAt,
-    getEarnXFromYAt
+    getEarnXFromYAt,
+    getFeeChargeFromAmount,
+    getFeeFromAmount
 }
