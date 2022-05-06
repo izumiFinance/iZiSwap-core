@@ -471,7 +471,7 @@ contract iZiSwapPool is IiZiSwapPool {
     }
 
     /// @inheritdoc IiZiSwapPool
-    function expandObservationQueue(uint16 newNextQueueLen) external override noDelegateCall {
+    function expandObservationQueue(uint16 newNextQueueLen) external override noDelegateCall lock {
         uint16 oldNextQueueLen = state.observationNextQueueLen;
         if (newNextQueueLen > oldNextQueueLen) {
             observations.expand(oldNextQueueLen, newNextQueueLen);
