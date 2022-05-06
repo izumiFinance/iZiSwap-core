@@ -148,8 +148,6 @@ contract iZiSwapPool is IiZiSwapPool {
         limitOrderModule = IiZiSwapFactory(_factory).limitOrderModule();
         flashModule = IiZiSwapFactory(_factory).flashModule();
 
-        console.log("swapX2Y: ", swapModuleX2Y);
-        console.log("swapY2X: ", swapModuleY2X);
         tokenX = _tokenX;
         tokenY = _tokenY;
         fee = _fee;
