@@ -36,7 +36,7 @@ contract iZiSwapFactory is Ownable, IiZiSwapFactory {
     /// @notice address of module to support flash loan
     address public override flashModule;
 
-    /// @notice construct the factory
+    /// @notice Construct the factory
     /// @param _swapX2YModule swap module to support swapX2Y(DesireY)
     /// @param _swapY2XModule swap module to support swapY2X(DesireX)
     /// @param _liquidityModule liquidity module to support mint/burn/collect
