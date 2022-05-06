@@ -21,8 +21,6 @@ import './libraries/OrderOrEndpoint.sol';
 import './libraries/MaxMinMath.sol';
 import './interfaces/IiZiSwapCallback.sol';
 
-import 'hardhat/console.sol';
-
 contract LimitOrderModule {
 
     using Liquidity for mapping(bytes32 =>Liquidity.Data);

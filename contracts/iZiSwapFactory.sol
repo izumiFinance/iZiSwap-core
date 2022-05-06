@@ -5,8 +5,6 @@ import './interfaces/IiZiSwapFactory.sol';
 import './iZiSwapPool.sol';
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-import "hardhat/console.sol";
-
 contract iZiSwapFactory is Ownable, IiZiSwapFactory {
 
     /// @notice charge receiver of all pools in this factory

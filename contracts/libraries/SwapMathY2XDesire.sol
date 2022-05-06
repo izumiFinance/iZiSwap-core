@@ -7,7 +7,6 @@ import './AmountMath.sol';
 import './State.sol';
 import './MaxMinMath.sol';
 import './Converter.sol';
-import "hardhat/console.sol";
 
 library SwapMathY2XDesire {
 

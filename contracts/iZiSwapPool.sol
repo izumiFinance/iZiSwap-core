@@ -18,7 +18,6 @@ import './libraries/State.sol';
 import './libraries/Oracle.sol';
 import './libraries/OrderOrEndpoint.sol';
 import './interfaces/IiZiSwapCallback.sol';
-import 'hardhat/console.sol';
 
 import './libraries/SwapMathY2X.sol';
 import './libraries/SwapMathX2Y.sol';

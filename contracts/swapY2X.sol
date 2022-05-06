@@ -22,8 +22,6 @@ import './libraries/MaxMinMath.sol';
 import './interfaces/IiZiSwapCallback.sol';
 import './libraries/SwapCache.sol';
 
-import 'hardhat/console.sol';
-
 contract SwapY2XModule {
 
     using Liquidity for mapping(bytes32 =>Liquidity.Data);
