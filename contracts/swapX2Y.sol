@@ -62,9 +62,9 @@ contract SwapX2YModule {
     /// @notice minimum number of distance between initialized or limitorder points 
     int24 public pointDelta;
 
-    /// @notice The fee growth as a 128-bit fixpoing fees of tokenX collected per 1 liquidity of the pool
+    /// @notice the fee growth as a 128-bit fixpoing fees of tokenX collected per 1 liquidity of the pool
     uint256 public feeScaleX_128;
-    /// @notice The fee growth as a 128-bit fixpoing fees of tokenY collected per 1 liquidity of the pool
+    /// @notice the fee growth as a 128-bit fixpoing fees of tokenY collected per 1 liquidity of the pool
     uint256 public feeScaleY_128;
 
     uint160 sqrtRate_96;
