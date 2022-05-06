@@ -18,6 +18,7 @@ import './libraries/UserEarn.sol';
 import './libraries/State.sol';
 import './libraries/Oracle.sol';
 import './libraries/OrderOrEndpoint.sol';
+import './libraries/MaxMinMath.sol';
 import './interfaces/IiZiSwapCallback.sol';
 
 import 'hardhat/console.sol';
@@ -351,6 +352,8 @@ contract LimitOrderModule {
         }
         ue.earnAssign = ue.earnAssign - actualCollectEarn;
         (uint256 x, uint256 y) = isEarnY? (actualCollectDec, actualCollectEarn): (actualCollectEarn, actualCollectDec);
+        x = MaxMinMath.min256(x, balanceX());
+        y = MaxMinMath.min256(y, balanceY());
         if (x > 0) {
             TokenTransfer.transferToken(tokenX, recipient, x);
         }

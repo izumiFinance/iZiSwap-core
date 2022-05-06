@@ -18,6 +18,7 @@ import './libraries/UserEarn.sol';
 import './libraries/State.sol';
 import './libraries/Oracle.sol';
 import './libraries/OrderOrEndpoint.sol';
+import './libraries/MaxMinMath.sol';
 import './interfaces/IiZiSwapCallback.sol';
 
 import 'hardhat/console.sol';
@@ -458,6 +459,9 @@ contract LiquidityModule {
         }
         lq.tokenOwedX -= actualAmountX;
         lq.tokenOwedY -= actualAmountY;
+
+        actualAmountX = MaxMinMath.min256(actualAmountX, balanceX());
+        actualAmountY = MaxMinMath.min256(actualAmountY, balanceY());
         if (actualAmountX > 0) {
             TokenTransfer.transferToken(tokenX, recipient, actualAmountX);
         }
