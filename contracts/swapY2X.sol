@@ -430,6 +430,6 @@ contract SwapY2XModule {
         uint256 by = balanceY();
         IiZiSwapCallback(msg.sender).swapY2XCallback(amountX, amountY, data);
         require(balanceY() >= by + amountY, "YE");
-        
     }
+
 }

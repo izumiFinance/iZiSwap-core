@@ -104,4 +104,5 @@ contract iZiSwapFactory is Ownable, IiZiSwapFactory {
     function modifyChargeReceiver(address _chargeReceiver) external override onlyOwner {
         chargeReceiver = _chargeReceiver;
     }
+    
 }
