@@ -12,4 +12,5 @@ library OrderOrEndpoint {
     function setOrderOrEndptVal(mapping(int24 =>int24) storage self, int24 point, int24 pd, int24 val) internal {
         self[point / pd] = val;
     }
+    
 }

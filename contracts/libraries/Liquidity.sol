@@ -5,6 +5,7 @@ import "./MulDivMath.sol";
 import "./TwoPower.sol";
 
 library Liquidity {
+
     struct Data {
         uint128 liquidity;
         uint256 lastFeeScaleX_128;
@@ -69,4 +70,5 @@ library Liquidity {
             self.tokenOwedY += feeY;
         }
     }
+    
 }

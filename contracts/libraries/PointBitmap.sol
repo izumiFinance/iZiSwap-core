@@ -157,4 +157,5 @@ library PointBitmap {
             ? (mapPt + int24(uint24(LSB(ones) - bitIdx))) * pointDelta
             : (mapPt + int24(uint24(type(uint8).max - bitIdx))) * pointDelta;
     }
+    
 }

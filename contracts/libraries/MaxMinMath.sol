@@ -30,4 +30,5 @@ library MaxMinMath {
         }
         return b;
     }
+    
 }

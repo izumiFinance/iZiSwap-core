@@ -2,6 +2,7 @@
 pragma solidity ^0.8.4;
 
 library LimitOrder {
+
     struct Data {
         uint128 sellingX;
         uint128 earnY;
@@ -10,4 +11,5 @@ library LimitOrder {
         uint128 earnX;
         uint256 accEarnX;
     }
+
 }

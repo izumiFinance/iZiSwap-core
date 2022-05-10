@@ -79,4 +79,5 @@ interface IiZiSwapFactory {
     /// @notice Change charge receiver, only owner of factory can call.
     /// @param _chargeReceiver address of new receiver
     function modifyChargeReceiver(address _chargeReceiver) external;
+    
 }
