@@ -309,6 +309,7 @@ contract LiquidityModule {
             uint128 withdrawedLiquidityY = (originLiquidityY < liquidDelta) ? originLiquidityY : liquidDelta;
             uint128 withdrawedLiquidityX = liquidDelta - withdrawedLiquidityY;
             withRet.yc = MulDivMath.mulDivFloor(withdrawedLiquidityY, sqrtPrice_96, TwoPower.Pow96);
+            // withdrawedLiquidityX * 2^96 < 2^128*2^96=2^224<2^256
             withRet.xc = uint256(withdrawedLiquidityX) * TwoPower.Pow96 / sqrtPrice_96;
             withRet.liquidityX = currentState.liquidityX - withdrawedLiquidityX;
             amountY += withRet.yc;

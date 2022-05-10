@@ -33,6 +33,8 @@ library AmountMath {
     ) internal pure returns (uint256 amount) {
         // rightPt - (leftPt - 1), pc = leftPt - 1
         uint160 sqrtPricePrPl_96 = LogPowMath.getSqrtPrice(rightPt - leftPt);
+        // 1. sqrtPriceR_96 * 2^96 < 2^256
+        // 2. sqrtRate_96 > 2^96, so sqrtPricePrM1_96 < sqrtPriceR_96 < 2^160
         uint160 sqrtPricePrM1_96 = uint160(uint256(sqrtPriceR_96) * TwoPower.Pow96 / sqrtRate_96);
 
         uint160 numerator = sqrtPricePrPl_96 - uint160(TwoPower.Pow96);

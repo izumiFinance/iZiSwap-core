@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity ^0.8.4;
 
-import "./MulDivMath.sol";
-import "./TwoPower.sol";
-import "./AmountMath.sol";
-import "./State.sol";
-import "./MaxMinMath.sol";
-import "./Converter.sol";
+import './MulDivMath.sol';
+import './TwoPower.sol';
+import './AmountMath.sol';
+import './State.sol';
+import './MaxMinMath.sol';
+import './Converter.sol';
 
 library SwapMathY2X {
 
@@ -40,24 +40,18 @@ library SwapMathY2X {
         costY = uint128(cost);
     }
 
-    function mulDivCeil(uint256 a, uint256 b, uint256 c) internal pure returns (uint256) {
-        uint256 v = a * b;
-        if (v % c == 0) {
-            return v / c;
-        }
-        return v / c + 1;
-    }
-
     function y2XAtPriceLiquidity(
         uint128 amountY,
         uint160 sqrtPrice_96,
         uint128 liquidityX
     ) internal pure returns (uint128 costY, uint256 acquireX, uint128 newLiquidityX) {
-        uint256 maxTransformLiquidityY = amountY * TwoPower.Pow96 / sqrtPrice_96;
+        // amountY * TwoPower.Pow96 < 2^128 * 2^96 = 2^224 < 2^256 
+        uint256 maxTransformLiquidityY = uint256(amountY) * TwoPower.Pow96 / sqrtPrice_96;
         // transformLiquidityY <= liquidityX
         uint128 transformLiquidityY = uint128(MaxMinMath.min256(maxTransformLiquidityY, liquidityX));
         // costY <= amountY
-        costY = uint128(mulDivCeil(transformLiquidityY, sqrtPrice_96, TwoPower.Pow96));
+        costY = uint128(MulDivMath.mulDivCeil(transformLiquidityY, sqrtPrice_96, TwoPower.Pow96));
+        // transformLiquidityY * 2^96 < 2^224 < 2^256
         acquireX = uint256(transformLiquidityY) * TwoPower.Pow96 / sqrtPrice_96;
         newLiquidityX = liquidityX - transformLiquidityY;
     }
