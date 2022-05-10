@@ -3,7 +3,7 @@ pragma solidity ^0.8.4;
 
 interface IiZiSwapPool {
 
-    /// @notice Emitted when miner successfully add liquidity (mint)
+    /// @notice Emitted when miner successfully add liquidity (mint).
     /// @param sender the address that minted the liquidity
     /// @param owner the owner who will benefit from this liquidity
     /// @param leftPoint left endpoint of the liquidity
@@ -21,7 +21,7 @@ interface IiZiSwapPool {
         uint256 amountY
     );
 
-    /// @notice Emitted when miner successfully decrease liquidity (withdraw)
+    /// @notice Emitted when miner successfully decrease liquidity (withdraw).
     /// @param owner owner address of liquidity
     /// @param leftPoint left endpoint of liquidity
     /// @param rightPoint right endpoint of liquidity
@@ -37,7 +37,7 @@ interface IiZiSwapPool {
         uint256 amountY
     );
 
-    /// @notice Emitted when a trader successfully exchange
+    /// @notice Emitted when a trader successfully exchange.
     /// @param tokenX tokenX of pool
     /// @param tokenY tokenY of pool
     /// @param fee fee amount of pool
@@ -53,7 +53,7 @@ interface IiZiSwapPool {
         uint256 amountY
     );
 
-    /// @notice Emitted by the pool for any flashes of tokenX/tokenY
+    /// @notice Emitted by the pool for any flashes of tokenX/tokenY.
     /// @param sender the address that initiated the swap call, and that received the callback
     /// @param recipient the address that received the tokens from flash
     /// @param amountX the amount of tokenX that was flashed
@@ -69,7 +69,7 @@ interface IiZiSwapPool {
         uint256 paidY
     );
 
-    /// @notice Emitted when a seller successfully add a limit order
+    /// @notice Emitted when a seller successfully add a limit order.
     /// @param amount amount of token to sell the seller added
     /// @param point point of limit order
     /// @param sellXEarnY direction of limit order, etc. sell tokenX or sell tokenY
@@ -79,7 +79,7 @@ interface IiZiSwapPool {
         bool sellXEarnY
     );
 
-    /// @notice Emitted when a seller successfully decrease a limit order
+    /// @notice Emitted when a seller successfully decrease a limit order.
     /// @param amount amount of token to sell the seller decreased
     /// @param point point of limit order
     /// @param sellXEarnY direction of limit order, etc. sell tokenX or sell tokenY
@@ -89,7 +89,7 @@ interface IiZiSwapPool {
         bool sellXEarnY
     );
 
-    /// @notice Returns the information about a liquidity by the liquidity's key
+    /// @notice Returns the information about a liquidity by the liquidity's key.
     /// @param key the liquidity's key is a hash of a preimage composed by the miner(owner), pointLeft and pointRight
     /// @return liquidity the amount of liquidity,
     /// @return lastFeeScaleX_128 fee growth of tokenX inside the range as of the last mint/burn/collect,
@@ -107,7 +107,7 @@ interface IiZiSwapPool {
             uint256 tokenOwedY
         );
     
-    /// @notice Returns the information about a user's limit order (sell tokenY and earn tokenX)
+    /// @notice Returns the information about a user's limit order (sell tokenY and earn tokenX).
     /// @param key the limit order's key is a hash of a preimage composed by the seller, point
     /// @return lastAccEarn total amount of tokenX earned by all users at this point as of the last add/dec/collect
     /// @return sellingRemain amount of tokenY not selled in this limit order
@@ -125,7 +125,7 @@ interface IiZiSwapPool {
             uint128 earnAssign
         );
     
-    /// @notice Returns the information about a user's limit order (sell tokenX and earn tokenY)
+    /// @notice Returns the information about a user's limit order (sell tokenX and earn tokenY).
     /// @param key the limit order's key is a hash of a preimage composed by the seller, point
     /// @return lastAccEarn total amount of tokenY earned by all users at this point as of the last add/dec/collect
     /// @return sellingRemain amount of tokenX not selled in this limit order
@@ -143,7 +143,7 @@ interface IiZiSwapPool {
             uint128 earnAssign
         );
     
-    /// @notice Marks a given amount of tokenY in a limitorder(sellx and earn y) as assigned
+    /// @notice Mark a given amount of tokenY in a limitorder(sellx and earn y) as assigned.
     /// @param point point (log Price) of seller's limit order,be sure to be times of pointDelta
     /// @param assignY max amount of tokenY to mark assigned
     /// @return actualAssignY actual amount of tokenY marked
@@ -152,7 +152,7 @@ interface IiZiSwapPool {
         uint128 assignY
     ) external returns(uint128 actualAssignY);
     
-    /// @notice Marks a given amount of tokenX in a limitorder(selly and earn x) as assigned
+    /// @notice Mark a given amount of tokenX in a limitorder(selly and earn x) as assigned.
     /// @param point point (log Price) of seller's limit order,be sure to be times of pointDelta
     /// @param assignX max amount of tokenX to mark assigned
     /// @return actualAssignX actual amount of tokenX marked
@@ -161,7 +161,7 @@ interface IiZiSwapPool {
         uint128 assignX
     ) external returns(uint128 actualAssignX);
 
-    /// @notice Decrease limitorder of selling X
+    /// @notice Decrease limitorder of selling X.
     /// @param point point of seller's limit order, be sure to be times of pointDelta
     /// @param deltaX max amount of tokenX seller wants to decrease
     /// @return actualDeltaX actual amount of tokenX decreased
@@ -170,7 +170,7 @@ interface IiZiSwapPool {
         uint128 deltaX
     ) external returns (uint128 actualDeltaX);
     
-    /// @notice Decrease limitorder of selling Y
+    /// @notice Decrease limitorder of selling Y.
     /// @param point point of seller's limit order, be sure to be times of pointDelta
     /// @param deltaY max amount of tokenY seller wants to decrease
     /// @return actualDeltaY actual amount of tokenY decreased
@@ -179,7 +179,7 @@ interface IiZiSwapPool {
         uint128 deltaY
     ) external returns (uint128 actualDeltaY);
     
-    /// @notice Add a limit order (selling x) in the pool
+    /// @notice Add a limit order (selling x) in the pool.
     /// @param recipient owner of the limit order
     /// @param point point of the order, be sure to be times of pointDelta
     /// @param amountX amount of tokenX to sell
@@ -193,7 +193,7 @@ interface IiZiSwapPool {
         bytes calldata data
     ) external returns (uint128 orderX, uint128 acquireY);
 
-    /// @notice Add a limit order (selling y) in the pool
+    /// @notice Add a limit order (selling y) in the pool.
     /// @param recipient owner of the limit order
     /// @param point point of the order, be sure to be times of pointDelta
     /// @param amountY amount of tokenY to sell
@@ -207,7 +207,7 @@ interface IiZiSwapPool {
         bytes calldata data
     ) external returns (uint128 orderY, uint128 acquireX);
 
-    /// @notice Collect earned or decreased token from limit order
+    /// @notice Collect earned or decreased token from limit order.
     /// @param recipient address to benefit
     /// @param point point of limit order, be sure to be times of pointDelta
     /// @param collectDec max amount of decreased selling token to collect
@@ -219,7 +219,7 @@ interface IiZiSwapPool {
         address recipient, int24 point, uint128 collectDec, uint128 collectEarn, bool isEarnY
     ) external returns(uint128 actualCollectDec, uint128 actualCollectEarn);
 
-    /// @notice Add liquidity to the pool
+    /// @notice Add liquidity to the pool.
     /// @param recipient newly created liquidity will belong to this address
     /// @param leftPt left endpoint of the liquidity, be sure to be times of pointDelta
     /// @param rightPt right endpoint of the liquidity, be sure to be times of pointDelta
@@ -235,7 +235,7 @@ interface IiZiSwapPool {
         bytes calldata data
     ) external returns (uint256 amountX, uint256 amountY);
 
-    /// @notice Decrease a given amount of liquidity from msg.sender's liquidities
+    /// @notice Decrease a given amount of liquidity from msg.sender's liquidities.
     /// @param leftPt left endpoint of the liquidity
     /// @param rightPt right endpoint of the liquidity
     /// @param liquidDelta amount of liquidity to burn
@@ -247,7 +247,7 @@ interface IiZiSwapPool {
         uint128 liquidDelta
     ) external returns (uint256 amountX, uint256 amountY);
 
-    /// @notice Collects tokens (fee or refunded after burn) from a liquidity
+    /// @notice Collect tokens (fee or refunded after burn) from a liquidity.
     /// @param recipient the address which should receive the collected tokens
     /// @param leftPt left endpoint of the liquidity
     /// @param rightPt right endpoint of the liquidity
@@ -263,7 +263,7 @@ interface IiZiSwapPool {
         uint256 amountYLim
     ) external returns (uint256 actualAmountX, uint256 actualAmountY);
 
-    /// @notice Swap tokenY for tokenX， given max amount of tokenY user willing to pay
+    /// @notice Swap tokenY for tokenX, given max amount of tokenY user willing to pay.
     /// @param recipient the address to receive tokenX
     /// @param amount the max amount of tokenY user willing to pay
     /// @param highPt the highest point(price) of x/y during swap
@@ -277,7 +277,7 @@ interface IiZiSwapPool {
         bytes calldata data
     ) external returns (uint256 amountX, uint256 amountY);
     
-    /// @notice Swap tokenY for tokenX， given amount of tokenX user desires
+    /// @notice Swap tokenY for tokenX, given amount of tokenX user desires.
     /// @param recipient the address to receive tokenX
     /// @param desireX the amount of tokenX user desires
     /// @param highPt the highest point(price) of x/y during swap
@@ -291,7 +291,7 @@ interface IiZiSwapPool {
         bytes calldata data
     ) external returns (uint256 amountX, uint256 amountY);
     
-    /// @notice Swap tokenX for tokenY， given max amount of tokenX user willing to pay
+    /// @notice Swap tokenX for tokenY, given max amount of tokenX user willing to pay.
     /// @param recipient the address to receive tokenY
     /// @param amount the max amount of tokenX user willing to pay
     /// @param lowPt the lowest point(price) of x/y during swap
@@ -305,7 +305,7 @@ interface IiZiSwapPool {
         bytes calldata data
     ) external returns (uint256 amountX, uint256 amountY);
     
-    /// @notice Swap tokenX for tokenY， given amount of tokenY user desires
+    /// @notice Swap tokenX for tokenY, given amount of tokenY user desires.
     /// @param recipient the address to receive tokenY
     /// @param desireY the amount of tokenY user desires
     /// @param lowPt the lowest point(price) of x/y during swap
@@ -319,10 +319,10 @@ interface IiZiSwapPool {
         bytes calldata data
     ) external returns (uint256 amountX, uint256 amountY);
 
-    /// @notice Returns sqrt(1.0001), in 96 bit fixpoint number
+    /// @notice Returns sqrt(1.0001), in 96 bit fixpoint number.
     function sqrtRate_96() external view returns(uint160);
     
-    /// @notice State values of pool
+    /// @notice State values of pool.
     /// @return sqrtPrice_96 a 96 fixpoing number describe the sqrt value of current price(tokenX/tokenY)
     /// @return currentPoint the current point of the pool, 1.0001 ^ currentPoint = price
     /// @return observationCurrentIndex the index of the last oracle observation that was written,
@@ -344,7 +344,7 @@ interface IiZiSwapPool {
             uint128 liquidityX
         );
     
-    /// @notice LimitOrder info on a given point
+    /// @notice LimitOrder info on a given point.
     /// @param point the given point 
     /// @return sellingX total amount of tokenX selling on the point
     /// @return earnY total amount of unclaimed earned tokenY
@@ -363,12 +363,12 @@ interface IiZiSwapPool {
             uint256 accEarnX
         );
     
-    /// @notice Query infomation about a point whether has limit order or is an liquidity's endpoint
+    /// @notice Query infomation about a point whether has limit order or is an liquidity's endpoint.
     /// @param point point to query
     /// @return val endpoint for val&1>0 and has limit order for val&2 > 0
     function orderOrEndpoint(int24 point) external returns(int24 val);
 
-    /// @notice Returns observation data about a specific index
+    /// @notice Returns observation data about a specific index.
     /// @param index the index of observation array
     /// @return timestamp the timestamp of the observation,
     /// @return accPoint the point multiplied by seconds elapsed for the life of the pool as of the observation timestamp,
@@ -382,7 +382,7 @@ interface IiZiSwapPool {
             bool init
         );
 
-    /// @notice Point status in the pool
+    /// @notice Point status in the pool.
     /// @param point the point
     /// @return liquidSum the total amount of liquidity that uses the point either as left endpoint or right endpoint
     /// @return liquidDelta how much liquidity changes when the pool price crosses the point from left to right
@@ -400,7 +400,7 @@ interface IiZiSwapPool {
             bool isEndpt
         );
 
-    /// @notice Returns 256 packed point (statusVal>0) boolean values. See PointBitmap for more information
+    /// @notice Returns 256 packed point (statusVal>0) boolean values. See PointBitmap for more information.
     function pointBitmap(int16 wordPosition) external view returns (uint256);
 
     /// @notice Returns the integral value of point(time) and integral value of 1/liquidity(time)
@@ -415,11 +415,11 @@ interface IiZiSwapPool {
         view
         returns (int56[] memory accPoints);
     
-    /// @notice Expand max-length of observation queue
+    /// @notice Expand max-length of observation queue.
     /// @param newNextQueueLen new value of observationNextQueueLen, which should be greater than current observationNextQueueLen
     function expandObservationQueue(uint16 newNextQueueLen) external;
 
-    /// @notice Borrow tokenX and/or tokenY and pay it back within a block
+    /// @notice Borrow tokenX and/or tokenY and pay it back within a block.
     /// @dev The caller needs to implement a IiZiSwapPool#flashCallback callback function
     /// @param recipient the address which will receive the tokenY and/or tokenX
     /// @param amountX the amount of tokenX to borrow
@@ -432,7 +432,7 @@ interface IiZiSwapPool {
         bytes calldata data
     ) external;
 
-    /// @notice Returns a snapshot infomation of Liquidity in [leftPoint, rightPoint)
+    /// @notice Returns a snapshot infomation of Liquidity in [leftPoint, rightPoint).
     /// @param leftPoint left endpoint of range, should be times of pointDelta
     /// @param rightPoint right endpoint of range, should be times of pointDelta
     /// @return deltaLiquidities an array of delta liquidity for points in the range
@@ -450,22 +450,22 @@ interface IiZiSwapPool {
         uint256 accEarnX;
     }
 
-    /// @notice Returns a snapshot infomation of Limit Order in [leftPoint, rightPoint)
+    /// @notice Returns a snapshot infomation of Limit Order in [leftPoint, rightPoint).
     /// @param leftPoint left endpoint of range, should be times of pointDelta
     /// @param rightPoint right endpoint of range, should be times of pointDelta
     /// @return limitOrders an array of Limit Orders for points in the range
     ///    note 1. this function may cost a HUGE amount of gas, be careful to call
     function limitOrderSnapshot(int24 leftPoint, int24 rightPoint) external view returns(LimitOrderStruct[] memory limitOrders); 
 
-    /// @notice Amount of charged fee on tokenX
+    /// @notice Amount of charged fee on tokenX.
     function totalFeeXCharged() external view returns(uint256);
 
-    /// @notice Amount of charged fee on tokenY
+    /// @notice Amount of charged fee on tokenY.
     function totalFeeYCharged() external view returns(uint256);
 
-    /// @notice Percent to charge from miner's fee
+    /// @notice Percent to charge from miner's fee.
     function feeChargePercent() external view returns(uint24);
 
-    /// @notice Collect charged fee, only factory's chargeReceiver can call
+    /// @notice Collect charged fee, only factory's chargeReceiver can call.
     function collectFeeCharged() external;
 }

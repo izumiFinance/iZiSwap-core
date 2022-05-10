@@ -43,7 +43,7 @@ interface IiZiSwapFactory {
     /// @param pointDelta The spacing between points to be enforced for all pools created with the given fee amount
     function enableFeeAmount(uint24 fee, uint24 pointDelta) external;
 
-    /// @notice create a new pool which not exists
+    /// @notice Create a new pool which not exists.
     /// @param tokenX address of tokenX
     /// @param tokenY address of tokenY
     /// @param fee fee amount
@@ -56,11 +56,11 @@ interface IiZiSwapFactory {
         int24 currentPoint
     ) external returns (address);
 
-    /// @notice charge receiver of all pools
+    /// @notice Charge receiver of all pools.
     /// @return address of charge receiver
     function chargeReceiver() external view returns(address);
 
-    /// @notice get pool of (tokenX, tokenY, fee), address(0) for not exists
+    /// @notice Get pool of (tokenX, tokenY, fee), address(0) for not exists.
     /// @param tokenX address of tokenX
     /// @param tokenY address of tokenY
     /// @param fee fee amount
@@ -71,12 +71,12 @@ interface IiZiSwapFactory {
         uint24 fee
     ) external view returns(address);
 
-    /// @notice get point delta of a given fee amount
+    /// @notice Get point delta of a given fee amount.
     /// @param fee fee amount
     /// @return pointDelta the point delta
     function fee2pointDelta(uint24 fee) external view returns (int24 pointDelta);
 
-    /// @notice change charge receiver, only owner of factory can call
+    /// @notice Change charge receiver, only owner of factory can call.
     /// @param _chargeReceiver address of new receiver
     function modifyChargeReceiver(address _chargeReceiver) external;
 }
