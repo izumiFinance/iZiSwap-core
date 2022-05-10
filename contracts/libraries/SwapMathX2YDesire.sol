@@ -51,12 +51,15 @@ library SwapMathX2YDesire {
         uint128 liquidityX
     ) internal pure returns (uint256 costX, uint128 acquireY, uint128 newLiquidityX) {
         uint256 liquidityY = liquidity - liquidityX;
+        // desireY * 2^96 <= 2^128 * 2^96 <= 2^224 < 2^256
         uint256 maxTransformLiquidityX = mulDivCeil(uint256(desireY), TwoPower.Pow96, sqrtPrice_96);
         // transformLiquidityX <= liquidityY <= uint128.max
         uint128 transformLiquidityX = uint128(MaxMinMath.min256(maxTransformLiquidityX, liquidityY));
+        // transformLiquidityX * 2^96 <= 2^128 * 2^96 <= 2^224 < 2^256
         costX = mulDivCeil(transformLiquidityX, TwoPower.Pow96, sqrtPrice_96);
         // acquireY should not > uint128.max
-        acquireY = Converter.toUint128(transformLiquidityX * sqrtPrice_96 / TwoPower.Pow96);
+        uint256 acquireY256 = MulDivMath.mulDivFloor(transformLiquidityX, sqrtPrice_96, TwoPower.Pow96);
+        acquireY = Converter.toUint128(acquireY256);
         newLiquidityX = liquidityX + transformLiquidityX;
     }
 
@@ -91,7 +94,10 @@ library SwapMathX2YDesire {
             ret.completeLiquidity = true;
             return ret;
         }
-        // desireY < maxY = rg.liquidity * (rg.sqrtPriceR_96 - rg.sqrtPriceL_96) / (rg.sqrtRate_96 - 2^96)
+        // 1. desireY * (rg.sqrtRate_96 - 2^96)
+        //    < 2^128 * 2^96
+        //    = 2 ^ 224 < 2 ^ 256
+        // 2. desireY < maxY = rg.liquidity * (rg.sqrtPriceR_96 - rg.sqrtPriceL_96) / (rg.sqrtRate_96 - 2^96)
         // here, '/' means div of int
         // desireY < rg.liquidity * (rg.sqrtPriceR_96 - rg.sqrtPriceL_96) / (rg.sqrtRate_96 - 2^96)
         // => desireY * (rg.sqrtRate_96 - TwoPower.Pow96) / rg.liquidity < rg.sqrtPriceR_96 - rg.sqrtPriceL_96
@@ -110,8 +116,12 @@ library SwapMathX2YDesire {
             ret.locPt = ret.locPt - 1;
             ret.sqrtLoc_96 = LogPowMath.getSqrtPrice(ret.locPt);
         } else {
+            // rg.rightPt - ret.locPt <= 256 * 100
+            // sqrtPricePrMloc_96 <= 1.0001 ** 25600 * 2 ^ 96 = 13 * 2^96 < 2^100
             uint160 sqrtPricePrMloc_96 = LogPowMath.getSqrtPrice(rg.rightPt - ret.locPt);
+            // rg.sqrtPriceR_96 * TwoPower.Pow96 < 2^160 * 2^96 = 2^256
             uint160 sqrtPricePrM1_96 = uint160(mulDivCeil(rg.sqrtPriceR_96, TwoPower.Pow96, rg.sqrtRate_96));
+            // rg.liquidity * (sqrtPricePrMloc_96 - TwoPower.Pow96) < 2^128 * 2^100 = 2^228 < 2^256
             ret.costX = mulDivCeil(rg.liquidity, sqrtPricePrMloc_96 - TwoPower.Pow96, rg.sqrtPriceR_96 - sqrtPricePrM1_96);
 
             ret.locPt = ret.locPt - 1;
@@ -174,6 +184,7 @@ library SwapMathX2YDesire {
         if (retState.finished) {
             return retState;
         }
+
         if (leftPt < currentState.currentPoint) {
             uint160 sqrtPriceL_96 = LogPowMath.getSqrtPrice(leftPt);
             RangeCompRet memory ret = x2YRangeComplete(

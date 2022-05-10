@@ -62,7 +62,8 @@ library SwapMathX2Y {
         // transformLiquidityX <= liquidityY <= uint128.max
         uint128 transformLiquidityX = uint128(MaxMinMath.min256(maxTransformLiquidityX, liquidityY));
 
-        // transformLiquidityX <= floor(amountX * sqrtPrice_96 / TwoPower.Pow96)
+        // 1. transformLiquidityX * TwoPower.Pow96 < 2^128 * 2^96 < 2^224 < 2^256
+        // 2. transformLiquidityX <= floor(amountX * sqrtPrice_96 / TwoPower.Pow96)
         // ceil(transformLiquidityX * sqrtPrice_96 / TwoPower.Pow96) <=
         // ceil(floor(amountX * sqrtPrice_96 / TwoPower.Pow96) * sqrtPrice_96 / TwoPower.Pow96) <=
         // ceil(amountX * sqrtPrice_96 / TwoPower.Pow96 * sqrtPrice_96 / TwoPower.Pow96) =
@@ -96,6 +97,7 @@ library SwapMathX2Y {
     ) internal pure returns (
         RangeCompRet memory ret
     ) {
+        // rg.sqrtPriceR_96 * 2^96 < 2^160 * 2^96 = 2^256
         uint160 sqrtPricePrM1_96 = uint160(mulDivCeil(rg.sqrtPriceR_96, TwoPower.Pow96, rg.sqrtRate_96));
         uint160 sqrtPricePrMl_96 = LogPowMath.getSqrtPrice(rg.rightPt - rg.leftPt);
         // rg.rightPt - rg.leftPt <= 256 * 100
@@ -136,6 +138,10 @@ library SwapMathX2Y {
                 ret.sqrtLoc_96 = LogPowMath.getSqrtPrice(ret.locPt);
             } else {
                 uint160 sqrtPricePrMloc_96 = LogPowMath.getSqrtPrice(rg.rightPt - ret.locPt);
+                // rg.rightPt - ret.locPt <= 256 * 100
+                // 1.0001 ** 25600 < 13
+                // 13 * 2^96 - 2^96 < 2^100
+                // rg.liquidity * (sqrtPricePrMloc_96 - TwoPower.Pow96) < 2^228 < 2^256
                 uint256 costX256 = mulDivCeil(rg.liquidity, sqrtPricePrMloc_96 - TwoPower.Pow96, rg.sqrtPriceR_96 - sqrtPricePrM1_96);
                 // ret.costX <= amountX <= uint128.max
                 ret.costX = uint128(MaxMinMath.min256(costX256, amountX));
