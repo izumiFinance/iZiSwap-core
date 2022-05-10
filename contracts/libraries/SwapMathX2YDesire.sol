@@ -25,6 +25,7 @@ library SwapMathX2YDesire {
         // liquidity of tokenX at finalPt
         uint128 liquidityX;
     }
+
     function x2YAtPrice(
         uint128 desireY,
         uint160 sqrtPrice_96,
@@ -37,6 +38,7 @@ library SwapMathX2YDesire {
         uint256 l = MulDivMath.mulDivCeil(acquireY, TwoPower.Pow96, sqrtPrice_96);
         costX = Converter.toUint128(MulDivMath.mulDivCeil(l, TwoPower.Pow96, sqrtPrice_96));
     }
+
     function mulDivCeil(uint256 a, uint256 b, uint256 c) internal pure returns (uint256) {
         uint256 v = a * b;
         if (v % c == 0) {
@@ -44,6 +46,7 @@ library SwapMathX2YDesire {
         }
         return v / c + 1;
     }
+
     function x2YAtPriceLiquidity(
         uint128 desireY,
         uint160 sqrtPrice_96,
@@ -227,5 +230,5 @@ library SwapMathX2YDesire {
             retState.sqrtFinalPrice_96 = currentState.sqrtPrice_96;
         }
     }
-    
+
 }

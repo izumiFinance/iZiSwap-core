@@ -138,6 +138,7 @@ library PointBitmap {
             : (mapPt - int24(uint24(bitIdx))) * pointDelta;
         
     }
+    
     // find nearest one from point, or boundary in the same word
     function nearestRightOneOrBoundary(
         mapping(int16 => uint256) storage self,
@@ -157,5 +158,5 @@ library PointBitmap {
             ? (mapPt + int24(uint24(LSB(ones) - bitIdx))) * pointDelta
             : (mapPt + int24(uint24(type(uint8).max - bitIdx))) * pointDelta;
     }
-    
+
 }

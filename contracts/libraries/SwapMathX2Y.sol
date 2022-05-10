@@ -40,7 +40,6 @@ library SwapMathX2Y {
         uint256 cost = MulDivMath.mulDivCeil(l, TwoPower.Pow96, sqrtPrice_96);
         // costX <= amountX <= uint128.max
         costX = uint128(cost);
-        // costX <= amountX
     }
 
     function mulDivCeil(uint256 a, uint256 b, uint256 c) internal pure returns (uint256) {
