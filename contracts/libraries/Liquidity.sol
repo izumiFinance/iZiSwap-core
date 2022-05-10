@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity ^0.8.4;
 
-import './MulDivMath.sol';
-import './TwoPower.sol';
+import "./MulDivMath.sol";
+import "./TwoPower.sol";
 
 library Liquidity {
     struct Data {
@@ -13,8 +13,7 @@ library Liquidity {
         uint256 tokenOwedY;
     }
     
-    // delta cannot be int128.min and it can be proved that
-    // liquidDelta of any one point will not be int128.min
+    // delta cannot be int128.min and liquidDelta of any one point will not be int128.min
     function liquidityAddDelta(uint128 l, int128 delta) internal pure returns (uint128 nl) {
         if (delta < 0) {
             // in the pool, max(liquidity) < 2 ** 127

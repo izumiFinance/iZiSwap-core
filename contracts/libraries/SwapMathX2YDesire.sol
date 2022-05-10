@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity ^0.8.4;
 
-import './MulDivMath.sol';
-import './TwoPower.sol';
-import './AmountMath.sol';
-import './State.sol';
-import './MaxMinMath.sol';
-import './Converter.sol';
+import "./MulDivMath.sol";
+import "./TwoPower.sol";
+import "./AmountMath.sol";
+import "./State.sol";
+import "./MaxMinMath.sol";
+import "./Converter.sol";
 
 library SwapMathX2YDesire {
     
@@ -127,8 +127,8 @@ library SwapMathX2YDesire {
         }
     }
 
-    /// @notice compute amount of tokens exchanged during swapX2YDesireY and some amount values (currX, currY, allX) on final point
-    ///    after this swapping
+    /// @notice Compute amount of tokens exchanged during swapX2YDesireY and some amount values (currX, currY, allX) on final point
+    ///    after this swap.
     /// @param currentState state values containing (currX, currY, allX) of start point
     /// @param leftPt left most point during this swap
     /// @param sqrtRate_96 sqrt(1.0001)
@@ -162,8 +162,7 @@ library SwapMathX2YDesire {
             }
         } else if (currentHasY) { // all y
             currentState.currentPoint = currentState.currentPoint + 1;
-            // sqrt(price) + sqrt(price) * (1.0001 - 1) = 
-            // sqrt(price) * 1.0001
+            // sqrt(price) + sqrt(price) * (1.0001 - 1) == sqrt(price) * 1.0001
             currentState.sqrtPrice_96 = uint160(
                 uint256(currentState.sqrtPrice_96) +
                 uint256(currentState.sqrtPrice_96) * (uint256(sqrtRate_96) - TwoPower.Pow96) / TwoPower.Pow96
@@ -212,7 +211,7 @@ library SwapMathX2YDesire {
             }
         } else {
             // finishd must be false
-            // retState.finished = false;
+            // retState.finished == false;
             retState.finalPt = currentState.currentPoint;
             retState.sqrtFinalPrice_96 = currentState.sqrtPrice_96;
         }

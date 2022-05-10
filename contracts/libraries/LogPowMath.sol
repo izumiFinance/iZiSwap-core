@@ -8,7 +8,6 @@ library LogPowMath {
 
     int24 internal constant MAX_POINT = -MIN_POINT;
 
-
     uint160 internal constant MIN_SQRT_PRICE = 4295128739;
 
     uint160 internal constant MAX_SQRT_PRICE = 1461446703485210103287273052203988822378723970342;

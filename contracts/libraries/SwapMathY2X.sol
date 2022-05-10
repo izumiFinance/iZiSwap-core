@@ -1,13 +1,12 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity ^0.8.4;
 
-import './MulDivMath.sol';
-import './TwoPower.sol';
-import './AmountMath.sol';
-import './State.sol';
-import './MaxMinMath.sol';
-import './Converter.sol';
-
+import "./MulDivMath.sol";
+import "./TwoPower.sol";
+import "./AmountMath.sol";
+import "./State.sol";
+import "./MaxMinMath.sol";
+import "./Converter.sol";
 
 library SwapMathY2X {
 
@@ -94,7 +93,7 @@ library SwapMathY2X {
             ret.completeLiquidity = true;
         } else {
             // we should locate highest price
-            // it is believed that uint160 is enough for muldiv and adding, because amountY < maxY
+            // uint160 is enough for muldiv and adding, because amountY < maxY
             uint160 sqrtLoc_96 = uint160(MulDivMath.mulDivFloor(
                 amountY,
                 rg.sqrtRate_96 - TwoPower.Pow96,
@@ -122,10 +121,9 @@ library SwapMathY2X {
             );
             // ret.costY <= amountY <= uint128.max
             ret.costY = uint128(MaxMinMath.min256(costY256, amountY));
-            // it is believed that costY <= amountY even if 
-            // the costY is the upperbound of the result
-            // because amountY is not a real and 
-            // sqrtLoc_96 <= sqrtLoc256_96
+
+            // costY <= amountY even if the costY is the upperbound of the result
+            // because amountY is not a real and sqrtLoc_96 <= sqrtLoc256_96
             ret.acquireX = AmountMath.getAmountX(
                 rg.liquidity,
                 rg.leftPt,
@@ -138,8 +136,8 @@ library SwapMathY2X {
         }
     }
 
-    /// @notice compute amount of tokens exchanged during swapY2X and some amount values (currX, currY, allX) on final point
-    ///    after this swapping
+    /// @notice Compute amount of tokens exchanged during swapY2X and some amount values (currX, currY, allX) on final point
+    ///    after this swap.
     /// @param currentState state values containing (currX, currY, allX) of start point
     /// @param rightPt right most point during this swap
     /// @param sqrtRate_96 sqrt(1.0001)
@@ -182,8 +180,7 @@ library SwapMathY2X {
                     retState.sqrtFinalPrice_96 = LogPowMath.getSqrtPrice(rightPt);
                     return retState;
                 }
-                // sqrt(price) + sqrt(price) * (1.0001 - 1) = 
-                // sqrt(price) * 1.0001
+                // sqrt(price) + sqrt(price) * (1.0001 - 1) == sqrt(price) * 1.0001
                 currentState.sqrtPrice_96 = uint160(
                     uint256(currentState.sqrtPrice_96) +
                     uint256(currentState.sqrtPrice_96) * (uint256(sqrtRate_96) - TwoPower.Pow96) / TwoPower.Pow96
@@ -192,6 +189,7 @@ library SwapMathY2X {
         }
 
         uint160 sqrtPriceR_96 = LogPowMath.getSqrtPrice(rightPt);
+
         // (uint128 liquidCostY, uint256 liquidAcquireX, bool liquidComplete, int24 locPt, uint160 sqrtLoc_96)
         RangeCompRet memory ret = y2XRangeComplete(
             Range({
@@ -216,11 +214,7 @@ library SwapMathY2X {
             // trade at locPt
             uint128 locCostY;
             uint256 locAcquireX;
-            // if (startHasY && ret.locPt == currentState.currentPoint) {
-            //     // get fixed sqrt price to reduce accumulated error
-            //     // because ret.sqrtLoc_96 is computed from sqrtStartPrice * sqrt(1.0001)
-            //     ret.sqrtLoc_96 = LogPowMath.getSqrtPrice(ret.locPt);
-            // }
+
             (locCostY, locAcquireX, retState.liquidityX) = y2XAtPriceLiquidity(amountY, ret.sqrtLoc_96, currentState.liquidity);
             
             retState.costY += locCostY;

@@ -47,7 +47,7 @@ library Point {
             }
         }
     }
-    /// @dev calculate fee scale within range [pl, pr)
+    /// @dev Calculate fee scale within range [pl, pr).
     /// @param axies collection of points of liquidities
     /// @param pl left endpoint of the segment
     /// @param pr right endpoint of the segment
@@ -77,7 +77,7 @@ library Point {
         }
     }
     
-    /// @dev update and endpoint of a liquidity segment,
+    /// @dev Update and endpoint of a liquidity segment.
     /// @param axies collections of points
     /// @param endpt endpoint of a segment
     /// @param isLeft left or right endpoint
@@ -122,7 +122,7 @@ library Point {
             // a new endpoint of certain segment
             new_or_erase = true;
             data.isEndpt = true;
-            // it can be proved that
+
             // for either left point or right point of the liquide segment
             // the feeScaleBeyond can be initialized to arbitrary value
             // we here set the initial val to total feeScale to delay overflow
@@ -138,7 +138,7 @@ library Point {
         return new_or_erase;
     }
 
-    /// @dev pass the endpoint, change the feescale beyond the price
+    /// @dev Pass the endpoint, change the feescale beyond the price.
     /// @param endpt endpoint to change
     /// @param feeScaleX_128 total fee scale of token x
     /// @param feeScaleY_128 total fee scale of token y 

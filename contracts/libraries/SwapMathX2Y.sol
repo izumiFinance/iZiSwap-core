@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity ^0.8.4;
 
-import './MulDivMath.sol';
-import './TwoPower.sol';
-import './AmountMath.sol';
-import './State.sol';
-import './MaxMinMath.sol';
-import './Converter.sol';
+import "./MulDivMath.sol";
+import "./TwoPower.sol";
+import "./AmountMath.sol";
+import "./State.sol";
+import "./MaxMinMath.sol";
+import "./Converter.sol";
 
 library SwapMathX2Y {
 
@@ -38,9 +38,9 @@ library SwapMathX2Y {
         }
         l = MulDivMath.mulDivCeil(acquireY, TwoPower.Pow96, sqrtPrice_96);
         uint256 cost = MulDivMath.mulDivCeil(l, TwoPower.Pow96, sqrtPrice_96);
-        // it is believed that costX <= amountX <= uint128.max
+        // costX <= amountX <= uint128.max
         costX = uint128(cost);
-        // it is believed that costX <= amountX
+        // costX <= amountX
     }
 
     function mulDivCeil(uint256 a, uint256 b, uint256 c) internal pure returns (uint256) {
@@ -89,7 +89,7 @@ library SwapMathX2Y {
         uint160 sqrtLoc_96;
     }
 
-    /// @dev move from rightPt to leftPt, the range is [leftPt, rightPt)
+    /// @dev Move from rightPt to leftPt, the range is [leftPt, rightPt).
     function x2YRangeComplete(
         Range memory rg,
         uint128 amountX
@@ -152,9 +152,8 @@ library SwapMathX2Y {
         }
     }
     
-    /// @notice compute amount of tokens exchanged during swapX2Y
-    ///    and some amount values (currX, currY, allX) on final point
-    ///    after this swapping
+    /// @notice Compute amount of tokens exchanged during swapX2Y and some amount values (currX, currY, allX) on final point
+    ///    after this swap.
     /// @param currentState state values containing (currX, currY, allX) of start point
     /// @param leftPt left most point during this swap
     /// @param sqrtRate_96 sqrt(1.0001)
@@ -171,7 +170,7 @@ library SwapMathX2Y {
         retState.costX = 0;
         retState.acquireY = 0;
         retState.finished = false;
-        // if (!currentState.allX && (currentState.currX > 0 || leftPt == currentState.currentPoint)) {
+
         bool currentHasY = (currentState.liquidityX < currentState.liquidity);
         if (currentHasY && (currentState.liquidityX > 0 || leftPt == currentState.currentPoint)) {
             (retState.costX, retState.acquireY, retState.liquidityX) = x2YAtPriceLiquidity(
@@ -188,8 +187,7 @@ library SwapMathX2Y {
             }
         } else if (currentHasY) { // all y
             currentState.currentPoint = currentState.currentPoint + 1;
-            // sqrt(price) + sqrt(price) * (1.0001 - 1) = 
-            // sqrt(price) * 1.0001
+            // sqrt(price) + sqrt(price) * (1.0001 - 1) == sqrt(price) * 1.0001
             currentState.sqrtPrice_96 = uint160(
                 uint256(currentState.sqrtPrice_96) +
                 uint256(currentState.sqrtPrice_96) * (uint256(sqrtRate_96) - TwoPower.Pow96) / TwoPower.Pow96
@@ -235,7 +233,7 @@ library SwapMathX2Y {
             }
         } else {
             // finishd must be false
-            // retState.finished = false;
+            // retState.finished == false;
             // liquidityX has been set
             retState.finalPt = currentState.currentPoint;
             retState.sqrtFinalPrice_96 = currentState.sqrtPrice_96;

@@ -1,26 +1,27 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity ^0.8.4;
 
-import './interfaces/IiZiSwapPool.sol';
-import './libraries/Liquidity.sol';
-import './libraries/Point.sol';
-import './libraries/PointBitmap.sol';
-import './libraries/LogPowMath.sol';
-import './libraries/MulDivMath.sol';
-import './libraries/TwoPower.sol';
-import './libraries/LimitOrder.sol';
-import './libraries/SwapMathY2X.sol';
-import './libraries/SwapMathX2Y.sol';
-import './libraries/SwapMathY2XDesire.sol';
-import './libraries/SwapMathX2YDesire.sol';
-import './libraries/TokenTransfer.sol';
-import './libraries/UserEarn.sol';
-import './libraries/State.sol';
-import './libraries/Oracle.sol';
-import './libraries/OrderOrEndpoint.sol';
-import './libraries/MaxMinMath.sol';
-import './interfaces/IiZiSwapCallback.sol';
-import './libraries/SwapCache.sol';
+import "./interfaces/IiZiSwapPool.sol";
+import "./interfaces/IiZiSwapCallback.sol";
+
+import "./libraries/Liquidity.sol";
+import "./libraries/Point.sol";
+import "./libraries/PointBitmap.sol";
+import "./libraries/LogPowMath.sol";
+import "./libraries/MulDivMath.sol";
+import "./libraries/TwoPower.sol";
+import "./libraries/LimitOrder.sol";
+import "./libraries/SwapMathY2X.sol";
+import "./libraries/SwapMathX2Y.sol";
+import "./libraries/SwapMathY2XDesire.sol";
+import "./libraries/SwapMathX2YDesire.sol";
+import "./libraries/TokenTransfer.sol";
+import "./libraries/UserEarn.sol";
+import "./libraries/State.sol";
+import "./libraries/Oracle.sol";
+import "./libraries/OrderOrEndpoint.sol";
+import "./libraries/MaxMinMath.sol";
+import "./libraries/SwapCache.sol";
 
 contract SwapX2YModule {
 
@@ -432,28 +433,25 @@ contract SwapX2YModule {
                 cache.currentOrderOrEndpt = nextVal;
             } else {
                 // amount > 0
-                // if (desireY > 0) {
-                    SwapMathX2YDesire.RangeRetState memory retState = SwapMathX2YDesire.x2YRange(
-                        st, nextPt, cache._sqrtRate_96, desireY
-                    );
-                    cache.finished = retState.finished;
+                SwapMathX2YDesire.RangeRetState memory retState = SwapMathX2YDesire.x2YRange(
+                    st, nextPt, cache._sqrtRate_96, desireY
+                );
+                cache.finished = retState.finished;
                     
-                    uint256 feeAmount = MulDivMath.mulDivCeil(retState.costX, fee, 1e6 - fee);
-                    uint256 chargedFeeAmount = feeAmount * feeChargePercent / 100;
-                    totalFeeXCharged += chargedFeeAmount;
+                uint256 feeAmount = MulDivMath.mulDivCeil(retState.costX, fee, 1e6 - fee);
+                uint256 chargedFeeAmount = feeAmount * feeChargePercent / 100;
+                totalFeeXCharged += chargedFeeAmount;
                     
-                    amountY += retState.acquireY;
-                    amountX += (retState.costX + feeAmount);
-                    desireY -= MaxMinMath.min(desireY, retState.acquireY);
+                amountY += retState.acquireY;
+                amountX += (retState.costX + feeAmount);
+                desireY -= MaxMinMath.min(desireY, retState.acquireY);
                     
-                    cache.currFeeScaleX_128 = cache.currFeeScaleX_128 + MulDivMath.mulDivFloor(feeAmount - chargedFeeAmount, TwoPower.Pow128, st.liquidity);
+                cache.currFeeScaleX_128 = cache.currFeeScaleX_128 + MulDivMath.mulDivFloor(feeAmount - chargedFeeAmount, TwoPower.Pow128, st.liquidity);
 
-                    st.currentPoint = retState.finalPt;
-                    st.sqrtPrice_96 = retState.sqrtFinalPrice_96;
-                    st.liquidityX = retState.liquidityX;
-                // } else {
-                //     cache.finished = true;
-                // }
+                st.currentPoint = retState.finalPt;
+                st.sqrtPrice_96 = retState.sqrtFinalPrice_96;
+                st.liquidityX = retState.liquidityX;
+
                 if (st.currentPoint == nextPt) {
                     cache.currentOrderOrEndpt = nextVal;
                 } else {

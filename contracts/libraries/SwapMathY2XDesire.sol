@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity ^0.8.4;
 
-import './MulDivMath.sol';
-import './TwoPower.sol';
-import './AmountMath.sol';
-import './State.sol';
-import './MaxMinMath.sol';
-import './Converter.sol';
+import "./MulDivMath.sol";
+import "./TwoPower.sol";
+import "./AmountMath.sol";
+import "./State.sol";
+import "./MaxMinMath.sol";
+import "./Converter.sol";
 
 library SwapMathY2XDesire {
 
@@ -85,8 +85,7 @@ library SwapMathY2XDesire {
         uint256 sqrtPricePrPl_96 = LogPowMath.getSqrtPrice(rg.rightPt - rg.leftPt);
         uint160 sqrtPricePrM1_96 = uint160(uint256(rg.sqrtPriceR_96) * TwoPower.Pow96 / rg.sqrtRate_96);
 
-        // div must be > 2^96
-        // because, if
+        // div must be > 2^96 because, if
         //  div <= 2^96
         //  <=>  sqrtPricePrPl_96 - desireX * (sqrtPriceR_96 - sqrtPricePrM1_96) / liquidity <= 2^96 (here, '/' is div of int)
         //  <=>  desireX >= (sqrtPricePrPl_96 - 2^96) * liquidity / (sqrtPriceR_96 - sqrtPricePrM1_96) 
@@ -105,11 +104,11 @@ library SwapMathY2XDesire {
         ret.sqrtLoc_96 = LogPowMath.getSqrtPrice(ret.locPt);
 
         if (ret.locPt == rg.leftPt) {
-            // ret.sqrtLoc_96 = rg.sqrtPriceL_96;
             ret.acquireX = 0;
             ret.costY = 0;
             return ret;
         }
+
         ret.completeLiquidity = false;
         // ret.acquireX <= desireX <= uint128.max
         ret.acquireX = uint128(MaxMinMath.min256(AmountMath.getAmountX(
@@ -120,9 +119,7 @@ library SwapMathY2XDesire {
             rg.sqrtRate_96,
             false
         ), desireX));
-        // if (ret.sqrtLoc_96 < rg.sqrtPriceL_96) {
-        //     ret.sqrtLoc_96 = rg.sqrtPriceL_96;
-        // }
+
         ret.costY = AmountMath.getAmountY(
             rg.liquidity,
             rg.sqrtPriceL_96,
@@ -132,8 +129,8 @@ library SwapMathY2XDesire {
         );
     }
 
-    /// @notice compute amount of tokens exchanged during swapY2XDesireY and some amount values (currX, currY, allX) on final point
-    ///    after this swapping
+    /// @notice Compute amount of tokens exchanged during swapY2XDesireY and some amount values (currX, currY, allX) on final point
+    ///    after this swap.
     /// @param currentState state values containing (currX, currY, allX) of start point
     /// @param rightPt right most point during this swap
     /// @param sqrtRate_96 sqrt(1.0001)
@@ -170,8 +167,7 @@ library SwapMathY2XDesire {
                     retState.sqrtFinalPrice_96 = LogPowMath.getSqrtPrice(rightPt);
                     return retState;
                 }
-                // sqrt(price) + sqrt(price) * (1.0001 - 1) = 
-                // sqrt(price) * 1.0001
+                // sqrt(price) + sqrt(price) * (1.0001 - 1) == sqrt(price) * 1.0001
                 currentState.sqrtPrice_96 = uint160(
                     uint256(currentState.sqrtPrice_96) +
                     uint256(currentState.sqrtPrice_96) * (uint256(sqrtRate_96) - TwoPower.Pow96) / TwoPower.Pow96
@@ -194,6 +190,7 @@ library SwapMathY2XDesire {
         retState.costY += ret.costY;
         retState.acquireX += ret.acquireX;
         desireX -= ret.acquireX;
+
         if (ret.completeLiquidity) {
             retState.finished = (desireX == 0);
             retState.finalPt = rightPt;
@@ -201,11 +198,6 @@ library SwapMathY2XDesire {
         } else {
             uint256 locCostY;
             uint128 locAcquireX;
-            // if (startHasY && ret.locPt == currentState.currentPoint) {
-            //     // get fixed sqrt price to reduce accumulated error
-            //     // because ret.sqrtLoc_96 is computed from sqrtStartPrice * sqrt(1.0001)
-            //     ret.sqrtLoc_96 = LogPowMath.getSqrtPrice(ret.locPt);
-            // }
             (locCostY, locAcquireX, retState.liquidityX) = y2XAtPriceLiquidity(desireX, ret.sqrtLoc_96, currentState.liquidity);
             retState.costY += locCostY;
             retState.acquireX += locAcquireX;

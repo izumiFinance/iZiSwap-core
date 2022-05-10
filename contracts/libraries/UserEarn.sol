@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity >=0.7.3;
 
-import './MulDivMath.sol';
-import './TwoPower.sol';
-import './Converter.sol';
-import './MaxMinMath.sol';
+import "./MulDivMath.sol";
+import "./TwoPower.sol";
+import "./Converter.sol";
+import "./MaxMinMath.sol";
 
 
 library UserEarn {
