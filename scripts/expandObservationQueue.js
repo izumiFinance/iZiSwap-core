@@ -1,6 +1,7 @@
 const { ethers } = require("hardhat");
 
 const contracts = require("./deployed")
+const BigNumber = require('bignumber.js')
 
 const Web3 = require("web3");
 const secret = require('../.secret.js');
