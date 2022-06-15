@@ -79,7 +79,7 @@ async function main() {
 
     const pool = new web3.eth.Contract(poolABI, poolAddress)
 
-    const expandObservationQueueCalling = pool.methods.expandObservationQueueCalling(para.expand)
+    const expandObservationQueueCalling = pool.methods.expandObservationQueue(para.expand)
 
     const gasLimit = await expandObservationQueueCalling.estimateGas()
     console.log('gas limit: ', gasLimit)
