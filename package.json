@@ -9,9 +9,10 @@
     "web3": "^1.6.1"
   },
   "dependencies": {
+    "@nomiclabs/hardhat-etherscan": "^3.0.3",
     "@openzeppelin/contracts": "^4.3.2",
     "@uniswap/v3-core": "^1.0.0",
-    "bignumber.js": "^9.0.1",
+    "bignumber.js": "^9.0.2",
     "hardhat-contract-sizer": "^2.1.1"
   }
 }
