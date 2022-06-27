@@ -44,6 +44,10 @@ module.exports = {
       // gas: 90000000,
       gasPrice: 5000000000,
     },
+    aurora: {
+      url: 'https://mainnet.aurora.dev',
+      accounts: [sk]
+    }
   },
   etherscan: {
     apiKey: apiKey,
