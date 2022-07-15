@@ -34,5 +34,12 @@ module.exports = {
         limitOrderModule: '0x344ADD21b136B09051fb061881eC7971c92cE7f7',
         flashModule: '0x79D175eF5fBe31b5D84B3ee359fcbBB466153E39',
         factory: '0xd7de110Bd452AAB96608ac3750c3730A17993DE0',
+    },
+    aurora: {
+	swapX2YModule: '0xE84e07b192d698C1d51EC775CEAC048BEb7ED20d',
+	swapY2XModule: '0x20ad361dd649D01E66359A7784046024745F34f9',
+	liquidityModule: '0x1a83291532B7C454Be6a8dC8CBfF469af337877B',
+	limitOrderModule: '0x98A684d1960679bd4C090e6f7d8fA82E9b263d4a',
+	flashModule: '0x60EDFf8A1Cbf15345F608c154b5665F3c94f5c8e',
     }
 }
