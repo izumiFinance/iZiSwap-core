@@ -47,6 +47,11 @@ module.exports = {
     aurora: {
       url: 'https://mainnet.aurora.dev',
       accounts: [sk]
+    },
+    auroraTest: {
+      url: 'https://testnet.aurora.dev',
+      accounts: [sk],
+      gasPrice: 5000000000,
     }
   },
   etherscan: {
