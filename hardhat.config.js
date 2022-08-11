@@ -52,6 +52,11 @@ module.exports = {
       url: 'https://testnet.aurora.dev',
       accounts: [sk],
       gasPrice: 5000000000,
+    },
+    etc: {
+      url: 'https://www.ethercluster.com/etc',
+      accounts: [sk],
+      gasPrice: 1100000000,
     }
   },
   etherscan: {
