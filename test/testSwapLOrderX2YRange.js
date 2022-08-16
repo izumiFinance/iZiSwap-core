@@ -2,7 +2,7 @@ const { expect } = require("chai");
 const { ethers } = require("hardhat");
 
 const BigNumber = require('bignumber.js');
-const { getLimOrder, getFeeCharge, getPoolParts} = require('./funcs.js');
+const { getLimOrder, checkLimOrder, getFeeCharge, getPoolParts} = require('./funcs.js');
 
 async function getToken() {
 
@@ -146,15 +146,6 @@ function amountAddFee(amount) {
     return ceil(amount.times(1000).div(997));
 }
 
-async function checkLimOrder(eSellingX, eAccEarnX, eSellingY, eAccEarnY, eEarnX, eEarnY, poolAddr, pt) {
-    const {sellingX, accEarnX, sellingY, accEarnY, earnX, earnY} = await getLimOrder(poolAddr, pt);
-    expect(sellingX.toFixed(0)).to.equal(eSellingX.toFixed(0));
-    expect(accEarnX.toFixed(0)).to.equal(eAccEarnX.toFixed(0));
-    expect(sellingY.toFixed(0)).to.equal(eSellingY.toFixed(0));
-    expect(accEarnY.toFixed(0)).to.equal(eAccEarnY.toFixed(0));
-    expect(earnX.toFixed(0)).to.equal(eEarnX.toFixed(0));
-    expect(earnY.toFixed(0)).to.equal(eEarnY.toFixed(0));
-}
 async function checkStatusVal(eVal, poolAddr, pt) {
     val = await getStatusVal(poolAddr, pt);
     expect(eVal).to.equal(val);
@@ -362,55 +353,99 @@ describe("swap", function () {
 
     // check limit order
     await checkLimOrder(
-        BigNumber('100000000'),
-        BigNumber('0'),
-        BigNumber("0"),
-        BigNumber("0"),
-        BigNumber("0"),
-        BigNumber("0"),
+        '100000000',
+        '0',
+        '0',
+
+        '0',
+        '0',
+        '0',
+
+        '0',
+        '0',
+
+        '0',
+        '0',
+
         poolAddr,
         5150
     );
     await checkLimOrder(
-        BigNumber('200000000'),
-        BigNumber('0'),
-        BigNumber("0"),
-        BigNumber("0"),
-        BigNumber("0"),
-        BigNumber("0"),
+        '200000000',
+        '0',
+        '0',
+
+        '0',
+        '0',
+        '0',
+
+        '0',
+        '0',
+
+        '0',
+        '0',
         poolAddr,
         5100
     );
     await checkLimOrder(
-        BigNumber('0'),
-        BigNumber(costX_5050_Lim),
-        BigNumber("0"),
-        BigNumber("0"),
-        BigNumber(costX_5050_Lim),
-        BigNumber("0"),
+
+        "0",
+        costX_5050_Lim.toFixed(0),
+        costX_5050_Lim.toFixed(0),
+
+        "0",
+        "0",
+        '0',
+
+        "0",
+        "0",
+
+        costX_5050_Lim.toFixed(0),
+        "0",
+
         poolAddr,
         5050
     );
+    
     await checkLimOrder(
-        BigNumber('0'),
-        BigNumber(costX_4950_Lim),
-        BigNumber("0"),
-        BigNumber("0"),
-        BigNumber(costX_4950_Lim),
-        BigNumber("0"),
+
+        "0",
+        costX_4950_Lim.toFixed(0),
+        costX_4950_Lim.toFixed(0),
+
+        "0",
+        "0",
+        '0',
+
+        "0",
+        "0",
+
+        costX_4950_Lim.toFixed(0),
+        "0",
+
         poolAddr,
         4950
     );
+    
     await checkLimOrder(
-        BigNumber('0'),
-        BigNumber('0'),
-        BigNumber("500000000"),
-        BigNumber("0"),
-        BigNumber("0"),
-        BigNumber('0'),
+        '0',
+        '0',
+        '0',
+
+        '500000000',
+        '0',
+        '0',
+
+        '0',
+        '0',
+
+        '0',
+        '0',
+
         poolAddr,
         4850
     );
+
     // check status val after swap
     // 1: only endpt of liquidity
     // 2: only limorder (sellingX>0 || sellingY > 0)

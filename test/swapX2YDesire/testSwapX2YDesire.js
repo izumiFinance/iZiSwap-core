@@ -420,7 +420,24 @@ describe("swap", function () {
         expect(state3.liquidity).to.equal('1000000')
         expect(state3.liquidityX).to.equal('1000000')
         expect(state3.currentPoint).to.equal('-250')
-        await checkLimOrder('0', costXAtM250_3, '8000000000000000000', '0', costXAtM250_3, '0', poolAddr, -250);
+        await checkLimOrder(
+            '0', 
+            costXAtM250_3, 
+            '0',
+
+            '8000000000000000000', 
+            '0', 
+            '0',
+            
+            costXAtM250_3, 
+            '0', 
+            
+            '0',
+            '0',
+            
+            poolAddr, 
+            -250
+        );
 
         // swap4
 
@@ -486,7 +503,24 @@ describe("swap", function () {
         expect(state0.liquidity).to.equal('1000000')
         expect(state0.liquidityX).to.equal('1000000')
         expect(state0.currentPoint).to.equal('2000')
-        await checkLimOrder('10000000000000000000', '0', '0', '0', '0', '0', poolAddr, 3000);
+        await checkLimOrder(
+            '10000000000000000000', 
+            '0', 
+            '0',
+
+            '0', 
+            '0', 
+            '0',
+
+            '0', 
+            '0', 
+
+            '0',
+            '0',
+
+            poolAddr, 
+            3000
+        );
 
         // swap1
         const costX_0_2000 = xInRange('2000000', 0, 2000, '1.0001', true);
@@ -527,7 +561,23 @@ describe("swap", function () {
         expect(swap2.costX).to.equal(getSum([costX_M4000_M3000_WithFee, costXAtM3000_WithFee, costX_M5000_M4000_WithFee]));
         expect(swap2.acquireY).to.equal(getSum([acquireY_M4000_M3000, acquireYAtM3000, acquireY_M5000_M4000]));
 
-        await checkLimOrder('0', costXAtM3000, '0', '0', costXAtM3000, '0', poolAddr, -3000)
+        await checkLimOrder(
+            '0', 
+            costXAtM3000, 
+            costXAtM3000,
+            
+            '0', 
+            '0', 
+            '0',
+
+            '0',
+            '0',
+            
+            costXAtM3000, 
+            '0', 
+            poolAddr, 
+            -3000
+        )
 
 
         // swap3
@@ -579,7 +629,24 @@ describe("swap", function () {
         expect(state5.liquidityX).to.equal('2000000')
         expect(state5.currentPoint).to.equal('-8000')
 
-        await checkLimOrder('0', costXAtM8000, '0', '0', costXAtM8000, '0', poolAddr, -8000)
+        await checkLimOrder(
+            '0', 
+            costXAtM8000, 
+            costXAtM8000,
+
+            '0', 
+            '0', 
+            '0',
+
+            '0',
+            '0',
+
+            costXAtM8000, 
+            '0', 
+
+            poolAddr, 
+            -8000
+        )
     });
 
     
@@ -618,7 +685,13 @@ describe("swap", function () {
         expect(state0.liquidity).to.equal('1000000')
         expect(state0.liquidityX).to.equal('1000000')
         expect(state0.currentPoint).to.equal('1000')
-        await checkLimOrder('0', costXAt1000, '0', '0', costXAt1000, '0', poolAddr, 1000);
+        await checkLimOrder(
+            '0', costXAt1000, costXAt1000,
+            
+            '0', '0', '0',
+            '0', '0',
+            costXAt1000, '0', 
+            poolAddr, 1000);
         
         // swap1
         const acquireYAtM3000 = '10000000000000000000';
@@ -645,7 +718,12 @@ describe("swap", function () {
         expect(state1.liquidity).to.equal('2000000')
         expect(state1.liquidityX).to.equal('2000000')
         expect(state1.currentPoint).to.equal('-3000')
-        await checkLimOrder('0', costXAtM3000, '0', '0', costXAtM3000, '0', poolAddr, -3000);
+        await checkLimOrder(
+            '0', costXAtM3000, costXAtM3000,
+            '0', '0', '0',
+            '0', '0',
+            costXAtM3000, '0', 
+            poolAddr, -3000);
 
         // swap2
         const acquireYAtM5000 = '10000000000000000000';
@@ -664,7 +742,11 @@ describe("swap", function () {
         expect(state2.liquidity).to.equal('2000000')
         expect(state2.liquidityX).to.equal('2000000')
         expect(state2.currentPoint).to.equal('-5000')
-        await checkLimOrder('0', costXAtM5000, '0', '0', costXAtM5000, '0', poolAddr, -5000);
+        await checkLimOrder(
+            '0', costXAtM5000, costXAtM5000,
+            '0', '0', '0',
+            '0', '0',
+            costXAtM5000, '0', poolAddr, -5000);
 
 
         // swap3
@@ -684,7 +766,12 @@ describe("swap", function () {
         expect(state3.liquidity).to.equal('2000000')
         expect(state3.liquidityX).to.equal('2000000')
         expect(state3.currentPoint).to.equal('-6000')
-        await checkLimOrder('0', costXAtM6000, '0', '0', costXAtM6000, '0', poolAddr, -6000);
+        await checkLimOrder(
+            '0', costXAtM6000, costXAtM6000,
+            '0', '0', '0',
+            '0', '0', 
+            costXAtM6000, '0', 
+            poolAddr, -6000);
 
 
         // swap4
@@ -705,7 +792,13 @@ describe("swap", function () {
         expect(state4.liquidity).to.equal('2000000')
         expect(state4.liquidityX).to.equal('2000000')
         expect(state4.currentPoint).to.equal('-8000')
-        await checkLimOrder('0', '0', '10000000000000000000', '0', '0', '0', poolAddr, -8000);
+        await checkLimOrder(
+            '0', '0', '0',
+            '10000000000000000000', '0', '0',
+            '0', '0', 
+            '0', '0',
+            poolAddr, -8000
+        );
 
         // swap5
 
@@ -721,7 +814,13 @@ describe("swap", function () {
         expect(state5.liquidity).to.equal('2000000')
         expect(state5.liquidityX).to.equal('2000000')
         expect(state5.currentPoint).to.equal('-8000')
-        await checkLimOrder('0', costXAtM8000, '2000000000000000000', '0', costXAtM8000, '0', poolAddr, -8000);
+        await checkLimOrder(
+            '0', costXAtM8000, '0',
+            '2000000000000000000', '0', '0',
+            costXAtM8000, '0', 
+            '0', '0',
+            poolAddr, -8000
+        );
     });
 
 
@@ -791,7 +890,13 @@ describe("swap", function () {
         expect(state1.liquidity).to.equal('2000000')
         expect(state1.liquidityX).to.equal('10000')
         expect(state1.currentPoint).to.equal('-10000')
-        await checkLimOrder('0', costXAt2350, '0', '0', costXAt2350, '0', poolAddr, 2350);
+        await checkLimOrder(
+            '0', costXAt2350, costXAt2350,
+            '0', '0', '0',
+            '0', '0',
+            costXAt2350, '0', 
+            poolAddr, 2350
+        );
 
         // swap2
 
