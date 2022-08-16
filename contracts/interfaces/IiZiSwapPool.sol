@@ -347,20 +347,28 @@ interface IiZiSwapPool {
     /// @notice LimitOrder info on a given point.
     /// @param point the given point 
     /// @return sellingX total amount of tokenX selling on the point
-    /// @return earnY total amount of unclaimed earned tokenY
+    /// @return earnY total amount of unclaimed earned tokenY for unlegacy sellingX
     /// @return accEarnY total amount of earned tokenY(via selling tokenX) by all users at this point as of the last swap
+    /// @return legacyAccEarnY latest recorded 'accEarnY' value when sellingX is clear (legacy)
+    /// @return legacyEarnY total amount of unclaimed earned tokenY for legacy (cleared during swap) sellingX
     /// @return sellingY total amount of tokenYselling on the point
-    /// @return earnX total amount of unclaimed earned tokenX
+    /// @return earnX total amount of unclaimed earned tokenX for unlegacy sellingY
+    /// @return legacyEarnX total amount of unclaimed earned tokenX for legacy (cleared during swap) sellingY
     /// @return accEarnX total amount of earned tokenX(via selling tokenY) by all users at this point as of the last swap
+    /// @return legacyAccEarnX latest recorded 'accEarnX' value when sellingY is clear (legacy)
     function limitOrderData(int24 point)
         external view
         returns(
             uint128 sellingX,
             uint128 earnY,
             uint256 accEarnY,
+            uint256 legacyAccEarnY,
+            uint128 legacyEarnY,
             uint128 sellingY,
             uint128 earnX,
-            uint256 accEarnX
+            uint128 legacyEarnX,
+            uint256 accEarnX,
+            uint256 legacyAccEarnX
         );
     
     /// @notice Query infomation about a point whether has limit order or is an liquidity's endpoint.
