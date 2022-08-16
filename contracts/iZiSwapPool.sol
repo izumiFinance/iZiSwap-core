@@ -5,6 +5,7 @@ import "./interfaces/IiZiSwapPool.sol";
 import "./interfaces/IiZiSwapFactory.sol";
 import "./interfaces/IiZiSwapFlashCallback.sol";
 import "./interfaces/IiZiSwapCallback.sol";
+import "./interfaces/IOwnable.sol";
 
 import "./libraries/Liquidity.sol";
 import "./libraries/Point.sol";
@@ -101,7 +102,7 @@ contract iZiSwapPool is IiZiSwapPool {
     address private flashModule;
 
     /// @notice percent to charge from miner's fee
-    uint24 public immutable override feeChargePercent = 50;
+    uint24 public override feeChargePercent;
 
     modifier lock() {
         require(!state.locked, 'LKD');
@@ -166,6 +167,7 @@ contract iZiSwapPool is IiZiSwapPool {
 
         (state.observationQueueLen, state.observationNextQueueLen) = observations.init(uint32(block.timestamp));
         state.observationCurrentIndex = 0;
+        feeChargePercent = 50;
     }
 
     function balanceX() private view returns (uint256) {
@@ -525,6 +527,14 @@ contract iZiSwapPool is IiZiSwapPool {
         TokenTransfer.transferToken(tokenY, msg.sender, totalFeeYCharged);
         totalFeeXCharged = 0;
         totalFeeYCharged = 0;
+    }
+
+    /// @inheritdoc IiZiSwapPool
+    function modifyFeeChargePercent(uint24 newFeeChargePercent) external override noDelegateCall lock {
+        require(msg.sender == IOwnable(factory).owner(), "NON");
+        require(newFeeChargePercent >= 0, "FP0");
+        require(newFeeChargePercent <= 100, "FP0");
+        feeChargePercent = newFeeChargePercent;
     }
 
     /// @inheritdoc IiZiSwapPool

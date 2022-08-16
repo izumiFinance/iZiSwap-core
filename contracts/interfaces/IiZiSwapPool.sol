@@ -468,5 +468,9 @@ interface IiZiSwapPool {
 
     /// @notice Collect charged fee, only factory's chargeReceiver can call.
     function collectFeeCharged() external;
+
+    /// @notice modify 'feeChargePercent', only owner has authority.
+    /// @param newFeeChargePercent new value of feeChargePercent, a nature number range in [0, 100], 
+    function modifyFeeChargePercent(uint24 newFeeChargePercent) external;
     
 }
