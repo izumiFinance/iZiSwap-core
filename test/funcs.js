@@ -108,9 +108,10 @@ async function checkLimOrder(
 ) {
     const {sellingX, accEarnX, sellingY, accEarnY, earnX, earnY, legacyEarnX, legacyAccEarnX, legacyEarnY, legacyAccEarnY} = await getLimOrder(poolAddr, pt);
     expect(sellingX.toFixed(0)).to.equal(eSellingX);
-
+    if (eAccEarnX)
     expect(accEarnX.toFixed(0)).to.equal(eAccEarnX);
     expect(sellingY.toFixed(0)).to.equal(eSellingY);
+    if (eAccEarnY)
     expect(accEarnY.toFixed(0)).to.equal(eAccEarnY);
     if (eEarnX)
     expect(earnX.toFixed(0)).to.equal(eEarnX);
@@ -120,7 +121,9 @@ async function checkLimOrder(
     expect(legacyEarnX.toFixed(0)).to.equal(eLegacyEarnX)
     if (eLegacyEarnY)
     expect(legacyEarnY.toFixed(0)).to.equal(eLegacyEarnY)
+    if (eLegacyAccEarnX)
     expect(legacyAccEarnX.toFixed(0)).to.equal(eLegacyAccEarnX)
+    if (eLegacyAccEarnY)
     expect(legacyAccEarnY.toFixed(0)).to.equal(eLegacyAccEarnY)
 }
 
