@@ -102,7 +102,7 @@ contract LimitOrderModule {
     address private flashModule;
 
     /// @notice percent to charge from miner's fee
-    uint24 public immutable feeChargePercent = 50;
+    uint24 public feeChargePercent;
 
     function balanceX() private view returns (uint256) {
         (bool success, bytes memory data) =
