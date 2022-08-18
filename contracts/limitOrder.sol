@@ -121,28 +121,44 @@ contract LimitOrderModule {
     /// Delegate call implementation for IiZiSwapPool#assignLimOrderEarnY.
     function assignLimOrderEarnY(
         int24 point,
-        uint128 assignY
+        uint128 assignY,
+        bool fromLegacy
     ) external returns (uint128 actualAssignY) {
         actualAssignY = assignY;
         UserEarn.Data storage ue = userEarnY.get(msg.sender, point);
-        if (actualAssignY > ue.earn) {
-            actualAssignY = ue.earn;
+        if (fromLegacy) {
+            if (actualAssignY > ue.legacyEarn) {
+                actualAssignY = ue.legacyEarn;
+            }
+            ue.legacyEarn -= actualAssignY;
+        } else {
+            if (actualAssignY > ue.earn) {
+                actualAssignY = ue.earn;
+            }
+            ue.earn -= actualAssignY;
         }
-        ue.earn -= actualAssignY;
         ue.earnAssign += actualAssignY;
     }
 
     /// Delegate call implementation for IiZiSwapPool#assignLimOrderEarnX.
     function assignLimOrderEarnX(
         int24 point,
-        uint128 assignX
+        uint128 assignX,
+        bool fromLegacy
     ) external returns (uint128 actualAssignX) {
         actualAssignX = assignX;
         UserEarn.Data storage ue = userEarnX.get(msg.sender, point);
-        if (actualAssignX > ue.earn) {
-            actualAssignX = ue.earn;
+        if (fromLegacy) {
+            if (actualAssignX > ue.legacyEarn) {
+                actualAssignX = ue.legacyEarn;
+            }
+            ue.legacyEarn -= actualAssignX;
+        } else {
+            if (actualAssignX > ue.earn) {
+                actualAssignX = ue.earn;
+            }
+            ue.earn -= actualAssignX;
         }
-        ue.earn -= actualAssignX;
         ue.earnAssign += actualAssignX;
     }
 
@@ -150,13 +166,14 @@ contract LimitOrderModule {
     function decLimOrderWithX(
         int24 point,
         uint128 deltaX
-    ) external returns (uint128 actualDeltaX) {
+    ) external returns (uint128 actualDeltaX, uint256 legacyAccEarn) {
         require(point % pointDelta == 0, "PD");
 
         UserEarn.Data storage ue = userEarnY.get(msg.sender, point);
         LimitOrder.Data storage pointOrder = limitOrderData[point];
         uint160 sqrtPrice_96 = LogPowMath.getSqrtPrice(point);
-        if (pointOrder.legacyAccEarnY > ue.lastAccEarn) {
+        legacyAccEarn = pointOrder.legacyAccEarnY;
+        if (legacyAccEarn > ue.lastAccEarn) {
             pointOrder.legacyEarnY = ue.updateLegacyOrder(0, pointOrder.accEarnY, sqrtPrice_96, pointOrder.legacyEarnY, true);
         } else {
             (actualDeltaX, pointOrder.earnY) = ue.dec(deltaX, pointOrder.accEarnY, sqrtPrice_96, pointOrder.earnY, true);
@@ -177,13 +194,14 @@ contract LimitOrderModule {
     function decLimOrderWithY(
         int24 point,
         uint128 deltaY
-    ) external returns (uint128 actualDeltaY) {
+    ) external returns (uint128 actualDeltaY, uint256 legacyAccEarn) {
         require(point % pointDelta == 0, "PD");
 
         UserEarn.Data storage ue = userEarnX.get(msg.sender, point);
         LimitOrder.Data storage pointOrder = limitOrderData[point];
         uint160 sqrtPrice_96 = LogPowMath.getSqrtPrice(point);
-        if (pointOrder.legacyAccEarnX > ue.lastAccEarn) {
+        legacyAccEarn = pointOrder.legacyAccEarnX;
+        if (legacyAccEarn > ue.lastAccEarn) {
             pointOrder.legacyEarnX = ue.updateLegacyOrder(0, pointOrder.accEarnX, sqrtPrice_96, pointOrder.legacyEarnX, false);
         } else {
             (actualDeltaY, pointOrder.earnX) = ue.dec(deltaY, pointOrder.accEarnX, sqrtPrice_96, pointOrder.earnX, false);

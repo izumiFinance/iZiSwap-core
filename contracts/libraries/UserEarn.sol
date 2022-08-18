@@ -17,10 +17,12 @@ library UserEarn {
         uint128 sellingRemain;
         // uncollected decreased token
         uint128 sellingDec;
-        // unassigned earned token
+        // unassigned and unlegacy earned token
         // earned token before collected need to be assigned
         uint128 earn;
-        // assigned but uncollected earned token
+        // unassigned and legacy earned token
+        uint128 legacyEarn;
+        // assigned but uncollected earned token (both unlegacy and legacy)
         uint128 earnAssign;
     }
     
@@ -134,7 +136,7 @@ library UserEarn {
                 earn = totalLegacyEarn;
             }
             self.sellingRemain = 0;
-            self.earn += uint128(earn);
+            self.legacyEarn += uint128(earn);
         }
         self.lastAccEarn = currAccEarn;
         totalLegacyEarnRemain = totalLegacyEarn - uint128(earn);
