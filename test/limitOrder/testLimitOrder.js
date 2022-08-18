@@ -172,7 +172,7 @@ function convertUserEarnFromBC(userEarnBC) {
         lastAccEarn: userEarnBC.lastAccEarn.toString(),
         sellingRemain: userEarnBC.sellingRemain.toString(),
         sellingDesc: userEarnBC.sellingDesc.toString(),
-        earn: userEarnBC.earn.toString(),
+        earn: stringAdd(userEarnBC.earn.toString(), userEarnBC.legacyEarn.toString()),
         earnAssign: userEarnBC.earnAssign.toString(),
     }
 }

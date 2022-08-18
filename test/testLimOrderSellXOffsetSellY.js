@@ -90,8 +90,9 @@ function list2BigNumber(valueList) {
     return bigList;
 }
 async function getUserEarn(testAddLimOrder, poolAddr, sellerAddr, pt, sellXEarnY) {
-    [lastAccEarn, sellingRemain, sellingDesc, earn, earnAssign] = await testAddLimOrder.getEarn(poolAddr, sellerAddr, pt, sellXEarnY);
-    return list2BigNumber([lastAccEarn, sellingRemain, sellingDesc, earn, earnAssign]);
+    [lastAccEarn, sellingRemain, sellingDesc, earn, legacyEarn, earnAssign] = await testAddLimOrder.getEarn(poolAddr, sellerAddr, pt, sellXEarnY);
+    const totEarn = new BigNumber(earn._hex).plus(legacyEarn._hex)
+    return list2BigNumber([lastAccEarn, sellingRemain, sellingDesc, {_hex: totEarn.toFixed(0)}, earnAssign]);
 }
 async function checkUserEarn(
     eLastAccEarn, eSellingRemain, eSellingDesc, eEarn, eEarnAssign,

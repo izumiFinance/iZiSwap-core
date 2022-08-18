@@ -169,6 +169,7 @@ function convertUserEarnFromBC(userEarnBC) {
         sellingRemain: userEarnBC.sellingRemain.toString(),
         sellingDesc: userEarnBC.sellingDesc.toString(),
         earn: userEarnBC.earn.toString(),
+        legacyEarn: userEarnBC.legacyEarn.toString(),
         earnAssign: userEarnBC.earnAssign.toString(),
     }
 }
@@ -197,6 +198,7 @@ async function decLimOrderWithY(seller, testAddLimOrder, deltaY, point, poolAddr
     const sellingReduce = stringMinus(earnBefore.sellingRemain, earnAfter.sellingRemain)
     const actualDec = stringMinus(earnAfter.sellingDesc, earnBefore.sellingDesc)
     const earn = stringMinus(earnAfter.earn, earnBefore.earn)
+    const legacyEarn = stringMinus(earnAfter.legacyEarn, earnBefore.legacyEarn)
     const sold = stringMinus(sellingReduce, actualDec)
     return {
         earnBefore,
@@ -204,6 +206,7 @@ async function decLimOrderWithY(seller, testAddLimOrder, deltaY, point, poolAddr
         sellingReduce,
         actualDec,
         earn,
+        legacyEarn,
         sold
     }
 }
@@ -218,10 +221,12 @@ async function addLimOrderWithYReturnDelta(tokenX, tokenY, seller, testAddLimOrd
     );
     const earnAfter = await getEarnX(testAddLimOrder, poolAddr, seller.address, point)
     const earn = stringMinus(earnAfter.earn, earnBefore.earn)
+    const legacyEarn = stringMinus(earnAfter.legacyEarn, earnBefore.legacyEarn)
     return {
         earnBefore,
         earnAfter,
         earn,
+        legacyEarn,
     }
 }
 
@@ -235,10 +240,12 @@ async function addLimOrderWithXReturnDelta(tokenX, tokenY, seller, testAddLimOrd
     );
     const earnAfter = await getEarnY(testAddLimOrder, poolAddr, seller.address, point)
     const earn = stringMinus(earnAfter.earn, earnBefore.earn)
+    const legacyEarn = stringMinus(earnAfter.legacyEarn, earnBefore.legacyEarn)
     return {
         earnBefore,
         earnAfter,
         earn,
+        legacyEarn,
     }
 }
 async function addLimOrderWithY(tokenX, tokenY, seller, testAddLimOrder, amountY, point) {
@@ -268,6 +275,7 @@ async function decLimOrderWithX(seller, testAddLimOrder, deltaX, point, poolAddr
     const sellingReduce = stringMinus(earnBefore.sellingRemain, earnAfter.sellingRemain)
     const actualDec = stringMinus(earnAfter.sellingDesc, earnBefore.sellingDesc)
     const earn = stringMinus(earnAfter.earn, earnBefore.earn)
+    const legacyEarn = stringMinus(earnAfter.legacyEarn, earnBefore.legacyEarn)
     const sold = stringMinus(sellingReduce, actualDec)
     return {
         earnBefore,
@@ -275,6 +283,7 @@ async function decLimOrderWithX(seller, testAddLimOrder, deltaX, point, poolAddr
         sellingReduce,
         actualDec,
         earn,
+        legacyEarn,
         sold
     }
 }
@@ -513,12 +522,14 @@ describe("swap", function () {
         const s5_dec_700_4 = await decLimOrderWithY(s5, testAddLimOrder, '0', 700, poolAddr)
         const s5_expect_earnX_4 = earnRemainAfterS4Dec_4
         expect(s5_dec_700_4.earn).to.equal(s5_expect_earnX_4)
+        expect(s5_dec_700_4.legacyEarn).to.equal('0')
         expect(s5_dec_700_4.actualDec).to.equal('0')
         const s5_expect_sold_4 = getCostYFromXAt((await logPowMath.getSqrtPrice(700)).toString(), s5_expect_earnX_4)
         expect(s5_dec_700_4.sold).to.equal(s5_expect_sold_4)
 
         const s5_uex_4 = await getEarnX(testAddLimOrder, poolAddr, s5.address, 700)
         expect(s5_uex_4.earn).to.equal(s5_expect_earnX_4)
+        expect(s5_uex_4.legacyEarn).to.equal('0')
         expect(s5_uex_4.sellingRemain).to.equal(stringMinus('100000000000000000000', s5_dec_700_4.sold))
         expect(s5_uex_4.sellingDesc).to.equal('0')
 
@@ -536,28 +547,32 @@ describe("swap", function () {
             '200000000000000000000', 700, poolAddr)
         // const s3_dec_700_4 = await decLimOrderWithY(s3, testAddLimOrder, '0', 700, poolAddr)
         const s3_expect_earnX_4 = getEarnXFromYAt((await logPowMath.getSqrtPrice(700)).toString(), '100000000000000000000')
-        expect(s3_add_700_4.earn).to.equal(s3_expect_earnX_4)
+        expect(s3_add_700_4.earn).to.equal('0')
+        expect(s3_add_700_4.legacyEarn).to.equal(s3_expect_earnX_4)
         expect(s3_add_700_4.earnAfter.sellingRemain).to.equal('200000000000000000000')
         expect(s3_add_700_4.earnAfter.sellingDesc).to.equal(s3_dec_700_1.actualDec)
 
         const s1_dec_700_4 = await decLimOrderWithY(s1, testAddLimOrder, '0', 700, poolAddr)
         const s1_expect_earnX_4 = getEarnXFromYAt((await logPowMath.getSqrtPrice(700)).toString(), '100000000000000000000')
-        expect(s1_dec_700_4.earn).to.equal(s1_expect_earnX_4)
+        expect(s1_dec_700_4.earn).to.equal('0')
+        expect(s1_dec_700_4.legacyEarn).to.equal(s1_expect_earnX_4)
         expect(s1_dec_700_4.actualDec).to.equal('0')
         expect(s1_dec_700_4.sold).to.equal('100000000000000000000')
 
         const s2_dec_700_4 = await decLimOrderWithY(s2, testAddLimOrder, '0', 700, poolAddr)
         const s2_expect_earnX_4 = getEarnXFromYAt((await logPowMath.getSqrtPrice(700)).toString(), '200000000000000000000')
-        expect(s2_dec_700_4.earn).to.equal(s2_expect_earnX_4)
+        expect(s2_dec_700_4.earn).to.equal('0')
+        expect(s2_dec_700_4.legacyEarn).to.equal(s2_expect_earnX_4)
         expect(s2_dec_700_4.actualDec).to.equal('0')
         expect(s2_dec_700_4.sold).to.equal('200000000000000000000')
 
         const s2_dec_700_4_2nd = await decLimOrderWithY(s2, testAddLimOrder, '200000000000000000000', 700, poolAddr)
-        expect(s2_dec_700_4_2nd.earn).to.equal('0')
+        expect(s2_dec_700_4_2nd.earn).to.equal('0')        
+        expect(s2_dec_700_4_2nd.legacyEarn).to.equal('0')
         expect(s2_dec_700_4_2nd.actualDec).to.equal('0')
         expect(s2_dec_700_4_2nd.sold).to.equal('0')
 
-        const legacyEarnRemain_4 = getSum([costXAt700_2, costXAt700_3, '-' + getSum([s1_dec_700_4.earn, s2_dec_700_4.earn, s3_add_700_4.earn])]);
+        const legacyEarnRemain_4 = getSum([costXAt700_2, costXAt700_3, '-' + getSum([s1_dec_700_4.legacyEarn, s2_dec_700_4.legacyEarn, s3_add_700_4.legacyEarn])]);
 
         await checkLimOrder(
             '0', 
@@ -739,28 +754,32 @@ describe("swap", function () {
             '200000000000000000000', 700, poolAddr)
         // const s3_dec_700_4 = await decLimOrderWithY(s3, testAddLimOrder, '0', 700, poolAddr)
         const s3_expect_earnY_8 = getEarnYFromXAt((await logPowMath.getSqrtPrice(700)).toString(), '100000000000000000000')
-        expect(s3_add_700_8.earn).to.equal(s3_expect_earnY_8)
+        expect(s3_add_700_8.earn).to.equal('0')
+        expect(s3_add_700_8.legacyEarn).to.equal(s3_expect_earnY_8)
         expect(s3_add_700_8.earnAfter.sellingRemain).to.equal('200000000000000000000')
         expect(s3_add_700_8.earnAfter.sellingDesc).to.equal(s3_dec_700_5.actualDec)
 
         const s1_dec_700_8 = await decLimOrderWithX(s1, testAddLimOrder, '0', 700, poolAddr)
         const s1_expect_earnY_8 = getEarnYFromXAt((await logPowMath.getSqrtPrice(700)).toString(), '100000000000000000000')
-        expect(s1_dec_700_8.earn).to.equal(s1_expect_earnY_8)
+        expect(s1_dec_700_8.earn).to.equal('0')
+        expect(s1_dec_700_8.legacyEarn).to.equal(s1_expect_earnY_8)
         expect(s1_dec_700_8.actualDec).to.equal('0')
         expect(s1_dec_700_8.sold).to.equal('100000000000000000000')
 
         const s2_dec_700_8 = await decLimOrderWithX(s2, testAddLimOrder, '0', 700, poolAddr)
         const s2_expect_earnY_8 = getEarnYFromXAt((await logPowMath.getSqrtPrice(700)).toString(), '200000000000000000000')
-        expect(s2_dec_700_8.earn).to.equal(s2_expect_earnY_8)
+        expect(s2_dec_700_8.earn).to.equal('0')
+        expect(s2_dec_700_8.legacyEarn).to.equal(s2_expect_earnY_8)
         expect(s2_dec_700_8.actualDec).to.equal('0')
         expect(s2_dec_700_8.sold).to.equal('200000000000000000000')
 
         const s2_dec_700_8_2nd = await decLimOrderWithX(s2, testAddLimOrder, '200000000000000000000', 700, poolAddr)
         expect(s2_dec_700_8_2nd.earn).to.equal('0')
+        expect(s2_dec_700_8_2nd.legacyEarn).to.equal('0')
         expect(s2_dec_700_8_2nd.actualDec).to.equal('0')
         expect(s2_dec_700_8_2nd.sold).to.equal('0')
 
-        const legacyEarnYRemain_8 = getSum([costYAt700_6, costYAt700_7, '-' + getSum([s1_dec_700_8.earn, s2_dec_700_8.earn, s3_add_700_8.earn])]);
+        const legacyEarnYRemain_8 = getSum([costYAt700_6, costYAt700_7, '-' + getSum([s1_dec_700_8.legacyEarn, s2_dec_700_8.legacyEarn, s3_add_700_8.legacyEarn])]);
 
         await checkLimOrder(
             '300000000000000000000', 
