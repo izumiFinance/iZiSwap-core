@@ -51,10 +51,10 @@ module.exports = {
 	flashModule: '0x29b66280F0Ea5F5DfbD7C94D560FC060575360cd',
     },
     etc: {
-        swapY2XModule: '0xF4efDB5A1E852f78e807fAE7100B1d38351e38c7',
-        swapX2YModule: '0x32D02Fc7722E81F6Ac60B87ea8B4b63a52Ad2b55',
-        liquidityModule: '0xe96526e92ee57bBD468DA1721987aa988b008768',
-        limitOrderModule: '0xbD6abA1Ef82A4cD6e15CB05e95f433ef48dfb5df',
-        flashModule: '0x4d4673745AAC664eFB9758fdd571F40d78a87bfe',
+        swapY2XModule: '0x6a7CDD0CC87ec02ed85c196e57BaBe1bc0Acd6f2',
+        swapX2YModule: '0x4a41EbEa62E7aB70413356D30DF73cA803aaE41c',
+        liquidityModule: '0x45e5F26451CDB01B0fA1f8582E0aAD9A6F27C218',
+        limitOrderModule: '0x611575eE1fbd4F7915D0eABCC518eD396fF78F0c',
+        flashModule: '0xcA7e21764CD8f7c1Ec40e651E25Da68AeD096037',
     }
 }
