@@ -176,7 +176,7 @@ contract LimitOrderModule {
         if (legacyAccEarn > ue.lastAccEarn) {
             pointOrder.legacyEarnY = ue.updateLegacyOrder(0, pointOrder.accEarnY, sqrtPrice_96, pointOrder.legacyEarnY, true);
         } else {
-            (actualDeltaX, pointOrder.earnY) = ue.dec(deltaX, pointOrder.accEarnY, sqrtPrice_96, pointOrder.earnY, true);
+            (actualDeltaX, pointOrder.earnY) = ue.decUnlegacyOrder(deltaX, pointOrder.accEarnY, sqrtPrice_96, pointOrder.earnY, true);
             pointOrder.sellingX -= actualDeltaX;
             
             if (actualDeltaX > 0 && pointOrder.sellingX == 0) {
@@ -204,7 +204,7 @@ contract LimitOrderModule {
         if (legacyAccEarn > ue.lastAccEarn) {
             pointOrder.legacyEarnX = ue.updateLegacyOrder(0, pointOrder.accEarnX, sqrtPrice_96, pointOrder.legacyEarnX, false);
         } else {
-            (actualDeltaY, pointOrder.earnX) = ue.dec(deltaY, pointOrder.accEarnX, sqrtPrice_96, pointOrder.earnX, false);
+            (actualDeltaY, pointOrder.earnX) = ue.decUnlegacyOrder(deltaY, pointOrder.accEarnX, sqrtPrice_96, pointOrder.earnX, false);
 
             pointOrder.sellingY -= actualDeltaY;
             
@@ -263,7 +263,7 @@ contract LimitOrderModule {
         if (ue.lastAccEarn < pointOrder.legacyAccEarnY) {
             pointOrder.legacyEarnY = ue.updateLegacyOrder(orderX, pointOrder.accEarnY, sqrtPrice_96, pointOrder.legacyEarnY, true);
         } else {
-            pointOrder.earnY = ue.add(orderX, pointOrder.accEarnY, sqrtPrice_96, pointOrder.earnY, true);
+            pointOrder.earnY = ue.addUnlegacyOrder(orderX, pointOrder.accEarnY, sqrtPrice_96, pointOrder.earnY, true);
         }
         ue.earnAssign = ue.earnAssign + acquireY;
         
@@ -337,7 +337,7 @@ contract LimitOrderModule {
         if (pointOrder.legacyAccEarnX > ue.lastAccEarn) {
             pointOrder.legacyEarnX = ue.updateLegacyOrder(orderY, pointOrder.accEarnX, sqrtPrice_96, pointOrder.legacyEarnX, false);
         } else {
-            pointOrder.earnX = ue.add(orderY, pointOrder.accEarnX, sqrtPrice_96, pointOrder.earnX, false);
+            pointOrder.earnX = ue.addUnlegacyOrder(orderY, pointOrder.accEarnX, sqrtPrice_96, pointOrder.earnX, false);
         }
         ue.earnAssign = ue.earnAssign + acquireX;
 

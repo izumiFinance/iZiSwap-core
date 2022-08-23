@@ -34,7 +34,16 @@ library UserEarn {
         data = self[keccak256(abi.encodePacked(user, point))];
     }
 
-    function update(
+    /// @notice update UserEarn info for an unlegacy (uncleared during swap) limit order.
+    ///    update strategy is 'first claim first earn', etc, earned token will be transformed for
+    ///    limit orders which is update first
+    /// @param self UserEarn storage object of target limit order
+    /// @param currAccEarn 'accEarn' value of corresponding point order on swap pool.
+    ///    accumulate amount of earned token 
+    /// @param sqrtPrice_96 describe price of limit order
+    /// @param totalEarn remained(undistributed) amount of earned token of unlegacy limit order on corresponding point
+    /// @param isEarnY direction of corresponding limit order.
+    function updateUnlegacyOrder(
         UserEarn.Data storage self,
         uint256 currAccEarn,
         uint160 sqrtPrice_96,
@@ -42,10 +51,15 @@ library UserEarn {
         bool isEarnY
     ) internal returns (uint128 totalEarnRemain) {
         Data memory data = self;
+
+        // first, we compute how many earned token remained on the point order
         uint256 earn = currAccEarn - data.lastAccEarn;
         if (earn > totalEarn) {
             earn = totalEarn;
         }
+        // second, compute how many sold token according to the 'first claim first earn' strategy,
+        // etc, for earnY, sold = min(sellingRemain, earn / price)
+        //      for earnX, sold = min(sellingRemain, earn * price)
         uint256 sold;
         if (isEarnY) {
             uint256 l = MulDivMath.mulDivCeil(earn, TwoPower.Pow96, sqrtPrice_96);
@@ -73,6 +87,8 @@ library UserEarn {
         //  => floor((sold1 - 1) * P / Q) < earn1 * Q / P
         //  => earn = floor(floor((sold1 - 1) * P / Q) * P / Q) < earn1 <= totalEarn
 
+        // thirdly, update info of userEarn object
+
         // earn <= totalEarn
         data.earn += uint128(earn);
         // sold <= data.sellingRemain
@@ -88,7 +104,17 @@ library UserEarn {
         totalEarnRemain = totalEarn - uint128(earn);
     }
 
-    function add(
+    /// @notice update UserEarn info for an unlegacy (uncleared during swap) limit order.
+    ///    and then add some amount of selling token
+    ///    update strategy is 'first claim first earn', etc, earned token will be transformed for
+    ///    limit orders which is update first
+    /// @param self UserEarn storage object of target limit order
+    /// @param currAccEarn 'accEarn' value of corresponding point order on swap pool.
+    ///    accumulate amount of earned token 
+    /// @param sqrtPrice_96 describe price of limit order
+    /// @param totalEarn remained(undistributed) amount of earned token of unlegacy limit order on corresponding point
+    /// @param isEarnY direction of corresponding limit order.
+    function addUnlegacyOrder(
         UserEarn.Data storage self,
         uint128 delta,
         uint256 currAccEarn,
@@ -96,11 +122,23 @@ library UserEarn {
         uint128 totalEarn,
         bool isEarnY
     ) internal returns(uint128 totalEarnRemain) {
-        totalEarnRemain = update(self, currAccEarn, sqrtPrice_96, totalEarn, isEarnY);
+        // first, call `updateUnlegacyOrder` to update unlegacy order
+        totalEarnRemain = updateUnlegacyOrder(self, currAccEarn, sqrtPrice_96, totalEarn, isEarnY);
+        // then, add
         self.sellingRemain = self.sellingRemain + delta;
     }
 
-    function dec(
+    /// @notice update UserEarn info for an unlegacy (uncleared during swap) limit order.
+    ///    and then decrease some amount of selling token (if remain)
+    ///    update strategy is 'first claim first earn', etc, earned token will be transformed for
+    ///    limit orders which is update first
+    /// @param self UserEarn storage object of target limit order
+    /// @param currAccEarn 'accEarn' value of corresponding point order on swap pool.
+    ///    accumulate amount of earned token 
+    /// @param sqrtPrice_96 describe price of limit order
+    /// @param totalEarn remained(undistributed) amount of earned token of unlegacy limit order on corresponding point
+    /// @param isEarnY direction of corresponding limit order.
+    function decUnlegacyOrder(
         UserEarn.Data storage self,
         uint128 delta,
         uint256 currAccEarn,
@@ -108,12 +146,26 @@ library UserEarn {
         uint128 totalEarn,
         bool isEarnY
     ) internal returns(uint128 actualDelta, uint128 totalEarnRemain) {
-        totalEarnRemain = update(self, currAccEarn, sqrtPrice_96, totalEarn, isEarnY);
+        // first, call `updateUnlegacyOrder` to update unlegacy order
+        totalEarnRemain = updateUnlegacyOrder(self, currAccEarn, sqrtPrice_96, totalEarn, isEarnY);
+        // then decrease
         actualDelta = MaxMinMath.min(delta, self.sellingRemain);
         self.sellingRemain = self.sellingRemain - actualDelta;
         self.sellingDec = self.sellingDec + actualDelta;
     }
 
+    /// @notice update UserEarn info for a legacy (cleared during swap) limit order.
+    ///    an limit order we call it 'legacy' if it together with other limit order of same
+    ///    direction and same point on the pool is cleared during one time of exchanging.
+    ///    if an limit order is convinced to be 'legacy', we should mark it as 'sold out',
+    ///    etc, transform all its remained selling token to earned token.
+    /// @param self UserEarn storage object of target limit order
+    /// @param addDelta addition of selling amount
+    /// @param currAccEarn 'accEarn' value of corresponding point order on swap pool.
+    ///    accumulate amount of earned token 
+    /// @param sqrtPrice_96 describe price of limit order
+    /// @param totalLegacyEarn remained(undistributed) amount of earned token of legacy limit order on corresponding point
+    /// @param isEarnY direction of corresponding limit order.
     function updateLegacyOrder(
         UserEarn.Data storage self,
         uint128 addDelta,
@@ -125,17 +177,21 @@ library UserEarn {
         uint256 sold = self.sellingRemain;
         uint256 earn = 0;
         if (sold > 0) {
+            // transform all its remained selling token to earned token.
             if (isEarnY) {
                 uint256 l = MulDivMath.mulDivFloor(sold, sqrtPrice_96, TwoPower.Pow96);
+                // for earnY, earn = sold * price
                 earn = MulDivMath.mulDivFloor(l, sqrtPrice_96, TwoPower.Pow96);
             } else {
                 uint256 l = MulDivMath.mulDivFloor(sold, TwoPower.Pow96, sqrtPrice_96);
+                // for earnX, earn = sold / price
                 earn = MulDivMath.mulDivFloor(l, TwoPower.Pow96, sqrtPrice_96);
             }
             if (earn > totalLegacyEarn) {
                 earn = totalLegacyEarn;
             }
             self.sellingRemain = 0;
+            // count earned token into legacyEarn field, not earn field
             self.legacyEarn += uint128(earn);
         }
         self.lastAccEarn = currAccEarn;
