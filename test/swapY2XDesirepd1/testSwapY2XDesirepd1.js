@@ -584,7 +584,12 @@ describe("swap", function () {
         expect(state10.liquidityX).to.equal('0')
         expect(state10.currentPoint).to.equal('48')
 
-        await checkLimOrder('20000000000000000000', '0', '0', costLimYAt48_10, '0', costLimYAt48_10, poolAddr, 48)
+        await checkLimOrder(
+            '20000000000000000000', '0', '0',
+            '0', costLimYAt48_10, '0',
+            '0', costLimYAt48_10, 
+            '0', '0',
+            poolAddr, 48)
 
         // swap11
         const acquireLimXAt48_11 = '20000000000000000000';
@@ -612,7 +617,12 @@ describe("swap", function () {
         expect(state11.liquidityX).to.equal('0')
         expect(state11.currentPoint).to.equal('50')
 
-        await checkLimOrder('0', '0', '0', costLimYAt50_11, '0', costLimYAt50_11, poolAddr, 50)
+        await checkLimOrder(
+            '0', '0', '0',
+            '0', costLimYAt50_11, costLimYAt50_11,
+            '0', '0',
+            '0', costLimYAt50_11, 
+            poolAddr, 50)
 
         // swap12
         const acquireLimXAt51_12 = '80000000000000000000';
@@ -632,7 +642,12 @@ describe("swap", function () {
         expect(state12.liquidityX).to.equal('0')
         expect(state12.currentPoint).to.equal('51')
 
-        await checkLimOrder('20000000000000000000', '0', '0', costLimYAt51_12, '0', costLimYAt51_12, poolAddr, '51')
+        await checkLimOrder(
+            '20000000000000000000', '0', '0',
+            '0', costLimYAt51_12, '0',
+            '0', costLimYAt51_12, 
+            '0', '0',
+            poolAddr, '51')
 
         // swap13
         const acquireLimXAt51_13 = '20000000000000000000';
@@ -695,7 +710,13 @@ describe("swap", function () {
         expect(state14.liquidity).to.equal('3000000')
         expect(state14.liquidityX).to.equal('3000000')
         expect(state14.currentPoint).to.equal('148')
-        await checkLimOrder('70000000000000000000', '0', '0', costLimYAt148_14, '0', costLimYAt148_14, poolAddr, '148')
+
+        await checkLimOrder(
+            '70000000000000000000', '0', '0',
+            '0', costLimYAt148_14, '0',
+            '0', costLimYAt148_14, 
+            '0', '0',
+            poolAddr, '148')
     });
 
     it("(2)", async function () {

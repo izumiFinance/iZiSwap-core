@@ -17,10 +17,12 @@ library UserEarn {
         uint128 sellingRemain;
         // uncollected decreased token
         uint128 sellingDec;
-        // unassigned earned token
+        // unassigned and unlegacy earned token
         // earned token before collected need to be assigned
         uint128 earn;
-        // assigned but uncollected earned token
+        // unassigned and legacy earned token
+        uint128 legacyEarn;
+        // assigned but uncollected earned token (both unlegacy and legacy)
         uint128 earnAssign;
     }
     
@@ -110,6 +112,38 @@ library UserEarn {
         actualDelta = MaxMinMath.min(delta, self.sellingRemain);
         self.sellingRemain = self.sellingRemain - actualDelta;
         self.sellingDec = self.sellingDec + actualDelta;
+    }
+
+    function updateLegacyOrder(
+        UserEarn.Data storage self,
+        uint128 addDelta,
+        uint256 currAccEarn,
+        uint160 sqrtPrice_96,
+        uint128 totalLegacyEarn,
+        bool isEarnY
+    ) internal returns(uint128 totalLegacyEarnRemain) {
+        uint256 sold = self.sellingRemain;
+        uint256 earn = 0;
+        if (sold > 0) {
+            if (isEarnY) {
+                uint256 l = MulDivMath.mulDivFloor(sold, sqrtPrice_96, TwoPower.Pow96);
+                earn = MulDivMath.mulDivFloor(l, sqrtPrice_96, TwoPower.Pow96);
+            } else {
+                uint256 l = MulDivMath.mulDivFloor(sold, TwoPower.Pow96, sqrtPrice_96);
+                earn = MulDivMath.mulDivFloor(l, TwoPower.Pow96, sqrtPrice_96);
+            }
+            if (earn > totalLegacyEarn) {
+                earn = totalLegacyEarn;
+            }
+            self.sellingRemain = 0;
+            self.legacyEarn += uint128(earn);
+        }
+        self.lastAccEarn = currAccEarn;
+        totalLegacyEarnRemain = totalLegacyEarn - uint128(earn);
+        if (addDelta > 0) {
+            // sellingRemain has been clear to 0
+            self.sellingRemain = addDelta;
+        }
     }
 
 }

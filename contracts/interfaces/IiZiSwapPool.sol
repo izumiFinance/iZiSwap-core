@@ -112,8 +112,9 @@ interface IiZiSwapPool {
     /// @return lastAccEarn total amount of tokenX earned by all users at this point as of the last add/dec/collect
     /// @return sellingRemain amount of tokenY not selled in this limit order
     /// @return sellingDec amount of tokenY decreased by seller from this limit order
-    /// @return earn amount of tokenX earned in this limit order not assigned
-    /// @return earnAssign assigned amount of tokenX earned in this limit order
+    /// @return earn amount of unlegacy earned tokenX in this limit order not assigned
+    /// @return legacyEarn amount of legacy earned tokenX in this limit order not assgined
+    /// @return earnAssign assigned amount of tokenX earned (both legacy and unlegacy) in this limit order
     function userEarnX(bytes32 key)
         external
         view
@@ -122,6 +123,7 @@ interface IiZiSwapPool {
             uint128 sellingRemain,
             uint128 sellingDec,
             uint128 earn,
+            uint128 legacyEarn,
             uint128 earnAssign
         );
     
@@ -130,8 +132,9 @@ interface IiZiSwapPool {
     /// @return lastAccEarn total amount of tokenY earned by all users at this point as of the last add/dec/collect
     /// @return sellingRemain amount of tokenX not selled in this limit order
     /// @return sellingDec amount of tokenX decreased by seller from this limit order
-    /// @return earn amount of tokenY earned in this limit order not assigned
-    /// @return earnAssign assigned amount of tokenY earned in this limit order
+    /// @return earn amount of unlegacy earned tokenY in this limit order not assigned
+    /// @return legacyEarn amount of legacy earned tokenY in this limit order not assgined
+    /// @return earnAssign assigned amount of tokenY earned (both legacy and unlegacy) in this limit order
     function userEarnY(bytes32 key)
         external
         view
@@ -140,44 +143,51 @@ interface IiZiSwapPool {
             uint128 sellingRemain,
             uint128 sellingDec,
             uint128 earn,
+            uint128 legacyEarn,
             uint128 earnAssign
         );
     
     /// @notice Mark a given amount of tokenY in a limitorder(sellx and earn y) as assigned.
     /// @param point point (log Price) of seller's limit order,be sure to be times of pointDelta
     /// @param assignY max amount of tokenY to mark assigned
+    /// @param fromLegacy true for assigning earned token from legacyEarnY
     /// @return actualAssignY actual amount of tokenY marked
     function assignLimOrderEarnY(
         int24 point,
-        uint128 assignY
+        uint128 assignY,
+        bool fromLegacy
     ) external returns(uint128 actualAssignY);
     
     /// @notice Mark a given amount of tokenX in a limitorder(selly and earn x) as assigned.
     /// @param point point (log Price) of seller's limit order,be sure to be times of pointDelta
     /// @param assignX max amount of tokenX to mark assigned
+    /// @param fromLegacy true for assigning earned token from legacyEarnX
     /// @return actualAssignX actual amount of tokenX marked
     function assignLimOrderEarnX(
         int24 point,
-        uint128 assignX
+        uint128 assignX,
+        bool fromLegacy
     ) external returns(uint128 actualAssignX);
 
     /// @notice Decrease limitorder of selling X.
     /// @param point point of seller's limit order, be sure to be times of pointDelta
     /// @param deltaX max amount of tokenX seller wants to decrease
     /// @return actualDeltaX actual amount of tokenX decreased
+    /// @return legacyAccEarn legacyAccEarnY of pointOrder at point when calling this interface
     function decLimOrderWithX(
         int24 point,
         uint128 deltaX
-    ) external returns (uint128 actualDeltaX);
+    ) external returns (uint128 actualDeltaX, uint256 legacyAccEarn);
     
     /// @notice Decrease limitorder of selling Y.
     /// @param point point of seller's limit order, be sure to be times of pointDelta
     /// @param deltaY max amount of tokenY seller wants to decrease
     /// @return actualDeltaY actual amount of tokenY decreased
+    /// @return legacyAccEarn legacyAccEarnX of pointOrder at point when calling this interface
     function decLimOrderWithY(
         int24 point,
         uint128 deltaY
-    ) external returns (uint128 actualDeltaY);
+    ) external returns (uint128 actualDeltaY, uint256 legacyAccEarn);
     
     /// @notice Add a limit order (selling x) in the pool.
     /// @param recipient owner of the limit order
@@ -347,20 +357,28 @@ interface IiZiSwapPool {
     /// @notice LimitOrder info on a given point.
     /// @param point the given point 
     /// @return sellingX total amount of tokenX selling on the point
-    /// @return earnY total amount of unclaimed earned tokenY
+    /// @return earnY total amount of unclaimed earned tokenY for unlegacy sellingX
     /// @return accEarnY total amount of earned tokenY(via selling tokenX) by all users at this point as of the last swap
+    /// @return legacyAccEarnY latest recorded 'accEarnY' value when sellingX is clear (legacy)
+    /// @return legacyEarnY total amount of unclaimed earned tokenY for legacy (cleared during swap) sellingX
     /// @return sellingY total amount of tokenYselling on the point
-    /// @return earnX total amount of unclaimed earned tokenX
+    /// @return earnX total amount of unclaimed earned tokenX for unlegacy sellingY
+    /// @return legacyEarnX total amount of unclaimed earned tokenX for legacy (cleared during swap) sellingY
     /// @return accEarnX total amount of earned tokenX(via selling tokenY) by all users at this point as of the last swap
+    /// @return legacyAccEarnX latest recorded 'accEarnX' value when sellingY is clear (legacy)
     function limitOrderData(int24 point)
         external view
         returns(
             uint128 sellingX,
             uint128 earnY,
             uint256 accEarnY,
+            uint256 legacyAccEarnY,
+            uint128 legacyEarnY,
             uint128 sellingY,
             uint128 earnX,
-            uint256 accEarnX
+            uint128 legacyEarnX,
+            uint256 accEarnX,
+            uint256 legacyAccEarnX
         );
     
     /// @notice Query infomation about a point whether has limit order or is an liquidity's endpoint.

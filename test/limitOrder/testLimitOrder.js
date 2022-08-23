@@ -172,7 +172,7 @@ function convertUserEarnFromBC(userEarnBC) {
         lastAccEarn: userEarnBC.lastAccEarn.toString(),
         sellingRemain: userEarnBC.sellingRemain.toString(),
         sellingDesc: userEarnBC.sellingDesc.toString(),
-        earn: userEarnBC.earn.toString(),
+        earn: stringAdd(userEarnBC.earn.toString(), userEarnBC.legacyEarn.toString()),
         earnAssign: userEarnBC.earnAssign.toString(),
     }
 }
@@ -464,11 +464,19 @@ describe("swap", function () {
             700
         )
 
-        await checkLimOrder('600000000000000000000', getSum([
-            costXAt700_1,
-            costXAt700_2,
-            getCostXFromYAt((await logPowMath.getSqrtPrice(700)).toString(), '100000000000000000000')
-        ]), '0', '0', undefined, '0', poolAddr, 700)
+        await checkLimOrder(
+            '600000000000000000000', 
+            getSum([
+                costXAt700_1,
+                costXAt700_2,
+                getCostXFromYAt((await logPowMath.getSqrtPrice(700)).toString(), '100000000000000000000')
+            ]), 
+            '0', 
+            '0', '0', '0',
+            undefined, '0',
+            '0', '0', 
+            poolAddr, 700
+        )
 
         const s2_dec_700_3 = await decLimOrderWithY(s2, testAddLimOrder, '0', 700, poolAddr)
         expect(s2_dec_700_3.actualDec).to.equal('0')
@@ -527,7 +535,12 @@ describe("swap", function () {
         expect(s3_dec_500_5.sold).to.equal(stringMinus('100000000000000000000', s3SoldAt500_4))
         expect(s3_dec_500_5.earn).to.equal(getEarnXFromYAt((await logPowMath.getSqrtPrice(500)).toString(), s3_dec_500_5.sold))
 
-        await checkLimOrder('0', stringAdd(costXAt500_5, costLimXAt500), '0', '0', undefined, '0', poolAddr, 500)
+        await checkLimOrder(
+            '0', stringAdd(costXAt500_5, costLimXAt500), stringAdd(costXAt500_5, costLimXAt500),
+            '0', '0', '0',
+            '0', '0',
+            undefined, '0', 
+            poolAddr, 500)
 
         // swap6
         const costX_350_500 = xInRange('1000000', 350, 500, '1.0001', true)
@@ -551,7 +564,12 @@ describe("swap", function () {
         expect(s1_dec_350_6.sellingReduce).to.equal('100000000000000000000')
         expect(s1_dec_350_6.sold).to.equal('100000000000000000000')
         expect(s1_dec_350_6.earn).to.equal(getEarnXFromYAt((await logPowMath.getSqrtPrice(350)).toString(), '100000000000000000000'))
-        await checkLimOrder('0', costLimXAt350, '0', '0', undefined, undefined, poolAddr, 350)
+        await checkLimOrder(
+            '0', costLimXAt350, costLimXAt350,
+            '0', '0', '0',
+            '0', '0',
+            undefined, undefined, 
+            poolAddr, 350)
 
         // swap7
         const acquireX_320_370 = xInRange('1000000', 320, 370, '1.0001', false)
@@ -573,7 +591,13 @@ describe("swap", function () {
         expect(s1_dec_350_8.sellingReduce).to.equal('100000000000000000000')
         expect(s1_dec_350_8.sold).to.equal('0')
         expect(s1_dec_350_8.earn).to.equal('0')
-        await checkLimOrder('0', costLimXAt350, '0', '0', undefined, undefined, poolAddr, 350)
+
+        await checkLimOrder(
+            '0', costLimXAt350, costLimXAt350,
+            '0', '0', '0',
+            '0', '0',
+            undefined, undefined, 
+            poolAddr, 350)
 
         const acquireY_250_370 = yInRange('1000000', 250, 370, '1.0001', false);
         const costX_250_370 = xInRange('1000000', 250, 370, '1.0001', true);
@@ -618,7 +642,12 @@ describe("swap", function () {
         ]))
         expect(swap10.acquireY).to.equal(getSum([acquireY_250_370_10, acquireY_50_100, acquireLimYAt50]))
 
-        await checkLimOrder('0', costLimXAt50, '50000000000000000000', '0', costLimXAt50, '0', poolAddr, 50)
+        await checkLimOrder(
+            '0', costLimXAt50, '0',
+            '50000000000000000000', '0', '0',
+            costLimXAt50, '0', 
+            '0', '0',
+            poolAddr, 50)
 
         const s1_dec_50_10 = await decLimOrderWithY(s1, testAddLimOrder, '20000000000000000000', 50, poolAddr);
         expect(s1_dec_50_10.actualDec).to.equal('20000000000000000000');
@@ -694,14 +723,25 @@ describe("swap", function () {
         expect(s6_dec_50_13.sellingReduce).to.equal(stringAdd(s6SoldAt50_13, '100000000000000000000'))
         expect(s6_dec_50_13.earn).to.equal(s6_earnRemain_13)
 
-        await checkLimOrder('300000000000000000000', 
+        await checkLimOrder(
+            '300000000000000000000', 
             getSum([
                 costLimXAt50,
                 getCostXFromYAt((await logPowMath.getSqrtPrice(50)).toString(), '30000000000000000000')
             ]), 
-            '0', costYAt50_13, undefined, '0', poolAddr, 50
-        )
+            getSum([
+                costLimXAt50,
+                getCostXFromYAt((await logPowMath.getSqrtPrice(50)).toString(), '30000000000000000000')
+            ]),
 
+            '0', costYAt50_13, '0',
+            
+            '0', '0', 
+
+            undefined, '0',
+            
+            poolAddr, 50
+        )
 
         // swap14
         const acquireXAt50_14 = '200000000000000000000'
@@ -711,16 +751,28 @@ describe("swap", function () {
         expect(swap14.costY).to.equal(amountAddFee(costYAt50_14))
 
 
-        await checkLimOrder('100000000000000000000', 
+        await checkLimOrder(
+            '100000000000000000000', 
             getSum([
                 costLimXAt50,
                 getCostXFromYAt((await logPowMath.getSqrtPrice(50)).toString(), '30000000000000000000')
             ]), 
+            getSum([
+                costLimXAt50,
+                getCostXFromYAt((await logPowMath.getSqrtPrice(50)).toString(), '30000000000000000000')
+            ]), 
+
             '0', 
             getSum([
                 costYAt50_13,
                 costYAt50_14
-            ]), undefined, costYAt50_14, poolAddr, 50
+            ]),
+            '0', 
+            
+            '0', costYAt50_14, 
+            undefined, '0',
+            
+            poolAddr, 50
         )
 
         const s6_dec_50_14 = await decLimOrderWithX(s6, testAddLimOrder, '100000000000000000000', 50, poolAddr);
@@ -730,17 +782,30 @@ describe("swap", function () {
         expect(s6_dec_50_14.earn).to.equal(getEarnYFromXAt((await logPowMath.getSqrtPrice(50)).toString(), s6_dec_50_13.earnAfter.sellingRemain))
 
 
-        await checkLimOrder('100000000000000000000', 
+        await checkLimOrder(
+            '100000000000000000000', 
             getSum([
                 costLimXAt50,
                 getCostXFromYAt((await logPowMath.getSqrtPrice(50)).toString(), '30000000000000000000')
             ]), 
+            getSum([
+                costLimXAt50,
+                getCostXFromYAt((await logPowMath.getSqrtPrice(50)).toString(), '30000000000000000000')
+            ]), 
+
             '0', 
             getSum([
                 costYAt50_13,
                 costYAt50_14
-            ]), undefined, 
+            ]), 
+            '0',
+            
+            '0', 
             stringMinus(costYAt50_14, s6_dec_50_14.earn), 
+
+            undefined,
+            '0',
+            
             poolAddr, 50
         )
 
@@ -754,17 +819,31 @@ describe("swap", function () {
             50
         )
 
-        await checkLimOrder('0', 
+        await checkLimOrder(
+            '0', 
             getSum([
                 costLimXAt50,
                 getCostXFromYAt((await logPowMath.getSqrtPrice(50)).toString(), '30000000000000000000')
             ]), 
-            '100000000000000000000', getSum([
+            getSum([
+                costLimXAt50,
+                getCostXFromYAt((await logPowMath.getSqrtPrice(50)).toString(), '30000000000000000000')
+            ]), 
+
+            '100000000000000000000', 
+            getSum([
                 costYAt50_13,
                 costYAt50_14,
                 getCostYFromXAt((await logPowMath.getSqrtPrice(50)).toString(), '100000000000000000000')
-            ]), undefined, 
+            ]), 
+            '0',
+            
+            '0', 
             stringMinus(stringAdd(getCostYFromXAt((await logPowMath.getSqrtPrice(50)).toString(), '100000000000000000000'), costYAt50_14), s6_dec_50_14.earn), 
+
+            undefined,
+            '0',
+
             poolAddr, 50
         );
 
@@ -774,20 +853,33 @@ describe("swap", function () {
         expect(s5_dec_50_14.sold).to.equal('200000000000000000000')
         expect(s5_dec_50_14.earn).to.equal(getEarnYFromXAt((await logPowMath.getSqrtPrice(50)).toString(), '200000000000000000000'))
 
-        await checkLimOrder('0', 
+        await checkLimOrder(
+            '0', 
             getSum([
                 costLimXAt50,
                 getCostXFromYAt((await logPowMath.getSqrtPrice(50)).toString(), '30000000000000000000')
             ]), 
-            '100000000000000000000', getSum([
+            getSum([
+                costLimXAt50,
+                getCostXFromYAt((await logPowMath.getSqrtPrice(50)).toString(), '30000000000000000000')
+            ]), 
+
+            '100000000000000000000', 
+            getSum([
                 costYAt50_13,
                 costYAt50_14,
                 getCostYFromXAt((await logPowMath.getSqrtPrice(50)).toString(), '100000000000000000000')
-            ]), undefined, 
+            ]), 
+            '0',
+            
+            '0', 
             stringMinus(
                 stringMinus(stringAdd(getCostYFromXAt((await logPowMath.getSqrtPrice(50)).toString(), '100000000000000000000'), costYAt50_14), s6_dec_50_14.earn), 
                 getEarnYFromXAt((await logPowMath.getSqrtPrice(50)).toString(), '200000000000000000000')
             ),
+
+            undefined, '0',
+
             poolAddr, 50
         );
 

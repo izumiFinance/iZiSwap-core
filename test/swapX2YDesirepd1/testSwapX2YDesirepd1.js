@@ -579,7 +579,12 @@ describe("swap", function () {
         expect(state9.liquidityX).to.equal('0')
         expect(state9.currentPoint).to.equal('-198')
 
-        await checkLimOrder('0', costLimXAtM198_9, '80000000000000000000', '0', costLimXAtM198_9, '0', poolAddr, -198)
+        await checkLimOrder(
+            '0', costLimXAtM198_9, '0',
+            '80000000000000000000', '0', '0',
+            costLimXAtM198_9, '0', 
+            '0', '0',
+            poolAddr, -198)
 
         // swap10
 
@@ -602,7 +607,24 @@ describe("swap", function () {
         expect(state10.liquidityX).to.equal('0')
         expect(state10.currentPoint).to.equal('-198')
 
-        await checkLimOrder('0', getSum([costLimXAtM198_9, costLimXAtM198_10]), '50000000000000000000', '0', getSum([costLimXAtM198_9, costLimXAtM198_10]), '0', poolAddr, -198)
+        await checkLimOrder(
+            '0', 
+            getSum([costLimXAtM198_9, costLimXAtM198_10]), 
+            '0',
+            
+            '50000000000000000000', 
+            '0', 
+            '0', 
+            
+            getSum([costLimXAtM198_9, costLimXAtM198_10]), 
+            '0', 
+
+            '0',
+            '0',
+            
+            poolAddr, 
+            -198
+        )
 
         // swap11
         const acquireLimYAtM198_11 = '50000000000000000000';
@@ -681,7 +703,13 @@ describe("swap", function () {
             costLimXAtM600_WithFee_11
         ]))
 
-        await checkLimOrder('0', costLimXAtM600_11, '30000000000000000000', '0', costLimXAtM600_11, '0', poolAddr, -600)
+        await checkLimOrder(
+            '0', costLimXAtM600_11, '0',
+            '30000000000000000000', '0', '0',
+            costLimXAtM600_11, '0', 
+            '0', '0',
+            poolAddr, -600
+        )
 
         // swap12
         const acquireLimYAtM600_12 = '30000000000000000000';
@@ -764,7 +792,12 @@ describe("swap", function () {
             costXAtM898_WithFee_12,
             costLimXAtM898_WithFee_12
         ]))
-        await checkLimOrder('0', costLimXAtM898_12, '30000000000000000000', '0', costLimXAtM898_12, '0', poolAddr, -898)
+        await checkLimOrder(
+            '0', costLimXAtM898_12, '0',
+            '30000000000000000000', '0', '0',
+            costLimXAtM898_12, '0', 
+            '0','0',
+            poolAddr, -898)
 
         // swap13
         const acquireLimYAtM898_13 = '30000000000000000000';
@@ -784,7 +817,12 @@ describe("swap", function () {
         expect(swap13.costX).to.equal(getSum([
             costLimXAtM898_WithFee_13, costXAtM899_WithFee_13
         ]))
-        await checkLimOrder('0', '0', '100000000000000000000', '0', '0', '0', poolAddr, -899)
+        await checkLimOrder(
+            '0', '0', '0',
+            '100000000000000000000', '0', '0',
+            '0', '0', 
+            '0', '0', 
+            poolAddr, -899)
         const state13 = await getState(pool);
         expect(state13.liquidity).to.equal('1000000')
         expect(state13.liquidityX).to.equal('200000')

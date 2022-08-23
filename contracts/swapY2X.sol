@@ -177,11 +177,16 @@ contract SwapY2XModule {
                     od.sellingX = currX;
                     od.earnY += costY;
                     od.accEarnY += costY;
-                    if (od.sellingY == 0 && currX == 0) {
-                        int24 newVal = cache.currentOrderOrEndpt & 1;
-                        orderOrEndpoint.setOrderOrEndptVal(st.currentPoint, cache.pointDelta, newVal);
-                        if (newVal == 0) {
-                            pointBitmap.setZero(st.currentPoint, cache.pointDelta);
+                    if (currX == 0) {
+                        od.legacyEarnY += od.earnY;
+                        od.earnY = 0;
+                        od.legacyAccEarnY = od.accEarnY;
+                        if (od.sellingY == 0) {
+                            int24 newVal = cache.currentOrderOrEndpt & 1;
+                            orderOrEndpoint.setOrderOrEndptVal(st.currentPoint, cache.pointDelta, newVal);
+                            if (newVal == 0) {
+                                pointBitmap.setZero(st.currentPoint, cache.pointDelta);
+                            }
                         }
                     }
                 } else {
@@ -335,11 +340,16 @@ contract SwapY2XModule {
                 od.sellingX = currX;
                 od.earnY += costY;
                 od.accEarnY += costY;
-                if (od.sellingY == 0 && currX == 0) {
-                    int24 newVal = cache.currentOrderOrEndpt & 1;
-                    orderOrEndpoint.setOrderOrEndptVal(st.currentPoint, cache.pointDelta, newVal);
-                    if (newVal == 0) {
-                        pointBitmap.setZero(st.currentPoint, cache.pointDelta);
+                if (currX == 0) {
+                    od.legacyEarnY += od.earnY;
+                    od.earnY = 0;
+                    od.legacyAccEarnY = od.accEarnY;
+                    if (od.sellingY == 0) {
+                        int24 newVal = cache.currentOrderOrEndpt & 1;
+                        orderOrEndpoint.setOrderOrEndptVal(st.currentPoint, cache.pointDelta, newVal);
+                        if (newVal == 0) {
+                            pointBitmap.setZero(st.currentPoint, cache.pointDelta);
+                        }
                     }
                 }
             }

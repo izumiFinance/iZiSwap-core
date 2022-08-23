@@ -667,7 +667,12 @@ describe("swap", function () {
         expect(swap3.acquireX).to.equal(getSum([
             acquireXAt2500
         ]));
-        await checkLimOrder('10000000000000000000', '0', '0', costYAt2500, '0', costYAt2500, poolAddr, 2500)
+        await checkLimOrder(
+            '10000000000000000000', '0', '0',
+            '0', costYAt2500, '0',
+            '0', costYAt2500, 
+            '0', '0',
+            poolAddr, 2500)
 
         // swap4
 
@@ -689,7 +694,12 @@ describe("swap", function () {
         expect(swap4.acquireX).to.equal(getSum([
             remainXAt2500, acquireXAt2550
         ]));
-        await checkLimOrder('0', '0', '0', costYAt2550, '0', costYAt2550, poolAddr, 2550)
+        await checkLimOrder(
+            '0', '0', '0',
+            '0', costYAt2550, costYAt2550,
+            '0', '0',
+            '0', costYAt2550, 
+            poolAddr, 2550)
 
 
         // swap5
@@ -712,7 +722,12 @@ describe("swap", function () {
         expect(swap5.acquireX).to.equal(getSum([
             acquireX_2550_2600, acquireXAt2600
         ]));
-        await checkLimOrder('20000000000000000000', '0', '0', costYAt2600, '0', costYAt2600, poolAddr, 2600)
+        await checkLimOrder(
+            '20000000000000000000', '0', '0',
+            '0', costYAt2600, '0',
+            '0', costYAt2600, 
+            '0', '0',
+            poolAddr, 2600)
 
 
         // swap6
@@ -739,7 +754,12 @@ describe("swap", function () {
         expect(swap6.acquireX).to.equal(getSum([
             remainXAt2600, acquireX_2600_2900, acquireXAt3150
         ]));
-        await checkLimOrder('0', '0', '0', costYAt3150, '0', costYAt3150, poolAddr, 3150)
+        await checkLimOrder(
+            '0', '0', '0',
+            '0', costYAt3150, costYAt3150,
+            '0', '0',
+            '0', costYAt3150, 
+            poolAddr, 3150)
 
         const state6 = await getState(pool);
         expect(state6.liquidity).to.equal('0')

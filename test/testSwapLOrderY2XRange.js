@@ -2,7 +2,7 @@ const { expect } = require("chai");
 const { ethers } = require("hardhat");
 
 const BigNumber = require('bignumber.js');
-const { getLimOrder, getFeeCharge, getPoolParts} = require('./funcs.js');
+const { getLimOrder, checkLimOrder, getFeeCharge, getPoolParts} = require('./funcs.js');
 
 async function getToken() {
 
@@ -177,15 +177,7 @@ function feeScale2Fee(feeScale, liquidity) {
     const fee_128 = feeScale.times(liquidity);
     return bigIntDiv(fee_128, BigNumber(2).pow(128));
 }
-async function checkLimOrder(eSellingX, eAccEarnX, eSellingY, eAccEarnY, eEarnX, eEarnY, poolAddr, pt) {
-    const {sellingX, accEarnX, sellingY, accEarnY, earnX, earnY} = await getLimOrder(poolAddr, pt);
-    expect(sellingX.toFixed(0)).to.equal(eSellingX.toFixed(0));
-    expect(accEarnX.toFixed(0)).to.equal(eAccEarnX.toFixed(0));
-    expect(sellingY.toFixed(0)).to.equal(eSellingY.toFixed(0));
-    expect(accEarnY.toFixed(0)).to.equal(eAccEarnY.toFixed(0));
-    expect(earnX.toFixed(0)).to.equal(eEarnX.toFixed(0));
-    expect(earnY.toFixed(0)).to.equal(eEarnY.toFixed(0));
-}
+
 async function checkStatusVal(eVal, poolAddr, pt) {
     val = await getStatusVal(poolAddr, pt);
     expect(eVal).to.equal(val);
@@ -354,32 +346,55 @@ describe("swap", function () {
 
     // check limit order
     await checkLimOrder(
-        BigNumber('0'),
-        BigNumber('0'),
-        BigNumber("10000000"),
-        BigNumber("0"),
-        BigNumber("0"),
-        BigNumber("0"),
+        '0',
+        '0',
+        '0',
+
+        "10000000",
+        "0",
+        '0',
+
+        "0",
+        "0",
+
+        "0",
+        "0",
+
         poolAddr,
         5000
     );
     await checkLimOrder(
-        BigNumber('0'),
-        BigNumber('0'),
-        BigNumber("0"),
-        costY_5050_Lim,
-        BigNumber("0"),
-        costY_5050_Lim,
+        '0',
+        '0',
+        '0',
+
+        "0",
+        costY_5050_Lim.toFixed(0),
+        costY_5050_Lim.toFixed(0),
+
+        "0",
+        "0",
+
+        "0",
+        costY_5050_Lim.toFixed(0),
         poolAddr,
         5050
     );
     await checkLimOrder(
-        BigNumber('0'),
-        BigNumber('0'),
-        BigNumber("0"),
-        costY_5100_Lim,
-        BigNumber("0"),
-        costY_5100_Lim,
+        '0',
+        '0',
+        "0",
+
+        "0",
+        costY_5100_Lim.toFixed(0),
+        costY_5100_Lim.toFixed(0),
+
+        "0",
+        "0",
+
+        "0",
+        costY_5100_Lim.toFixed(0),
+        
         poolAddr,
         5100
     );

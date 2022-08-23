@@ -71,27 +71,60 @@ async function getPoolParts() {
 async function getLimOrder(poolAddr, pt) {
     const iZiSwapPool = await ethers.getContractFactory("iZiSwapPool");
     pool = await iZiSwapPool.attach(poolAddr);
-    const {sellingX, accEarnX, sellingY, accEarnY, earnX, earnY} = await pool.limitOrderData(pt);
+
+    const {sellingX, accEarnX, legacyEarnX, legacyAccEarnX, sellingY, accEarnY, earnX, earnY, legacyEarnY, legacyAccEarnY} = await pool.limitOrderData(pt);
+
     return {
         sellingX: BigNumber(sellingX._hex),
         accEarnX: BigNumber(accEarnX._hex),
         sellingY: BigNumber(sellingY._hex),
         accEarnY: BigNumber(accEarnY._hex),
         earnX: BigNumber(earnX._hex),
-        earnY: BigNumber(earnY._hex)
+        earnY: BigNumber(earnY._hex),
+        legacyEarnX: BigNumber(legacyEarnX._hex),
+        legacyAccEarnX: BigNumber(legacyAccEarnX._hex),
+        legacyEarnY: BigNumber(legacyEarnY._hex),
+        legacyAccEarnY: BigNumber(legacyAccEarnY._hex)
     }
 }
 
-async function checkLimOrder(eSellingX, eAccEarnX, eSellingY, eAccEarnY, eEarnX, eEarnY, poolAddr, pt) {
-    const {sellingX, accEarnX, sellingY, accEarnY, earnX, earnY} = await getLimOrder(poolAddr, pt);
+async function checkLimOrder(
+    eSellingX, 
+    eAccEarnX, 
+    eLegacyAccEarnX, 
+
+    eSellingY, 
+    eAccEarnY, 
+    eLegacyAccEarnY, 
+
+    eEarnX, 
+    eEarnY, 
+
+    eLegacyEarnX, 
+    eLegacyEarnY, 
+
+    poolAddr, 
+    pt
+) {
+    const {sellingX, accEarnX, sellingY, accEarnY, earnX, earnY, legacyEarnX, legacyAccEarnX, legacyEarnY, legacyAccEarnY} = await getLimOrder(poolAddr, pt);
     expect(sellingX.toFixed(0)).to.equal(eSellingX);
+    if (eAccEarnX)
     expect(accEarnX.toFixed(0)).to.equal(eAccEarnX);
     expect(sellingY.toFixed(0)).to.equal(eSellingY);
+    if (eAccEarnY)
     expect(accEarnY.toFixed(0)).to.equal(eAccEarnY);
     if (eEarnX)
     expect(earnX.toFixed(0)).to.equal(eEarnX);
     if (eEarnY)
     expect(earnY.toFixed(0)).to.equal(eEarnY);
+    if (eLegacyEarnX)
+    expect(legacyEarnX.toFixed(0)).to.equal(eLegacyEarnX)
+    if (eLegacyEarnY)
+    expect(legacyEarnY.toFixed(0)).to.equal(eLegacyEarnY)
+    if (eLegacyAccEarnX)
+    expect(legacyAccEarnX.toFixed(0)).to.equal(eLegacyAccEarnX)
+    if (eLegacyAccEarnY)
+    expect(legacyAccEarnY.toFixed(0)).to.equal(eLegacyAccEarnY)
 }
 
 function floor(a) {
