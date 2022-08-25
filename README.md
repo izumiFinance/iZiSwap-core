@@ -1,4 +1,4 @@
-# izumi-swap-core
+# iZiSwap-core
 
 <div align="center">
   <a href="https://izumi.finance"> 
@@ -8,6 +8,8 @@
 </div>
 
 
-Contracts for izumi swap core.
+Contracts for iZiSwap core.
 
-Design and some details can be found in the paper [DSwap: Building Decentralized Exchange with Discretized Concentrated Liquidity and Limit Order](https://izumi.finance/paper/dswap.pdf).
+Incorporated with the innovative Discretized-Liquidity-AMM model, iZiSwap is a next-generation DEX to maximize capital efficiency by realizing Limit Order in a decentralized way.
+
+Design and some details can be found in the paper [iZiSwap: Building Decentralized Exchange with Discretized Concentrated Liquidity and Limit Order](https://izumi.finance/paper/dswap.pdf).
