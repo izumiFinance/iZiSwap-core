@@ -661,6 +661,7 @@ describe("swap", function () {
         await addLimOrderWithY(tokenX, tokenY, s6, testAddLimOrder, '100000000000000000000', 700)
         await swapX2Y(testSwap, trader, tokenX, tokenY, 3000, '100000000000000000000000', 699)
         const earnXBefore7 = getCostXFromYAt((await logPowMath.getSqrtPrice(700)).toString(), '100000000000000000000')
+        const earnXBelong2S6Before7 = getEarnXFromYAt((await logPowMath.getSqrtPrice(700)).toString(), '100000000000000000000')
         
         await addLimOrderWithX(tokenX, tokenY, s3, testAddLimOrder, '100000000000000000000', 700)
 
@@ -684,6 +685,8 @@ describe("swap", function () {
         const earnXBefore8 = getCostXFromYAt((await logPowMath.getSqrtPrice(700)).toString(), '100000000000000000000')
 
         await addLimOrderWithX(tokenX, tokenY, s4, testAddLimOrder, '100000000000000000000', 700)
+        // const s4_add_700_7 = addLimOrderWithXReturnDelta(tokenX, tokenY, s4, testAddLimOrder, '100000000000000000000', 700, poolAddr)
+        // expect()
         await addLimOrderWithX(tokenX, tokenY, s5, testAddLimOrder, '100000000000000000000', 700)
 
         const costYAt700_8 = getCostYFromXAt((await logPowMath.getSqrtPrice(700)).toString(), '100000000000000000000')
@@ -699,7 +702,8 @@ describe("swap", function () {
 
             '0', costYAt700_8,
 
-            undefined, getSum([costYAt700_6, costYAt700_7]), 
+            getSum([legacyEarnRemain_4, earnXRemain, stringMinus(earnXBefore7, earnXBelong2S6Before7), earnXBefore8]), 
+            getSum([costYAt700_6, costYAt700_7]), 
             poolAddr, 700)  
 
         
@@ -720,7 +724,8 @@ describe("swap", function () {
 
             '0', earnRemainAfterS4Dec_8,
 
-            undefined, getSum([costYAt700_6, costYAt700_7]), 
+            getSum([legacyEarnRemain_4, earnXRemain, stringMinus(earnXBefore7, earnXBelong2S6Before7), earnXBefore8]), 
+            getSum([costYAt700_6, costYAt700_7]), 
             poolAddr, 700)  
 
         const s5_dec_700_8 = await decLimOrderWithX(s5, testAddLimOrder, '0', 700, poolAddr)
@@ -746,7 +751,8 @@ describe("swap", function () {
 
             '0', '0',
 
-            undefined, getSum([costYAt700_6, costYAt700_7]), 
+            getSum([legacyEarnRemain_4, earnXRemain, stringMinus(earnXBefore7, earnXBelong2S6Before7), earnXBefore8]), 
+            getSum([costYAt700_6, costYAt700_7]), 
             poolAddr, 700)  
         
         const s3_add_700_8 = await addLimOrderWithXReturnDelta(
@@ -792,7 +798,8 @@ describe("swap", function () {
 
             '0', '0',
 
-            undefined, legacyEarnYRemain_8, 
+            getSum([legacyEarnRemain_4, earnXRemain, stringMinus(earnXBefore7, earnXBelong2S6Before7), earnXBefore8]), 
+            legacyEarnYRemain_8, 
             poolAddr, 700)  
         // await checkLimOrder(
         //     '0', 
