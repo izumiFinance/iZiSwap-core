@@ -70,22 +70,32 @@ interface IiZiSwapPool {
     );
 
     /// @notice Emitted when a seller successfully add a limit order.
-    /// @param amount amount of token to sell the seller added
+    /// @param addAmount amount of token to sell the seller added
+    /// @param acquireAmount amount of earn-token acquired, if there exists some opposite order before 
     /// @param point point of limit order
+    /// @param claimSold claimed sold sell-token, if this owner has order with same direction on this point before
+    /// @param claimEarn claimed earned earn-token, if this owner has order with same direction on this point before
     /// @param sellXEarnY direction of limit order, etc. sell tokenX or sell tokenY
     event AddLimitOrder(
-        uint256 amount,
+        uint128 addAmount,
+        uint128 acquireAmount,
         int24 point,
+        uint128 claimSold,
+        uint128 claimEarn,
         bool sellXEarnY
     );
 
     /// @notice Emitted when a seller successfully decrease a limit order.
-    /// @param amount amount of token to sell the seller decreased
+    /// @param decreaseAmount amount of token to sell the seller decreased
     /// @param point point of limit order
+    /// @param claimSold claimed sold sell-token
+    /// @param claimEarn claimed earned earn-token
     /// @param sellXEarnY direction of limit order, etc. sell tokenX or sell tokenY
     event DecLimitOrder(
-        uint256 amount,
+        uint128 decreaseAmount,
         int24 point,
+        uint128 claimSold,
+        uint128 claimEarn,
         bool sellXEarnY
     );
 

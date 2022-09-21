@@ -166,7 +166,7 @@ contract LimitOrderModule {
     function decLimOrderWithX(
         int24 point,
         uint128 deltaX
-    ) external returns (uint128 actualDeltaX, uint256 legacyAccEarn) {
+    ) external returns (uint128 actualDeltaX, uint256 legacyAccEarn, uint128 claimSold, uint128 claimEarn) {
         require(point % pointDelta == 0, "PD");
 
         UserEarn.Data storage ue = userEarnY.get(msg.sender, point);
@@ -174,9 +174,9 @@ contract LimitOrderModule {
         uint160 sqrtPrice_96 = LogPowMath.getSqrtPrice(point);
         legacyAccEarn = pointOrder.legacyAccEarnY;
         if (legacyAccEarn > ue.lastAccEarn) {
-            pointOrder.legacyEarnY = ue.updateLegacyOrder(0, pointOrder.accEarnY, sqrtPrice_96, pointOrder.legacyEarnY, true);
+            (pointOrder.legacyEarnY, claimSold, claimEarn) = ue.updateLegacyOrder(0, pointOrder.accEarnY, sqrtPrice_96, pointOrder.legacyEarnY, true);
         } else {
-            (actualDeltaX, pointOrder.earnY) = ue.decUnlegacyOrder(deltaX, pointOrder.accEarnY, sqrtPrice_96, pointOrder.earnY, true);
+            (actualDeltaX, pointOrder.earnY, claimSold, claimEarn) = ue.decUnlegacyOrder(deltaX, pointOrder.accEarnY, sqrtPrice_96, pointOrder.earnY, true);
             pointOrder.sellingX -= actualDeltaX;
             
             if (actualDeltaX > 0 && pointOrder.sellingX == 0) {
@@ -194,7 +194,7 @@ contract LimitOrderModule {
     function decLimOrderWithY(
         int24 point,
         uint128 deltaY
-    ) external returns (uint128 actualDeltaY, uint256 legacyAccEarn) {
+    ) external returns (uint128 actualDeltaY, uint256 legacyAccEarn, uint128 claimSold, uint128 claimEarn) {
         require(point % pointDelta == 0, "PD");
 
         UserEarn.Data storage ue = userEarnX.get(msg.sender, point);
@@ -202,9 +202,9 @@ contract LimitOrderModule {
         uint160 sqrtPrice_96 = LogPowMath.getSqrtPrice(point);
         legacyAccEarn = pointOrder.legacyAccEarnX;
         if (legacyAccEarn > ue.lastAccEarn) {
-            pointOrder.legacyEarnX = ue.updateLegacyOrder(0, pointOrder.accEarnX, sqrtPrice_96, pointOrder.legacyEarnX, false);
+            (pointOrder.legacyEarnX, claimSold, claimEarn) = ue.updateLegacyOrder(0, pointOrder.accEarnX, sqrtPrice_96, pointOrder.legacyEarnX, false);
         } else {
-            (actualDeltaY, pointOrder.earnX) = ue.decUnlegacyOrder(deltaY, pointOrder.accEarnX, sqrtPrice_96, pointOrder.earnX, false);
+            (actualDeltaY, pointOrder.earnX, claimSold, claimEarn) = ue.decUnlegacyOrder(deltaY, pointOrder.accEarnX, sqrtPrice_96, pointOrder.earnX, false);
 
             pointOrder.sellingY -= actualDeltaY;
             
@@ -219,13 +219,19 @@ contract LimitOrderModule {
         
     }
 
+    struct AddLimOrderCacheData {
+        uint128 currX;
+        uint128 currY;
+        uint128 costOffset;
+    }
+
     /// Delegate call implementation for IiZiSwapPool#allLimOrderWithX.
     function addLimOrderWithX(
         address recipient,
         int24 point,
         uint128 amountX,
         bytes calldata data
-    ) external returns (uint128 orderX, uint128 acquireY) {
+    ) external returns (uint128 orderX, uint128 acquireY, uint128 claimSold, uint128 claimEarn) {
         require(point % pointDelta == 0, "PD");
         require(point >= state.currentPoint, "PG");
         require(point <= rightMostPt, "HO");
@@ -237,38 +243,40 @@ contract LimitOrderModule {
         orderX = amountX;
         acquireY = 0;
         uint160 sqrtPrice_96 = LogPowMath.getSqrtPrice(point);
-        
-        uint128 currY = pointOrder.sellingY;
-        uint128 currX = pointOrder.sellingX;
-        uint128 costOffsetX = 0;
 
-        if (currY > 0) {
-            (costOffsetX, acquireY) = SwapMathX2Y.x2YAtPrice(amountX, sqrtPrice_96, currY);
-            orderX -= costOffsetX;
-            currY -= acquireY;
-            pointOrder.accEarnX = pointOrder.accEarnX + costOffsetX;
-            pointOrder.earnX = pointOrder.earnX + costOffsetX;
-            pointOrder.sellingY = currY;
-            if (currY > 0) {
+        AddLimOrderCacheData memory addLimOrderCacheData = AddLimOrderCacheData({
+            currY: pointOrder.sellingY,
+            currX: pointOrder.sellingX,
+            costOffset: 0
+        });
+        
+        if (addLimOrderCacheData.currY > 0) {
+            (addLimOrderCacheData.costOffset, acquireY) = SwapMathX2Y.x2YAtPrice(amountX, sqrtPrice_96, addLimOrderCacheData.currY);
+            orderX -= addLimOrderCacheData.costOffset;
+            addLimOrderCacheData.currY -= acquireY;
+            pointOrder.accEarnX = pointOrder.accEarnX + addLimOrderCacheData.costOffset;
+            pointOrder.earnX = pointOrder.earnX + addLimOrderCacheData.costOffset;
+            pointOrder.sellingY = addLimOrderCacheData.currY;
+            if (addLimOrderCacheData.currY > 0) {
                 orderX = 0;
             }
         }
 
         if (orderX > 0) {
-            currX += orderX;
-            pointOrder.sellingX = currX;
+            addLimOrderCacheData.currX += orderX;
+            pointOrder.sellingX = addLimOrderCacheData.currX;
         }
 
         UserEarn.Data storage ue = userEarnY.get(recipient, point);
         if (ue.lastAccEarn < pointOrder.legacyAccEarnY) {
-            pointOrder.legacyEarnY = ue.updateLegacyOrder(orderX, pointOrder.accEarnY, sqrtPrice_96, pointOrder.legacyEarnY, true);
+            (pointOrder.legacyEarnY, claimSold, claimEarn) = ue.updateLegacyOrder(orderX, pointOrder.accEarnY, sqrtPrice_96, pointOrder.legacyEarnY, true);
         } else {
-            pointOrder.earnY = ue.addUnlegacyOrder(orderX, pointOrder.accEarnY, sqrtPrice_96, pointOrder.earnY, true);
+            (pointOrder.earnY, claimSold, claimEarn) = ue.addUnlegacyOrder(orderX, pointOrder.accEarnY, sqrtPrice_96, pointOrder.earnY, true);
         }
         ue.earnAssign = ue.earnAssign + acquireY;
         
         // update statusval and bitmap
-        if (currX == 0 && currY == 0) {
+        if (addLimOrderCacheData.currX == 0 && addLimOrderCacheData.currY == 0) {
             int24 val = orderOrEndpoint.getOrderOrEndptVal(point, pointDelta);
             // val & 2 != 0, because currX == 0, but amountX > 0
             int24 newVal = val & 1;
@@ -286,12 +294,12 @@ contract LimitOrderModule {
                 }
             }
         }
-        require(orderX + costOffsetX > 0, 'p>0');
+        require(orderX + addLimOrderCacheData.costOffset > 0, 'p>0');
 
         // trader pay x
         uint256 bx = balanceX();
-        IiZiSwapAddLimOrderCallback(msg.sender).payCallback(orderX + costOffsetX, 0, data);
-        require(balanceX() >= bx + orderX + costOffsetX, "XE");
+        IiZiSwapAddLimOrderCallback(msg.sender).payCallback(orderX + addLimOrderCacheData.costOffset, 0, data);
+        require(balanceX() >= bx + orderX + addLimOrderCacheData.costOffset, "XE");
     }
     
     /// Delegate call implementation for IiZiSwapPool#addLimOrderWithY.
@@ -300,7 +308,7 @@ contract LimitOrderModule {
         int24 point,
         uint128 amountY,
         bytes calldata data
-    ) external returns (uint128 orderY, uint128 acquireX) {
+    ) external returns (uint128 orderY, uint128 acquireX, uint128 claimSold, uint128 claimEarn) {
         require(point % pointDelta == 0, "PD");
         require(point <= state.currentPoint, "PL");
         require(point >= leftMostPt, "LO");
@@ -312,37 +320,40 @@ contract LimitOrderModule {
         orderY = amountY;
         acquireX = 0;
         uint160 sqrtPrice_96 = LogPowMath.getSqrtPrice(point);
-        uint128 currY = pointOrder.sellingY;
-        uint128 currX = pointOrder.sellingX;
-        uint128 costOffsetY = 0;
 
-        if (currX > 0) {
-            (costOffsetY, acquireX) = SwapMathY2X.y2XAtPrice(amountY, sqrtPrice_96, currX);
-            orderY -= costOffsetY;
-            currX -= acquireX;
-            pointOrder.accEarnY = pointOrder.accEarnY + costOffsetY;
-            pointOrder.earnY = pointOrder.earnY + costOffsetY;
-            pointOrder.sellingX = currX;
-            if (currX > 0) {
+        AddLimOrderCacheData memory addLimOrderCacheData = AddLimOrderCacheData({
+            currY: pointOrder.sellingY,
+            currX: pointOrder.sellingX,
+            costOffset: 0
+        });
+
+        if (addLimOrderCacheData.currX > 0) {
+            (addLimOrderCacheData.costOffset, acquireX) = SwapMathY2X.y2XAtPrice(amountY, sqrtPrice_96, addLimOrderCacheData.currX);
+            orderY -= addLimOrderCacheData.costOffset;
+            addLimOrderCacheData.currX -= acquireX;
+            pointOrder.accEarnY = pointOrder.accEarnY + addLimOrderCacheData.costOffset;
+            pointOrder.earnY = pointOrder.earnY + addLimOrderCacheData.costOffset;
+            pointOrder.sellingX = addLimOrderCacheData.currX;
+            if (addLimOrderCacheData.currX > 0) {
                 orderY = 0;
             }
         }
 
         if (orderY > 0) {
-            currY += orderY;
-            pointOrder.sellingY = currY;
+            addLimOrderCacheData.currY += orderY;
+            pointOrder.sellingY = addLimOrderCacheData.currY;
         }
 
         UserEarn.Data storage ue = userEarnX.get(recipient, point);
         if (pointOrder.legacyAccEarnX > ue.lastAccEarn) {
-            pointOrder.legacyEarnX = ue.updateLegacyOrder(orderY, pointOrder.accEarnX, sqrtPrice_96, pointOrder.legacyEarnX, false);
+            (pointOrder.legacyEarnX, claimSold, claimEarn) = ue.updateLegacyOrder(orderY, pointOrder.accEarnX, sqrtPrice_96, pointOrder.legacyEarnX, false);
         } else {
-            pointOrder.earnX = ue.addUnlegacyOrder(orderY, pointOrder.accEarnX, sqrtPrice_96, pointOrder.earnX, false);
+            (pointOrder.earnX, claimSold, claimEarn) = ue.addUnlegacyOrder(orderY, pointOrder.accEarnX, sqrtPrice_96, pointOrder.earnX, false);
         }
         ue.earnAssign = ue.earnAssign + acquireX;
 
         // update statusval and bitmap
-        if (currX == 0 && currY == 0) {
+        if (addLimOrderCacheData.currX == 0 && addLimOrderCacheData.currY == 0) {
             int24 val = orderOrEndpoint.getOrderOrEndptVal(point, pointDelta);
             // val & 2 != 0, because currY == 0, but amountY > 0
             int24 newVal = val & 1;
@@ -361,12 +372,12 @@ contract LimitOrderModule {
             }
         }
 
-        require(orderY + costOffsetY > 0, 'p>0');
+        require(orderY + addLimOrderCacheData.costOffset > 0, 'p>0');
 
         // trader pay y
         uint256 by = balanceY();
-        IiZiSwapAddLimOrderCallback(msg.sender).payCallback(0, orderY + costOffsetY, data);
-        require(balanceY() >= by + orderY + costOffsetY, "YE");
+        IiZiSwapAddLimOrderCallback(msg.sender).payCallback(0, orderY + addLimOrderCacheData.costOffset, data);
+        require(balanceY() >= by + orderY + addLimOrderCacheData.costOffset, "YE");
     }
 
     /// Delegate call implementation for IiZiSwapPool#collectLimOrder.

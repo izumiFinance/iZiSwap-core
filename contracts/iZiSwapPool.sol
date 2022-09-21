@@ -247,8 +247,10 @@ contract iZiSwapPool is IiZiSwapPool {
             abi.encodeWithSignature("decLimOrderWithX(int24,uint128)", point, deltaX)
         );
         if (success) {
-            (actualDeltaX, legacyAccEarn) = abi.decode(d, (uint128, uint256));
-            emit DecLimitOrder(actualDeltaX, point, true);
+            uint128 claimSold;
+            uint128 claimEarn;
+            (actualDeltaX, legacyAccEarn, claimSold, claimEarn) = abi.decode(d, (uint128, uint256, uint128, uint128));
+            emit DecLimitOrder(actualDeltaX, point, claimSold, claimEarn, true);
         } else {
             revertDCData(d);
         }
@@ -265,8 +267,10 @@ contract iZiSwapPool is IiZiSwapPool {
             abi.encodeWithSignature("decLimOrderWithY(int24,uint128)", point, deltaY)
         );
         if (success) {
-            (actualDeltaY, legacyAccEarn) = abi.decode(d, (uint128, uint256));
-            emit DecLimitOrder(actualDeltaY, point, false);
+            uint128 claimSold;
+            uint128 claimEarn;
+            (actualDeltaY, legacyAccEarn, claimSold, claimEarn) = abi.decode(d, (uint128, uint256, uint128, uint128));
+            emit DecLimitOrder(actualDeltaY, point, claimSold, claimEarn, false);
         } else {
             revertDCData(d);
         }
@@ -285,8 +289,10 @@ contract iZiSwapPool is IiZiSwapPool {
             abi.encodeWithSignature("addLimOrderWithX(address,int24,uint128,bytes)", recipient, point, amountX, data)
         );
         if (success) {
-            (orderX, acquireY) = abi.decode(d, (uint128, uint128));
-            emit AddLimitOrder(orderX, point, true);
+            uint128 claimSold;
+            uint128 claimEarn;
+            (orderX, acquireY, claimSold, claimEarn) = abi.decode(d, (uint128, uint128, uint128, uint128));
+            emit AddLimitOrder(orderX, acquireY, point, claimSold, claimEarn, true);
         } else {
             revertDCData(d);
         }
@@ -305,8 +311,10 @@ contract iZiSwapPool is IiZiSwapPool {
             abi.encodeWithSignature("addLimOrderWithY(address,int24,uint128,bytes)", recipient, point, amountY, data)
         );
         if (success) {
-            (orderY, acquireX) = abi.decode(d, (uint128, uint128));
-            emit AddLimitOrder(orderY, point, false);
+            uint128 claimSold;
+            uint128 claimEarn;
+            (orderY, acquireX, claimSold, claimEarn) = abi.decode(d, (uint128, uint128, uint128, uint128));
+            emit AddLimitOrder(orderY, acquireX, point, claimSold, claimEarn, false);
         } else {
             revertDCData(d);
         }

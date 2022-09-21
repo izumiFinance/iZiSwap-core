@@ -49,7 +49,7 @@ library UserEarn {
         uint160 sqrtPrice_96,
         uint128 totalEarn,
         bool isEarnY
-    ) internal returns (uint128 totalEarnRemain) {
+    ) internal returns (uint128 totalEarnRemain, uint128 claimSold, uint128 claimEarn) {
         Data memory data = self;
 
         // first, we compute how many earned token remained on the point order
@@ -100,8 +100,10 @@ library UserEarn {
         if (sold > 0) {
             self.sellingRemain = data.sellingRemain;
         }
+        claimSold = uint128(sold);
+        claimEarn = uint128(earn);
         // earn <= totalEarn
-        totalEarnRemain = totalEarn - uint128(earn);
+        totalEarnRemain = totalEarn - claimEarn;
     }
 
     /// @notice update UserEarn info for an unlegacy (uncleared during swap) limit order.
@@ -121,9 +123,9 @@ library UserEarn {
         uint160 sqrtPrice_96,
         uint128 totalEarn,
         bool isEarnY
-    ) internal returns(uint128 totalEarnRemain) {
+    ) internal returns(uint128 totalEarnRemain, uint128 claimSold, uint128 claimEarn) {
         // first, call `updateUnlegacyOrder` to update unlegacy order
-        totalEarnRemain = updateUnlegacyOrder(self, currAccEarn, sqrtPrice_96, totalEarn, isEarnY);
+        (totalEarnRemain, claimSold, claimEarn) = updateUnlegacyOrder(self, currAccEarn, sqrtPrice_96, totalEarn, isEarnY);
         // then, add
         self.sellingRemain = self.sellingRemain + delta;
     }
@@ -145,9 +147,9 @@ library UserEarn {
         uint160 sqrtPrice_96,
         uint128 totalEarn,
         bool isEarnY
-    ) internal returns(uint128 actualDelta, uint128 totalEarnRemain) {
+    ) internal returns(uint128 actualDelta, uint128 totalEarnRemain, uint128 claimSold, uint128 claimEarn) {
         // first, call `updateUnlegacyOrder` to update unlegacy order
-        totalEarnRemain = updateUnlegacyOrder(self, currAccEarn, sqrtPrice_96, totalEarn, isEarnY);
+        (totalEarnRemain, claimSold, claimEarn) = updateUnlegacyOrder(self, currAccEarn, sqrtPrice_96, totalEarn, isEarnY);
         // then decrease
         actualDelta = MaxMinMath.min(delta, self.sellingRemain);
         self.sellingRemain = self.sellingRemain - actualDelta;
@@ -173,8 +175,8 @@ library UserEarn {
         uint160 sqrtPrice_96,
         uint128 totalLegacyEarn,
         bool isEarnY
-    ) internal returns(uint128 totalLegacyEarnRemain) {
-        uint256 sold = self.sellingRemain;
+    ) internal returns(uint128 totalLegacyEarnRemain, uint128 sold, uint128 claimedEarn) {
+        sold = self.sellingRemain;
         uint256 earn = 0;
         if (sold > 0) {
             // transform all its remained selling token to earned token.
@@ -194,8 +196,9 @@ library UserEarn {
             // count earned token into legacyEarn field, not earn field
             self.legacyEarn += uint128(earn);
         }
+        claimedEarn = uint128(earn);
         self.lastAccEarn = currAccEarn;
-        totalLegacyEarnRemain = totalLegacyEarn - uint128(earn);
+        totalLegacyEarnRemain = totalLegacyEarn - claimedEarn;
         if (addDelta > 0) {
             // sellingRemain has been clear to 0
             self.sellingRemain = addDelta;
