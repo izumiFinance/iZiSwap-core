@@ -31,6 +31,9 @@ async function main() {
     console.log('limitOrderModule: ', limitOrderModule)
     console.log('flashModule: ', flashModule);
 
+    const args = [para.receiver, swapX2YModule, swapY2XModule, liquidityModule, limitOrderModule, flashModule]
+    console.log('args: ', args)
+
     const factory = await iZiSwapFactory.deploy(para.receiver, swapX2YModule, swapY2XModule, liquidityModule, limitOrderModule, flashModule);
     await factory.deployed();
 
