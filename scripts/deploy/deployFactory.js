@@ -11,7 +11,8 @@ const limitOrderModule = deployed[net].limitOrderModule;
 const flashModule = deployed[net].flashModule;
 const v = process.argv
 const para = {
-    receiver: v[2]
+    receiver: v[2],
+    defaultFeeChargePercent: v[3]
 }
 
 async function main() {
@@ -29,12 +30,12 @@ async function main() {
     console.log('swapY2XModule: ', swapY2XModule)
     console.log('liquidityModule: ', liquidityModule)
     console.log('limitOrderModule: ', limitOrderModule)
-    console.log('flashModule: ', flashModule);
+    console.log('flashModule: ', flashModule, 50);
 
-    const args = [para.receiver, swapX2YModule, swapY2XModule, liquidityModule, limitOrderModule, flashModule]
+    const args = [para.receiver, swapX2YModule, swapY2XModule, liquidityModule, limitOrderModule, flashModule, defaultFeeChargePercent]
     console.log('args: ', args)
 
-    const factory = await iZiSwapFactory.deploy(para.receiver, swapX2YModule, swapY2XModule, liquidityModule, limitOrderModule, flashModule);
+    const factory = await iZiSwapFactory.deploy(para.receiver, swapX2YModule, swapY2XModule, liquidityModule, limitOrderModule, flashModule, defaultFeeChargePercent);
     await factory.deployed();
 
     console.log("factory addr: " + factory.address);
