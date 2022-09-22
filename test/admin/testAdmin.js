@@ -54,7 +54,7 @@ describe("admin operation", function () {
         // deploy a factory
         const iZiSwapFactory = await ethers.getContractFactory("iZiSwapFactory");
 
-        factory = await iZiSwapFactory.deploy(receiver.address, swapX2YModule, swapY2XModule, liquidityModule, limitOrderModule, flashModule);
+        factory = await iZiSwapFactory.deploy(receiver.address, swapX2YModule, swapY2XModule, liquidityModule, limitOrderModule, flashModule, 50);
         await factory.deployed();
         await factory.enableFeeAmount(3000, 50);
 
