@@ -124,29 +124,17 @@ contract iZiSwapPool is IiZiSwapPool {
     }
 
     /// @notice Construct a pool
-    /// @param _factory address of iZiSwapFactory
-    /// @param _tokenX address of tokenX
-    /// @param _tokenY address of tokenY
-    /// @param _fee fee amount
-    /// @param currentPoint initial current point of pool
-    /// @param _pointDelta pointDelta of pool, etc. minimum number of distance between initialized or limitorder points 
-    constructor(
-        address _factory,
-        address _tokenX,
-        address _tokenY,
-        uint24 _fee,
-        int24 currentPoint,
-        int24 _pointDelta
-    ) public {
+    constructor() {
+        (address _tokenX, address _tokenY, uint24 _fee, int24 currentPoint, int24 _pointDelta, uint24 _feeChargePercent) = IiZiSwapFactory(msg.sender).deployPoolParams();
         require(_tokenX < _tokenY, 'x<y');
         require(_pointDelta > 0, 'pd0');
         original = address(this);
-        factory = _factory;
-        swapModuleX2Y = IiZiSwapFactory(_factory).swapX2YModule();
-        swapModuleY2X = IiZiSwapFactory(_factory).swapY2XModule();
-        liquidityModule = IiZiSwapFactory(_factory).liquidityModule();
-        limitOrderModule = IiZiSwapFactory(_factory).limitOrderModule();
-        flashModule = IiZiSwapFactory(_factory).flashModule();
+        factory = msg.sender;
+        swapModuleX2Y = IiZiSwapFactory(msg.sender).swapX2YModule();
+        swapModuleY2X = IiZiSwapFactory(msg.sender).swapY2XModule();
+        liquidityModule = IiZiSwapFactory(msg.sender).liquidityModule();
+        limitOrderModule = IiZiSwapFactory(msg.sender).limitOrderModule();
+        flashModule = IiZiSwapFactory(msg.sender).flashModule();
 
         tokenX = _tokenX;
         tokenY = _tokenY;
@@ -167,7 +155,7 @@ contract iZiSwapPool is IiZiSwapPool {
 
         (state.observationQueueLen, state.observationNextQueueLen) = observations.init(uint32(block.timestamp));
         state.observationCurrentIndex = 0;
-        feeChargePercent = 50;
+        feeChargePercent = _feeChargePercent;
     }
 
     function balanceX() private view returns (uint256) {
