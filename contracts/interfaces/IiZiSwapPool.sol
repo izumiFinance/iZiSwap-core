@@ -37,6 +37,22 @@ interface IiZiSwapPool {
         uint256 amountY
     );
 
+    /// @notice Emitted when fees and withdrawed liquidity are collected 
+    /// @param owner The owner of the Liquidity
+    /// @param recipient recipient of those token
+    /// @param leftPoint The left point of the liquidity
+    /// @param rightPoint The right point of the liquidity
+    /// @param amountX The amount of tokenX (fees and withdrawed tokenX from liquidity)
+    /// @param amountY The amount of tokenY (fees and withdrawed tokenY from liquidity)
+    event CollectLiquidity(
+        address indexed owner,
+        address recipient,
+        int24 indexed leftPoint,
+        int24 indexed rightPoint,
+        uint256 amountX,
+        uint256 amountY
+    );
+
     /// @notice Emitted when a trader successfully exchange.
     /// @param tokenX tokenX of pool
     /// @param tokenY tokenY of pool
@@ -70,6 +86,7 @@ interface IiZiSwapPool {
     );
 
     /// @notice Emitted when a seller successfully add a limit order.
+    /// @param owner owner of limit order
     /// @param addAmount amount of token to sell the seller added
     /// @param acquireAmount amount of earn-token acquired, if there exists some opposite order before 
     /// @param point point of limit order
@@ -77,25 +94,44 @@ interface IiZiSwapPool {
     /// @param claimEarn claimed earned earn-token, if this owner has order with same direction on this point before
     /// @param sellXEarnY direction of limit order, etc. sell tokenX or sell tokenY
     event AddLimitOrder(
+        address indexed owner,
         uint128 addAmount,
         uint128 acquireAmount,
-        int24 point,
+        int24 indexed point,
         uint128 claimSold,
         uint128 claimEarn,
         bool sellXEarnY
     );
 
     /// @notice Emitted when a seller successfully decrease a limit order.
+    /// @param owner owner of limit order
     /// @param decreaseAmount amount of token to sell the seller decreased
     /// @param point point of limit order
     /// @param claimSold claimed sold sell-token
     /// @param claimEarn claimed earned earn-token
     /// @param sellXEarnY direction of limit order, etc. sell tokenX or sell tokenY
     event DecLimitOrder(
+        address indexed owner,
         uint128 decreaseAmount,
-        int24 point,
+        int24 indexed point,
         uint128 claimSold,
         uint128 claimEarn,
+        bool sellXEarnY
+    );
+
+    /// @notice Emitted when collect from a limit order
+    /// @param owner The owner of the Liquidity
+    /// @param recipient recipient of those token
+    /// @param point The point of the limit order
+    /// @param collectDec The amount of decreased sell token collected
+    /// @param collectEarn The amount of earn token collected
+    /// @param sellXEarnY direction of limit order, etc. sell tokenX or sell tokenY
+    event CollectLimitOrder(
+        address indexed owner,
+        address recipient,
+        int24 indexed point,
+        uint128 collectDec,
+        uint128 collectEarn,
         bool sellXEarnY
     );
 

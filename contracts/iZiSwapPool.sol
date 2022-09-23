@@ -238,7 +238,7 @@ contract iZiSwapPool is IiZiSwapPool {
             uint128 claimSold;
             uint128 claimEarn;
             (actualDeltaX, legacyAccEarn, claimSold, claimEarn) = abi.decode(d, (uint128, uint256, uint128, uint128));
-            emit DecLimitOrder(actualDeltaX, point, claimSold, claimEarn, true);
+            emit DecLimitOrder(msg.sender, actualDeltaX, point, claimSold, claimEarn, true);
         } else {
             revertDCData(d);
         }
@@ -258,7 +258,7 @@ contract iZiSwapPool is IiZiSwapPool {
             uint128 claimSold;
             uint128 claimEarn;
             (actualDeltaY, legacyAccEarn, claimSold, claimEarn) = abi.decode(d, (uint128, uint256, uint128, uint128));
-            emit DecLimitOrder(actualDeltaY, point, claimSold, claimEarn, false);
+            emit DecLimitOrder(msg.sender, actualDeltaY, point, claimSold, claimEarn, false);
         } else {
             revertDCData(d);
         }
@@ -280,7 +280,7 @@ contract iZiSwapPool is IiZiSwapPool {
             uint128 claimSold;
             uint128 claimEarn;
             (orderX, acquireY, claimSold, claimEarn) = abi.decode(d, (uint128, uint128, uint128, uint128));
-            emit AddLimitOrder(orderX, acquireY, point, claimSold, claimEarn, true);
+            emit AddLimitOrder(recipient, orderX, acquireY, point, claimSold, claimEarn, true);
         } else {
             revertDCData(d);
         }
@@ -302,7 +302,7 @@ contract iZiSwapPool is IiZiSwapPool {
             uint128 claimSold;
             uint128 claimEarn;
             (orderY, acquireX, claimSold, claimEarn) = abi.decode(d, (uint128, uint128, uint128, uint128));
-            emit AddLimitOrder(orderY, acquireX, point, claimSold, claimEarn, false);
+            emit AddLimitOrder(recipient, orderY, acquireX, point, claimSold, claimEarn, false);
         } else {
             revertDCData(d);
         }
@@ -318,6 +318,7 @@ contract iZiSwapPool is IiZiSwapPool {
         );
         if (success) {
             (actualCollectDec, actualCollectEarn) = abi.decode(d, (uint128, uint128));
+            emit CollectLimitOrder(msg.sender, recipient, point, actualCollectDec, actualCollectEarn, isEarnY);
         } else {
             revertDCData(d);
         }
@@ -372,6 +373,7 @@ contract iZiSwapPool is IiZiSwapPool {
         );
         if (success) {
             (actualAmountX, actualAmountY) = abi.decode(d, (uint256, uint256));
+            emit CollectLiquidity(msg.sender, recipient, leftPt, rightPt, actualAmountX, actualAmountY);
         } else {
             revertDCData(d);
         }
