@@ -84,6 +84,10 @@ interface IiZiSwapFactory {
     /// @param _chargeReceiver address of new receiver
     function modifyChargeReceiver(address _chargeReceiver) external;
 
+    /// @notice Change defaultFeeChargePercent
+    /// @param _defaultFeeChargePercent new charge percent
+    function modifyDefaultFeeChargePercent(uint24 _defaultFeeChargePercent) external;
+
     function deployPoolParams() external view returns(
         address tokenX,
         address tokenY,

@@ -129,5 +129,10 @@ contract iZiSwapFactory is Ownable, IiZiSwapFactory {
     function modifyChargeReceiver(address _chargeReceiver) external override onlyOwner {
         chargeReceiver = _chargeReceiver;
     }
+
+    /// @inheritdoc IiZiSwapFactory
+    function modifyDefaultFeeChargePercent(uint24 _defaultFeeChargePercent) external override onlyOwner {
+        defaultFeeChargePercent = _defaultFeeChargePercent;
+    }
     
 }
