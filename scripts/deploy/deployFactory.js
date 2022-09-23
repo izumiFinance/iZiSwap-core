@@ -30,12 +30,12 @@ async function main() {
     console.log('swapY2XModule: ', swapY2XModule)
     console.log('liquidityModule: ', liquidityModule)
     console.log('limitOrderModule: ', limitOrderModule)
-    console.log('flashModule: ', flashModule, 50);
+    console.log('flashModule: ', flashModule);
 
-    const args = [para.receiver, swapX2YModule, swapY2XModule, liquidityModule, limitOrderModule, flashModule, defaultFeeChargePercent]
+    const args = [para.receiver, swapX2YModule, swapY2XModule, liquidityModule, limitOrderModule, flashModule, para.defaultFeeChargePercent]
     console.log('args: ', args)
 
-    const factory = await iZiSwapFactory.deploy(para.receiver, swapX2YModule, swapY2XModule, liquidityModule, limitOrderModule, flashModule, defaultFeeChargePercent);
+    const factory = await iZiSwapFactory.deploy(para.receiver, swapX2YModule, swapY2XModule, liquidityModule, limitOrderModule, flashModule, para.defaultFeeChargePercent);
     await factory.deployed();
 
     console.log("factory addr: " + factory.address);
