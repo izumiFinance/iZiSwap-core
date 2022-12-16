@@ -72,6 +72,14 @@ module.exports = {
 	    url: 'https://rpc-mainnet.maticvigil.com',
       accounts: [sk],
     },
+    zkSyncAlphaTest: {
+      url: 'https://zksync2-testnet.zksync.dev',
+      accounts: [sk],
+    },
+    mantleTest: {
+      url: 'https://rpc.testnet.mantle.xyz',
+      accounts: [sk],
+    },
   },
   etherscan: {
     apiKey: apiKey,

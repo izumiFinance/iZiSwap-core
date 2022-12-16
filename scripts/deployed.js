@@ -4,6 +4,13 @@ module.exports = {
         BIT: '0x41BC21bdcF0FA87ae6eeFcBE0e4dB29dB2b650C1',
         USDC: '0xe507AAC9eFb2A08F53C7BC73B3B1b8BCf883E41B',
     },
+    mantleTest: {
+	swapX2YModule: '0xED9b4E3ED8fe7e820B950F28f939AF848f98e995',
+	swapY2XModule: '0x706A11AF5bb5C2a50aB9802503ddbfF69373D1bd',
+	liquidityModule: '0x817EC83Fb6906ba0777E89110d5089313385F4A2',
+	limitOrderModule: '0xAF931D7AaB9643d1E63Ed2E1fB17911c65e09678',
+	flashModule: '0x29b66280F0Ea5F5DfbD7C94D560FC060575360cd',
+    },
     bscTest: {
         swapX2YModule: '0xf6991b783FAbC33Cc7E735Bafd81ac087e08f564',
         swapY2XModule: '0x6E58130919Bb63AA8B5B3Bd673093C1651b9fE95',
@@ -37,6 +44,8 @@ module.exports = {
         limitOrderModule: '0x344ADD21b136B09051fb061881eC7971c92cE7f7',
         flashModule: '0x79D175eF5fBe31b5D84B3ee359fcbBB466153E39',
         factory: '0xd7de110Bd452AAB96608ac3750c3730A17993DE0',
+        WBNB: '0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c',
+        COCA: '0x44516Eb3D488175128D257748610426a866937D8',
     },
     aurora: {
         swapX2YModule: '0x9Bf8399c9f5b777cbA2052F83E213ff59e51612B',

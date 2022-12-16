@@ -1,7 +1,6 @@
 const { ethers } = require("hardhat");
 
 async function main() {
-
     const SwapX2YModuleFactory = await ethers.getContractFactory("SwapX2YModule");
     const swapX2YModule = await SwapX2YModuleFactory.deploy();
     await swapX2YModule.deployed();
