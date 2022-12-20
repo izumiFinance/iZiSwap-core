@@ -80,6 +80,10 @@ module.exports = {
       url: 'https://rpc.testnet.mantle.xyz',
       accounts: [sk],
     },
+    scrollTestL2: {
+      url: 'https://prealpha.scroll.io/l2',
+      accounts: [sk],
+    }
   },
   etherscan: {
     apiKey: apiKey,
