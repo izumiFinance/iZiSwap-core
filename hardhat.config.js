@@ -88,6 +88,10 @@ module.exports = {
       url: 'https://rpctest.ic-plaza.org/',
       accounts: [sk],
     },
+    icplaza: {
+      url: 'https://rpcmainnet.ic-plaza.org/',
+      accounts: [sk],
+    },
   },
   etherscan: {
     apiKey: apiKey,

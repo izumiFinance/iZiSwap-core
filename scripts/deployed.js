@@ -4,6 +4,13 @@ module.exports = {
         BIT: '0x41BC21bdcF0FA87ae6eeFcBE0e4dB29dB2b650C1',
         USDC: '0xe507AAC9eFb2A08F53C7BC73B3B1b8BCf883E41B',
     },
+    icplaza: {
+        swapX2YModule: '0x4353b845AfE70D4405E9d35a5A9cfE151d9A3cA7',
+	swapY2XModule: '0x31032ECb1920F3bBfB5960Ed47d264753FbB1577',
+	liquidityModule: '0xa7f0AFE82979A7Fca7ba6dC0F0F311A02d760325',
+	limitOrderModule: '0x95eed35F0ad225d53EC8D2459A90eDc715EC341F',
+	flashModule: '0x303201c3CB79f99E240a0B3ad91A98BFbFa67AD7',
+    },
     scrollTestL2: {
         swapX2YModule: '0x706A11AF5bb5C2a50aB9802503ddbfF69373D1bd',
         swapY2XModule: '0x817EC83Fb6906ba0777E89110d5089313385F4A2',
