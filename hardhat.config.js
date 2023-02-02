@@ -92,6 +92,14 @@ module.exports = {
       url: 'https://rpcmainnet.ic-plaza.org/',
       accounts: [sk],
     },
+    syscoin: {
+	    url: 'https://rpc.ankr.com/syscoin',
+      accounts: [sk],
+    },
+    syscoinTest: {
+	    url: 'https://rpc.tanenbaum.io/',
+	    accounts: [sk],
+    }
   },
   etherscan: {
     apiKey: apiKey,

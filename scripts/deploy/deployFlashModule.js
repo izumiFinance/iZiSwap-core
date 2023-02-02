@@ -1,9 +1,14 @@
 const { ethers } = require("hardhat");
 
 async function main() {
+    const feeData = await ethers.provider.getFeeData();
 
     const FlashModuleFactory = await ethers.getContractFactory('FlashModule');
-    const flashModule = await FlashModuleFactory.deploy();
+    const flashModule = await FlashModuleFactory.deploy({
+                        maxPriorityFeePerGas: feeData.maxPriorityFeePerGas,
+                        maxFeePerGas: feeData.maxFeePerGas,
+                        type: 2
+                });
     await flashModule.deployed();
 
     console.log("flashModule addr: " + flashModule.address);

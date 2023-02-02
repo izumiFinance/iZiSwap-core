@@ -16,7 +16,7 @@ const para = {
 }
 
 async function main() {
-
+    const feeData = await ethers.provider.getFeeData();
     console.log("Paramters: ");
     for ( var i in para) { console.log("    " + i + ": " + para[i]); }
 
@@ -35,7 +35,12 @@ async function main() {
     const args = [para.receiver, swapX2YModule, swapY2XModule, liquidityModule, limitOrderModule, flashModule, para.defaultFeeChargePercent]
     console.log('args: ', args)
 
-    const factory = await iZiSwapFactory.deploy(para.receiver, swapX2YModule, swapY2XModule, liquidityModule, limitOrderModule, flashModule, para.defaultFeeChargePercent);
+    const factory = await iZiSwapFactory.deploy(para.receiver, swapX2YModule, swapY2XModule, liquidityModule, limitOrderModule, flashModule, para.defaultFeeChargePercent, 
+                {
+                        maxPriorityFeePerGas: feeData.maxPriorityFeePerGas,
+                        maxFeePerGas: feeData.maxFeePerGas,
+                        type: 2
+                });
     await factory.deployed();
 
     console.log("factory addr: " + factory.address);
