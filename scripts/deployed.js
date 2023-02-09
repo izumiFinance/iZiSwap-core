@@ -25,6 +25,13 @@ module.exports = {
         limitOrderModule: '0x64c2F1306b4ED3183E7B345158fd01c19C0d8c5E',
         flashModule: '0x67A1f4A939b477A6b7c5BF94D97E45dE87E608eF',
     },
+    bedrockRolluxTestL2: {
+        swapX2YModule: '0xED9b4E3ED8fe7e820B950F28f939AF848f98e995',
+	swapY2XModule: '0x706A11AF5bb5C2a50aB9802503ddbfF69373D1bd',
+	liquidityModule: '0x817EC83Fb6906ba0777E89110d5089313385F4A2',
+	limitOrderModule: '0xAF931D7AaB9643d1E63Ed2E1fB17911c65e09678',
+	flashModule: '0x29b66280F0Ea5F5DfbD7C94D560FC060575360cd',
+    },
     syscoin: {
         swapX2YModule: '0x9b1757E5da9c6943E0212da00B674498a4FEb5B2',
 	swapY2XModule: '0x275C2E1A6516D32c67d0D391A6073b2523f5afd1',
