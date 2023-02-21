@@ -2,6 +2,7 @@ require("@nomiclabs/hardhat-waffle");
 require('hardhat-contract-sizer');
 require('@nomiclabs/hardhat-etherscan')
 require("@cronos-labs/hardhat-cronoscan")
+require("hardhat-conflux");
 
 const secret = require('./.secret.js');
 const sk = secret.sk;
@@ -99,6 +100,10 @@ module.exports = {
     syscoinTest: {
 	    url: 'https://rpc.tanenbaum.io/',
 	    accounts: [sk],
+    },
+    confluxEspace: {
+      url: 'https://evm.confluxrpc.com',
+      accounts: [sk],
     }
   },
   etherscan: {
