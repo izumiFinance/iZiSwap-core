@@ -19,6 +19,17 @@ module.exports = {
           optimizer: {
             enabled: true,
             runs: 10
+          },
+          outputSelection: {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+            }
           }
         }
       },
@@ -99,6 +110,10 @@ module.exports = {
     syscoinTest: {
 	    url: 'https://rpc.tanenbaum.io/',
 	    accounts: [sk],
+    },
+    meter: {
+      url: 'https://rpc.meter.io',
+      accounts: [sk],
     }
   },
   etherscan: {

@@ -11,6 +11,13 @@ module.exports = {
 	limitOrderModule: '0x95eed35F0ad225d53EC8D2459A90eDc715EC341F',
 	flashModule: '0x303201c3CB79f99E240a0B3ad91A98BFbFa67AD7',
     },
+    meter: {
+        swapX2YModule: '0x4231307e3A461EE395455c8736DD7e76607aC69a',
+        swapY2XModule: '0x6E43C308Ffc3C8885c30F415B1317eA1C0b8A73E',
+        liquidityModule: '0x63791a6284bE6C85D7AB0f352f38F70545542511',
+        limitOrderModule: '0xff8104D3b210e3041a1a548751b002AA623756e0',
+        flashModule: '0x3B60C03036D112c9daeA07ecBBDeee77111E038A',
+    },
     scrollTestL2: {
         swapX2YModule: '0xED9b4E3ED8fe7e820B950F28f939AF848f98e995',
 	swapY2XModule: '0x706A11AF5bb5C2a50aB9802503ddbfF69373D1bd',
