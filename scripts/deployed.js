@@ -18,6 +18,13 @@ module.exports = {
         limitOrderModule: '0xff8104D3b210e3041a1a548751b002AA623756e0',
         flashModule: '0x3B60C03036D112c9daeA07ecBBDeee77111E038A',
     },
+    meterTest: {
+        swapX2YModule: '0x4357824Ddcb47557B960275fc10BE8eC23C427dc',
+        swapY2XModule: '0xb9061C3A7E2746493A48791E4Fb19F4F698126d8',
+        liquidityModule: '0x592662eb5b8a5564903d8Fb37aE866F999FC729f',
+        limitOrderModule: '0xF76c191226A515EA48CeF30f521DD227f4552b25',
+        flashModule: '0xfB0A7FB04411f1C9706EE7CE8ad9E31378c656C1',
+    },
     telos: {    
         swapX2YModule: '0x4d4673745AAC664eFB9758fdd571F40d78a87bfe',
         swapY2XModule: '0x32D02Fc7722E81F6Ac60B87ea8B4b63a52Ad2b55',
@@ -47,11 +54,11 @@ module.exports = {
 	flashModule: '0xC7A1B769FBb9E609b219A6388F0c8c5a6476F7B6',
     },
     mantleTest: {
-        swapX2YModule: '0xED9b4E3ED8fe7e820B950F28f939AF848f98e995',
-        swapY2XModule: '0x706A11AF5bb5C2a50aB9802503ddbfF69373D1bd',
-        liquidityModule: '0x817EC83Fb6906ba0777E89110d5089313385F4A2',
-	limitOrderModule: '0xAF931D7AaB9643d1E63Ed2E1fB17911c65e09678',
-	flashModule: '0x29b66280F0Ea5F5DfbD7C94D560FC060575360cd',
+        swapX2YModule: '0x7336A5a3251b9259DDf8B9D02a96dA0153e0799d',
+        swapY2XModule: '0x5708c30c6eCEa3f432aC860Cf6CFdF631f576810',
+        liquidityModule: '0x3aB38EF845E86E949253Dd3a6FdA37Cc7d4Cd892',
+        limitOrderModule: '0x6953DEe956eEe39973F1e1090368Ba434CCa0d94',
+        flashModule: '0xcFf0318C36147deaB07Cf751a00b21F83d13412d',
     },
     bscTest: {
         swapX2YModule: '0xf6991b783FAbC33Cc7E735Bafd81ac087e08f564',
