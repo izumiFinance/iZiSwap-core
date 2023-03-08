@@ -115,6 +115,10 @@ module.exports = {
       url: 'https://rpc.meter.io',
       accounts: [sk],
     },
+    meterTest: {
+      url: 'https://rpctest.meter.io',
+      accounts: [sk],
+    },
     telos: {
       url: 'https://mainnet.telos.net/evm',
       accounts: [sk],
