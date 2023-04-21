@@ -19,6 +19,17 @@ module.exports = {
           optimizer: {
             enabled: true,
             runs: 10
+          },
+          outputSelection: {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+            }
           }
         }
       },
@@ -102,6 +113,18 @@ module.exports = {
     },
     bedrockRolluxTestL2: {
       url: 'https://bedrock.rollux.com:9545/',
+      accounts: [sk],
+    },
+    meter: {
+      url: 'https://rpc.meter.io',
+      accounts: [sk],
+    },
+    meterTest: {
+      url: 'https://rpctest.meter.io',
+      accounts: [sk],
+    },
+    telos: {
+      url: 'https://mainnet.telos.net/evm',
       accounts: [sk],
     }
   },
