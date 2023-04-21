@@ -82,6 +82,14 @@ module.exports = {
         WBNB: '0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c',
         COCA: '0x44516Eb3D488175128D257748610426a866937D8',
     },
+    ethereum: {
+        swapX2YModule: '0xF4efDB5A1E852f78e807fAE7100B1d38351e38c7',
+        swapY2XModule: '0xe96526e92ee57bBD468DA1721987aa988b008768',
+        liquidityModule: '0xbD6abA1Ef82A4cD6e15CB05e95f433ef48dfb5df',
+        limitOrderModule: '0x8c7d3063579BdB0b90997e18A770eaE32E1eBb08',
+        flashModule: '0x110dE362cc436D7f54210f96b8C7652C2617887D',
+        factory: '0x1502d025BfA624469892289D45C0352997251728',
+    },
     aurora: {
         swapX2YModule: '0x9Bf8399c9f5b777cbA2052F83E213ff59e51612B',
         swapY2XModule: '0x12a76434182c8cAF7856CE1410cD8abfC5e2639F',
