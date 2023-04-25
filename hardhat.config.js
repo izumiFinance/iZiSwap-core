@@ -51,6 +51,10 @@ module.exports = {
       // gas: 90000000,
       gasPrice: 10000000000,
     },
+    ontologyTest: {
+      url: 'https://polaris1.ont.io:10339',
+      accounts: [sk],
+    },
     bsc: {
       url: 'https://bsc-dataseed.binance.org/',
       accounts: [sk],
