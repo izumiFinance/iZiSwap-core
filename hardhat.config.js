@@ -61,6 +61,10 @@ module.exports = {
       // gas: 90000000,
       gasPrice: 5000000000,
     },
+    ontology: {
+      url: 'https://dappnode1.ont.io:10339',
+      accounts: [sk],
+    },
     arbitrum: {
       url: 'https://arb1.arbitrum.io/rpc',
       accounts: [sk],

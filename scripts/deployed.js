@@ -110,6 +110,13 @@ module.exports = {
         WBNB: '0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c',
         COCA: '0x44516Eb3D488175128D257748610426a866937D8',
     },
+    ontology: {
+        swapX2YModule: '0x4d4673745AAC664eFB9758fdd571F40d78a87bfe',
+        swapY2XModule: '0x32D02Fc7722E81F6Ac60B87ea8B4b63a52Ad2b55',
+        liquidityModule: '0xF4efDB5A1E852f78e807fAE7100B1d38351e38c7',
+        limitOrderModule: '0xe96526e92ee57bBD468DA1721987aa988b008768',
+        flashModule: '0xbD6abA1Ef82A4cD6e15CB05e95f433ef48dfb5df',
+    },
     ethereum: {
         swapX2YModule: '0xF4efDB5A1E852f78e807fAE7100B1d38351e38c7',
         swapY2XModule: '0xe96526e92ee57bBD468DA1721987aa988b008768',
