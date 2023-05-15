@@ -100,7 +100,7 @@ module.exports = {
       accounts: [sk],
     },
     scrollTestL2: {
-      url: 'https://prealpha.scroll.io/l2',
+      url: 'https://alpha-rpc.scroll.io/l2',
       accounts: [sk],
     },
     icplazaTest: {
