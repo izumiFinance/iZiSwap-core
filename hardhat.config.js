@@ -19,6 +19,17 @@ module.exports = {
           optimizer: {
             enabled: true,
             runs: 10
+          },
+          outputSelection: {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+            }
           }
         }
       },
@@ -40,11 +51,19 @@ module.exports = {
       // gas: 90000000,
       gasPrice: 10000000000,
     },
+    ontologyTest: {
+      url: 'https://polaris1.ont.io:10339',
+      accounts: [sk],
+    },
     bsc: {
       url: 'https://bsc-dataseed.binance.org/',
       accounts: [sk],
       // gas: 90000000,
       gasPrice: 5000000000,
+    },
+    ontology: {
+      url: 'https://dappnode1.ont.io:10339',
+      accounts: [sk],
     },
     arbitrum: {
       url: 'https://arb1.arbitrum.io/rpc',
@@ -81,7 +100,7 @@ module.exports = {
       accounts: [sk],
     },
     scrollTestL2: {
-      url: 'https://prealpha.scroll.io/l2',
+      url: 'https://alpha-rpc.scroll.io/l2',
       accounts: [sk],
     },
     icplazaTest: {
@@ -99,6 +118,26 @@ module.exports = {
     syscoinTest: {
 	    url: 'https://rpc.tanenbaum.io/',
 	    accounts: [sk],
+    },
+    bedrockRolluxTestL2: {
+      url: 'https://bedrock.rollux.com:9545/',
+      accounts: [sk],
+    },
+    meter: {
+      url: 'https://rpc.meter.io',
+      accounts: [sk],
+    },
+    meterTest: {
+      url: 'https://rpctest.meter.io',
+      accounts: [sk],
+    },
+    telos: {
+      url: 'https://mainnet.telos.net/evm',
+      accounts: [sk],
+    },
+    ultron: {
+      url: 'https://ultron-rpc.net',
+      accounts: [sk],
     }
   },
   etherscan: {
