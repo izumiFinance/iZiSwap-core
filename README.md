@@ -8,7 +8,7 @@
 </div>
 
 
-Contracts for iZiSwap core. 
+Core contracts for iZiSwap, a next-generation DEX to maximize capital efficiency by supporting concentrated liquidity and realizing Limit Order in a decentralized way.
 [iZiSwap Periphery](https://github.com/izumiFinance/iZiSwap-periphery)  contracts are suggested entrances to interact with the core contracts.  
 
 ## Overview
@@ -21,7 +21,13 @@ Contracts for iZiSwap core.
   </a>
 </div>
 
+iZiSwap core includes the core logic implementation for swap, liquidity management, and limit orders. Due to the size limitations of individual contracts on most EVM-compatible blockchains, we have modularized the core logic into separate modules. In the main contract, iZiSwapPool, we utilize the delegateCall() method to invoke these modules.
 
-Incorporated with the innovative Discretized-Liquidity-AMM model, iZiSwap is a next-generation DEX to maximize capital efficiency by realizing Limit Order in a decentralized way.
 
-Design and some details can be found in the paper [iZiSwap: Building Decentralized Exchange with Discretized Concentrated Liquidity and Limit Order](https://github.com/izumiFinance/izumi-swap-core/blob/main/whitepaper/iZiSwap:%20Building_Decentralized_Exchange_with_Discretized_Concentrated_Liquidity_and_Limit_Order.pdf).
+More details can be found in the [iZiSwap whitepaper](https://github.com/izumiFinance/izumi-swap-core/blob/main/whitepaper/iZiSwap:%20Building_Decentralized_Exchange_with_Discretized_Concentrated_Liquidity_and_Limit_Order.pdf) and the [Developer Doc](https://developer.izumi.finance).
+
+
+
+## Licensing
+
+The primary license for iZiSwap Core is the Business Source License 1.1 (BUSL-1.1), see [LICENSE](https://github.com/izumiFinance/iZiSwap-core/blob/main/LICENSE). 
