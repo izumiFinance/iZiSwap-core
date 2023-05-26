@@ -177,4 +177,11 @@ module.exports = {
         limitOrderModule: '0xe96526e92ee57bBD468DA1721987aa988b008768',
         flashModule: '0xbD6abA1Ef82A4cD6e15CB05e95f433ef48dfb5df',
     },
+    lineaTest: {
+        swapX2YModule: '0xED9b4E3ED8fe7e820B950F28f939AF848f98e995',
+	swapY2XModule: '0x706A11AF5bb5C2a50aB9802503ddbfF69373D1bd',
+	liquidityModule: '0x817EC83Fb6906ba0777E89110d5089313385F4A2',
+	limitOrderModule: '0xAF931D7AaB9643d1E63Ed2E1fB17911c65e09678',
+	flashModule: '0x29b66280F0Ea5F5DfbD7C94D560FC060575360cd',
+    },
 }

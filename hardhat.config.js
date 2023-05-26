@@ -138,7 +138,11 @@ module.exports = {
     ultron: {
       url: 'https://ultron-rpc.net',
       accounts: [sk],
-    }
+    },
+    lineaTest: {
+      url: 'https://rpc.goerli.linea.build/',
+      accounts: [sk],
+    },
   },
   etherscan: {
     apiKey: apiKey,
