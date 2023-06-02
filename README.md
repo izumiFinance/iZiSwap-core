@@ -31,3 +31,10 @@ More details can be found in the [iZiSwap whitepaper](https://github.com/izumiFi
 ## Licensing
 
 The primary license for iZiSwap Core is the Business Source License 1.1 (BUSL-1.1), see [LICENSE](https://github.com/izumiFinance/iZiSwap-core/blob/main/LICENSE). 
+
+
+### Use source code as npm package
+
+```
+$ npm install iziswap_core
+```
