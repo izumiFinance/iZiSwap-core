@@ -38,3 +38,18 @@ The primary license for iZiSwap Core is the Business Source License 1.1 (BUSL-1.
 ```
 $ npm install iziswap_core
 ```
+
+An example to usage this package
+
+```
+import 'iziswap_core/contracts/interfaces/IiZiSwapPool.sol';
+
+contract Foo {
+  IiZiSwapPool pool;
+
+  function bar() {
+      // pool.addLimOrderWithY(...)
+      // pool.addLimOrderWithX(...)
+  }
+}
+```
