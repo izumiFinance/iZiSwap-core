@@ -1,5 +1,5 @@
 {
-  "name": "iziswap_core",
+  "name": "@izumifinance/iziswap_core",
   "version": "1.0.0",
   "keywords": [
     "iZUMi",
@@ -8,7 +8,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/izumiFinance/iZiSwap-core"
+    "url": "git+https://github.com/izumiFinance/iZiSwap-core.git"
   },
   "files": [
     "contracts/*.sol",
@@ -34,5 +34,19 @@
   },
   "dependencies": {
     "@openzeppelin/contracts": "^4.3.2"
-  }
+  },
+  "description": "<div align=\"center\">   <a href=\"https://izumi.finance\">      <img width=\"900px\" height=\"auto\"      src=\"image/logo.png\">   </a> </div>",
+  "bugs": {
+    "url": "https://github.com/izumiFinance/iZiSwap-core/issues"
+  },
+  "homepage": "https://github.com/izumiFinance/iZiSwap-core#readme",
+  "main": "index.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "mocha"
+  },
+  "author": "",
+  "license": "ISC"
 }
