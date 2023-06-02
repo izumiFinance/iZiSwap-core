@@ -42,7 +42,7 @@ $ npm install iziswap_core
 An example to usage this package
 
 ```
-import 'iziswap_core/contracts/interfaces/IiZiSwapPool.sol';
+import '@izumifinance/iziswap_core/contracts/interfaces/IiZiSwapPool.sol';
 
 contract Foo {
   IiZiSwapPool pool;
