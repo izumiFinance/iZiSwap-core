@@ -1,4 +1,23 @@
 {
+  "name": "iziswap_core",
+  "version": "1.0.0",
+  "keywords": [
+    "iZUMi",
+    "iziswap",
+    "core"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/izumiFinance/iZiSwap-core"
+  },
+  "files": [
+    "contracts/*.sol",
+    "contracts/interfaces/*.sol",
+    "contracts/libraries/*.sol",
+    "artifacts/contracts/**/*.json",
+    "!artifacts/contracts/**/*.dbg.json",
+    "!artifacts/contracts/test/**/*"
+  ],
   "devDependencies": {
     "@cronos-labs/hardhat-cronoscan": "^0.0.4",
     "@nomiclabs/hardhat-ethers": "^2.0.2",
