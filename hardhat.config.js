@@ -143,6 +143,10 @@ module.exports = {
       url: 'https://rpc.goerli.linea.build/',
       accounts: [sk],
     },
+    opsideTest: {
+      url: 'https://pre-alpha-us-http-geth.opside.network',
+      accounts: [sk],
+    },
   },
   etherscan: {
     apiKey: apiKey,
