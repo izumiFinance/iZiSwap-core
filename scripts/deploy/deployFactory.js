@@ -35,12 +35,7 @@ async function main() {
     const args = [para.receiver, swapX2YModule, swapY2XModule, liquidityModule, limitOrderModule, flashModule, para.defaultFeeChargePercent]
     console.log('args: ', args)
 
-    const factory = await iZiSwapFactory.deploy(para.receiver, swapX2YModule, swapY2XModule, liquidityModule, limitOrderModule, flashModule, para.defaultFeeChargePercent, 
-                {
-                        maxPriorityFeePerGas: feeData.maxPriorityFeePerGas,
-                        maxFeePerGas: feeData.maxFeePerGas,
-                        type: 2
-                });
+    const factory = await iZiSwapFactory.deploy(para.receiver, swapX2YModule, swapY2XModule, liquidityModule, limitOrderModule, flashModule, para.defaultFeeChargePercent);
     await factory.deployed();
 
     console.log("factory addr: " + factory.address);
