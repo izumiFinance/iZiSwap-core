@@ -196,8 +196,19 @@ library UserEarn {
             // count earned token into legacyEarn field, not earn field
             self.legacyEarn += uint128(earn);
         }
+        uint128 pastEarn = self.earn;
+        if (pastEarn > 0) {
+            // add userEarn.earn into legacyEarn
+            // because this userEarn is legacy
+            self.legacyEarn += pastEarn;
+            self.earn = 0;
+        }
+        // claimedEarn should not involve pastEarn
         claimedEarn = uint128(earn);
         self.lastAccEarn = currAccEarn;
+        // because 1. totalLegacyEarn on pointOrder will minus claimedEarn
+        // and totalLegacyEarn does not involve pastEarn
+        // and 2. pastEarn must have been claimed before
         totalLegacyEarnRemain = totalLegacyEarn - claimedEarn;
         if (addDelta > 0) {
             // sellingRemain has been clear to 0
