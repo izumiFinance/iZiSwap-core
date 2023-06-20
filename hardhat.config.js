@@ -147,6 +147,10 @@ module.exports = {
       url: 'https://pre-alpha-us-http-geth.opside.network',
       accounts: [sk],
     },
+    opsideTestRollux: {
+      url: 'https://pre-alpha-zkrollup-rpc.opside.network/public',
+      accounts: [sk],
+    },
   },
   etherscan: {
     apiKey: apiKey,
