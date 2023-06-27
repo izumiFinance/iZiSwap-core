@@ -185,10 +185,10 @@ module.exports = {
 	flashModule: '0x29b66280F0Ea5F5DfbD7C94D560FC060575360cd',
     },
     opsideTestRollux: {
-        swapX2YModule: '0xB2B0cde11223ab8EE62573298afBF3506Ff31755',
-        swapY2XModule: '0x3c823cF552fbEc203aAF9B4406BE696900841c9E',
-        liquidityModule: '0x817EC83Fb6906ba0777E89110d5089313385F4A2',
-        limitOrderModule: '0xAF931D7AaB9643d1E63Ed2E1fB17911c65e09678',
-        flashModule: '0x29b66280F0Ea5F5DfbD7C94D560FC060575360cd',
+    swapX2YModule: '0xe3213248CA0798CBC6f9402A8fdeD34d2abB3dA2',
+	        swapY2XModule: '0xa6585bbfae62096eBd7d71668B3E6cdE300a8c3E',
+	        liquidityModule: '0xe821322692Ef22e0BA985c1Ad8BD3042e9E1Cc43',
+	        limitOrderModule: '0xCE7fe0A153EF73759d253372b783E12a04849F35',
+	        flashModule: '0x539E30dBa3Bb825626C7A91D42557E49FF4C4413',
     },
 }
