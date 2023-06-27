@@ -61,11 +61,11 @@ module.exports = {
 	flashModule: '0xC7A1B769FBb9E609b219A6388F0c8c5a6476F7B6',
     },
     mantleTest: {
-        swapX2YModule: '0x7336A5a3251b9259DDf8B9D02a96dA0153e0799d',
-        swapY2XModule: '0x5708c30c6eCEa3f432aC860Cf6CFdF631f576810',
-        liquidityModule: '0x3aB38EF845E86E949253Dd3a6FdA37Cc7d4Cd892',
-        limitOrderModule: '0x6953DEe956eEe39973F1e1090368Ba434CCa0d94',
-        flashModule: '0xcFf0318C36147deaB07Cf751a00b21F83d13412d',
+        swapX2YModule: '0xfc49751C99bE41792f17071862eeb248EE3a3eB8',
+        swapY2XModule: '0x9b2EB4C79dBe8556389364F884Abd7b51De1121c',
+        liquidityModule: '0x44bDE35bc4eB41339E9c2Ec8B2B4B92FB684Da8E',
+        limitOrderModule: '0x2A19e0CF8c73280CdDdFd5877AA64A9690AE6d47',
+        flashModule: '0x069F50fcF55d96Fd95AE36b8E7DF44Db0dc426de',
     },
     bscTest: {
         swapX2YModule: '0xf6991b783FAbC33Cc7E735Bafd81ac087e08f564',
