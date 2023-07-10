@@ -67,9 +67,9 @@ contract iZiSwapFactory is Ownable, IiZiSwapFactory {
     ) {
         only_addr_ = address(this);
         fee2pointDelta[100] = 1;
-        fee2pointDelta[400] = 8;
-        fee2pointDelta[2000] = 40;
-        fee2pointDelta[10000] = 200;
+        fee2pointDelta[500] = 16;
+        fee2pointDelta[3000] = 80;
+        fee2pointDelta[10000] = 400;
         swapX2YModule = _swapX2YModule;
         swapY2XModule = _swapY2XModule;
         liquidityModule = _liquidityModule;
