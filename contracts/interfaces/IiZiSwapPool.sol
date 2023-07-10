@@ -60,13 +60,15 @@ interface IiZiSwapPool {
     /// @param sellXEarnY true for selling tokenX, false for buying tokenX
     /// @param amountX amount of tokenX in this exchange
     /// @param amountY amount of tokenY in this exchange
+    /// @param currentPoint current point after swap
     event Swap(
         address indexed tokenX,
         address indexed tokenY,
         uint24 indexed fee,
         bool sellXEarnY,
         uint256 amountX,
-        uint256 amountY
+        uint256 amountY,
+        int24 currentPoint
     );
 
     /// @notice Emitted by the pool for any flashes of tokenX/tokenY.
