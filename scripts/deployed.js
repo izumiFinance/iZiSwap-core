@@ -67,6 +67,13 @@ module.exports = {
         limitOrderModule: '0x2A19e0CF8c73280CdDdFd5877AA64A9690AE6d47',
         flashModule: '0x069F50fcF55d96Fd95AE36b8E7DF44Db0dc426de',
     },
+    mantle: {
+        swapX2YModule: '0x4d4673745AAC664eFB9758fdd571F40d78a87bfe',
+        swapY2XModule: '0x32D02Fc7722E81F6Ac60B87ea8B4b63a52Ad2b55',
+        liquidityModule: '0xF4efDB5A1E852f78e807fAE7100B1d38351e38c7',
+        limitOrderModule: '0xe96526e92ee57bBD468DA1721987aa988b008768',
+        flashModule: '0xbD6abA1Ef82A4cD6e15CB05e95f433ef48dfb5df',
+    },
     bscTest: {
         swapX2YModule: '0xf6991b783FAbC33Cc7E735Bafd81ac087e08f564',
         swapY2XModule: '0x6E58130919Bb63AA8B5B3Bd673093C1651b9fE95',
