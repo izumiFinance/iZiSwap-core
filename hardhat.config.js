@@ -99,6 +99,10 @@ module.exports = {
       url: 'https://rpc.testnet.mantle.xyz',
       accounts: [sk],
     },
+    mantle: {
+      url: 'https://rpc.mantle.xyz',
+      accounts: [sk],
+    },
     scrollTestL2: {
       url: 'https://alpha-rpc.scroll.io/l2',
       accounts: [sk],
