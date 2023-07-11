@@ -100,6 +100,13 @@ module.exports = {
         LAND: '0x1017D7d37169f98EED32BBB68aD79A3881174e3f',
         FROYO: '0xed2F92D6D2b936ce3Db9e046E57D9119e4A31ECb',
     },
+    opBNBTest: {
+        swapX2YModule: '0xED9b4E3ED8fe7e820B950F28f939AF848f98e995',
+        swapY2XModule: '0x706A11AF5bb5C2a50aB9802503ddbfF69373D1bd',
+        liquidityModule: '0x817EC83Fb6906ba0777E89110d5089313385F4A2',
+        limitOrderModule: '0xAF931D7AaB9643d1E63Ed2E1fB17911c65e09678',
+        flashModule: '0x29b66280F0Ea5F5DfbD7C94D560FC060575360cd',
+    },
     ontologyTest: {
         swapX2YModule: '0xED9b4E3ED8fe7e820B950F28f939AF848f98e995',
 	swapY2XModule: '0x706A11AF5bb5C2a50aB9802503ddbfF69373D1bd',

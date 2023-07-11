@@ -51,6 +51,10 @@ module.exports = {
       // gas: 90000000,
       gasPrice: 10000000000,
     },
+    opBNBTest: {
+      url: 'https://opbnb-testnet-rpc.bnbchain.org',
+      accounts: [sk],
+    },
     ontologyTest: {
       url: 'https://polaris1.ont.io:10339',
       accounts: [sk],
