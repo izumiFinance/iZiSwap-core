@@ -191,6 +191,13 @@ module.exports = {
 	limitOrderModule: '0xAF931D7AaB9643d1E63Ed2E1fB17911c65e09678',
 	flashModule: '0x29b66280F0Ea5F5DfbD7C94D560FC060575360cd',
     },
+    linea: {
+        swapX2YModule: '0x4d4673745AAC664eFB9758fdd571F40d78a87bfe',
+        swapY2XModule: '0x32D02Fc7722E81F6Ac60B87ea8B4b63a52Ad2b55',
+        liquidityModule: '0xF4efDB5A1E852f78e807fAE7100B1d38351e38c7',
+        limitOrderModule: '0xe96526e92ee57bBD468DA1721987aa988b008768',
+        flashModule: '0xbD6abA1Ef82A4cD6e15CB05e95f433ef48dfb5df',
+    },
     opsideTestRollux: {
     swapX2YModule: '0xe3213248CA0798CBC6f9402A8fdeD34d2abB3dA2',
 	        swapY2XModule: '0xa6585bbfae62096eBd7d71668B3E6cdE300a8c3E',
