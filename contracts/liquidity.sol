@@ -116,6 +116,7 @@ contract LiquidityModule {
         uint256 yc;
         // value of liquidityX at current point after withdraw
         uint128 liquidityX;
+        bool coverCurrentPt;
     }
 
     function balanceX() private view returns (uint256) {
@@ -304,6 +305,7 @@ contract LiquidityModule {
             );
             amountX += xr;
         }
+        withRet.coverCurrentPt = false;
         if (leftPoint <= pc && rightPoint > pc) {
             uint128 originLiquidityY = currentState.liquidity - currentState.liquidityX;
             uint128 withdrawedLiquidityY = (originLiquidityY < liquidDelta) ? originLiquidityY : liquidDelta;
@@ -314,6 +316,7 @@ contract LiquidityModule {
             withRet.liquidityX = currentState.liquidityX - withdrawedLiquidityX;
             amountY += withRet.yc;
             amountX += withRet.xc;
+            withRet.coverCurrentPt = true;
         } else {
             withRet.yc = 0;
             withRet.xc = 0;
@@ -427,7 +430,7 @@ contract LiquidityModule {
             currentState
         );
         // update state
-        if (withRet.yc > 0 || withRet.xc > 0) {
+        if (withRet.coverCurrentPt) {
             state.liquidity = liquidity - liquidDelta;
             state.liquidityX = withRet.liquidityX;
         }
