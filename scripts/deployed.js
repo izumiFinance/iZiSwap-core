@@ -140,12 +140,11 @@ module.exports = {
         factory: '0x156d8a0bE25FA232bb637Fc76255bCd00dEae9E9',
     },
     arbitrum: {
-        swapX2YModule: '0x88867BF3bB3321d8c7Da71a8eAb70680037068E4',
-        swapY2XModule: '0xB8dDAfE7385A962a4515821248368823E93fa61F',
-        liquidityModule: '0x77aB297Da4f3667059ef0C32F5bc657f1006cBB0',
-        limitOrderModule: '0x6a7CDD0CC87ec02ed85c196e57BaBe1bc0Acd6f2',
-        flashModule: '0x4a41EbEa62E7aB70413356D30DF73cA803aaE41c',
-        factory: '0x45e5F26451CDB01B0fA1f8582E0aAD9A6F27C218',
+        swapX2YModule: '0xAC9788cfea201950dB91d7db6F28C448CF3A4B29',
+        swapY2XModule: '0x93C22Fbeff4448F2fb6e432579b0638838Ff9581',
+        liquidityModule: '0x9Bf8399c9f5b777cbA2052F83E213ff59e51612B',
+        limitOrderModule: '0x12a76434182c8cAF7856CE1410cD8abfC5e2639F',
+        flashModule: '0xBd3bd95529e0784aD973FD14928eEDF3678cfad8',
     },
     cronos: {
         swapX2YModule: '0x110dE362cc436D7f54210f96b8C7652C2617887D',
