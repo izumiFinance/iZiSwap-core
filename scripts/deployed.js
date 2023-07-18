@@ -132,12 +132,11 @@ module.exports = {
         factory: '0x1502d025BfA624469892289D45C0352997251728',
     },
     aurora: {
-        swapX2YModule: '0x9Bf8399c9f5b777cbA2052F83E213ff59e51612B',
-        swapY2XModule: '0x12a76434182c8cAF7856CE1410cD8abfC5e2639F',
-        liquidityModule: '0xBd3bd95529e0784aD973FD14928eEDF3678cfad8',
-        limitOrderModule: '0xCFD8A067e1fa03474e79Be646c5f6b6A27847399',
-        flashModule: '0xAD1F11FBB288Cd13819cCB9397E59FAAB4Cdc16F',
-        factory: '0x156d8a0bE25FA232bb637Fc76255bCd00dEae9E9',
+        swapX2YModule: '0xA7B45d3546b736B04cf80aa5Dd10d46c38E83068',
+        swapY2XModule: '0x731C540Ad98564a6E3dC387F783475609721d0C3',
+        liquidityModule: '0x9e0E3D5c0c1D554e05Fd7BDb5EA1513108e88414',
+        limitOrderModule: '0xF3409631f87B0bC9bD6e9D9FD26D31BaDAA21880',
+        flashModule: '0x41BE134611a6039aeA79029050f164bC50a6e597',
     },
     arbitrum: {
         swapX2YModule: '0xAC9788cfea201950dB91d7db6F28C448CF3A4B29',
