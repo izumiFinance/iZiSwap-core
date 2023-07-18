@@ -138,6 +138,13 @@ module.exports = {
         limitOrderModule: '0xF3409631f87B0bC9bD6e9D9FD26D31BaDAA21880',
         flashModule: '0x41BE134611a6039aeA79029050f164bC50a6e597',
     },
+    confluxEspace: {
+	swapX2YModule: '0x04830cfCED9772b8ACbAF76Cfc7A630Ad82c9148',
+	    swapY2XModule: '0x2C6Df0fDbCE9D2Ded2B52A117126F2Dc991f770f',
+	    liquidityModule: '0x14323AfbC2b82fE58F0D9c203830EE969B4d1bE2',
+	    limitOrderModule: '0x88867BF3bB3321d8c7Da71a8eAb70680037068E4',
+	    flashModule: '0xB8dDAfE7385A962a4515821248368823E93fa61F',
+    },
     arbitrum: {
         swapX2YModule: '0xAC9788cfea201950dB91d7db6F28C448CF3A4B29',
         swapY2XModule: '0x93C22Fbeff4448F2fb6e432579b0638838Ff9581',

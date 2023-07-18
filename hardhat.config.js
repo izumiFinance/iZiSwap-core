@@ -155,6 +155,10 @@ module.exports = {
       url: 'https://pre-alpha-zkrollup-rpc.opside.network/public',
       accounts: [sk],
     },
+    confluxEspace: {
+	    url: 'https://evm.confluxrpc.com',
+      accounts: [sk],
+    },
   },
   etherscan: {
     apiKey: apiKey,
